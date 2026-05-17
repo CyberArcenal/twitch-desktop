@@ -1,0 +1,103 @@
+{
+  "name": "twitch-desktop",
+  "private": true,
+  "version": "1.0.0",
+  "description": "A modern Twitch desktop client built with Electron, React, TypeScript, and Vite",
+  "main": "dist-electron/main.js",
+  "author": {
+    "name": "CyberArcenal",
+    "email": "cyberarcenal1@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CyberArcenal/twitch-desktop.git"
+  },
+  "build": {
+    "appId": "com.CyberArcenal.twitchdesktop",
+    "productName": "Twitch Desktop",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist-electron/**/*",
+      "dist-renderer/**/*"
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": "nsis",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "mac": {
+      "icon": "build/icon.icns",
+      "target": "dmg",
+      "artifactName": "${productName}-${version}.${ext}"
+    },
+    "linux": {
+      "icon": "build/icon.png",
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "artifactName": "${productName}-${version}.${ext}"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "CyberArcenal",
+      "repo": "twitch-desktop",
+      "releaseType": "release"
+    }
+  },
+  "scripts": {
+    "dev": "cross-env NODE_ENV=development concurrently \"vite\" \"tsc -w -p tsconfig.main.json\" \"electron ./src/main/index.js\"",
+    "build": "vite build && electron-builder --publish never",
+    "build:renderer": "vite build",
+    "build:main": "tsc -p tsconfig.main.json",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:linux": "npm run build && electron-builder --linux",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .ts,.tsx",
+    "seed": "node src/seeders/seedData.js",
+    "seed:reset": "ts-node src/seeders/seedData.js --reset",
+    "postinstall": "electron-rebuild"
+  },
+  "dependencies": {
+    "@twurple/api": "^7.0.0",
+    "@twurple/auth": "^7.0.0",
+    "@twurple/chat": "^7.0.0",
+    "@twurple/eventsub-ws": "^7.0.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "electron-store": "^8.2.0",
+    "electron-updater": "^6.3.0",
+    "lucide-react": "^0.562.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.12.0",
+    "reflect-metadata": "^0.2.2",
+    "tailwind-merge": "^3.4.0"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.3",
+    "@eslint/js": "^9.39.1",
+    "@tailwindcss/vite": "^4.1.18",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "concurrently": "^9.2.1",
+    "cors": "^2.8.6",
+    "cross-env": "^10.1.0",
+    "electron": "^40.6.1",
+    "electron-builder": "^26.8.1",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "express": "^5.2.1",
+    "globals": "^16.5.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.4",
+    "vite": "^7.2.4",
+    "wait-on": "^8.0.3"
+  }
+}

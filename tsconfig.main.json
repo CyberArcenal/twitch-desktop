@@ -1,0 +1,38 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "outDir": "src/main",
+    "rootDir": "src/main",
+    "noEmit": false,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "resolveJsonModule": true,
+    "allowJs": false,
+    "sourceMap": true,
+    "types": ["node"]
+  },
+  "include": [
+    "src/main/**/*",
+    "src/entities/**/*",
+    "src/migrations/**/*",
+    "src/handlers/**/*",
+    "src/services/**/*",
+    "src/subscribers/**/*",
+    "src/utils/**/*",
+    "src/middlewares/**/*",
+    "src/StateTransitionServices/**/*",
+    "src/channels/**/*",
+    "src/drivers/**/*",
+    "src/scheduler/**/*",
+    "src/seeders/**/*"
+  ],
+  "exclude": ["src/renderer", "node_modules", "dist"]
+}

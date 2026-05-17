@@ -1,0 +1,121 @@
+/* Windows-style components for Twitch Desktop (adapted) */
+
+/* Windows-like buttons - Twitch themed */
+.windows-button {
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--twitch-dark-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+.windows-button-primary {
+  background-color: var(--twitch-purple);
+  color: white;
+  border-color: var(--twitch-purple);
+}
+
+.windows-button-primary:hover {
+  background-color: var(--twitch-purple-dark);
+  border-color: var(--twitch-purple-dark);
+}
+
+.windows-button-secondary {
+  background-color: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+}
+
+.windows-button-secondary:hover {
+  background-color: var(--bg-overlay);
+  border-color: var(--border-light);
+}
+
+.windows-button:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(145, 70, 255, 0.5);
+}
+
+/* Windows-like inputs */
+.windows-input {
+  display: block;
+  width: 100%;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border-default);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  background-color: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.windows-input:focus {
+  border-color: var(--twitch-purple);
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(145, 70, 255, 0.5);
+}
+
+/* Windows-like cards */
+.windows-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-default);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  transition: transform 0.1s ease, border-color 0.1s;
+}
+
+.windows-card:hover {
+  border-color: var(--twitch-purple);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+/* Windows-like tables */
+.windows-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.windows-table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+  background-color: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.windows-table td {
+  padding: 0.75rem 1rem;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-default);
+}
+
+/* Animation */
+@keyframes windowsFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.windows-fade-in {
+  animation: windowsFadeIn 0.3s ease-out;
+}
