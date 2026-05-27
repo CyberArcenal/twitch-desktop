@@ -1,17 +1,17 @@
 // src/renderer/api/core/player.ts
-import type { BaseResponse } from './common';
+import type { BaseResponse } from "./common";
 
 export interface PlayerState {
   isPlaying: boolean;
   volume: number;
   muted: boolean;
-  currentType: 'stream' | 'vod' | null;
+  currentType: "stream" | "vod" | null;
   currentId: string | null;
   quality: string;
 }
 
 export interface PlayerLoaded {
-  type: 'stream' | 'vod';
+  type: "stream" | "vod";
   id: string;
 }
 
@@ -36,52 +36,66 @@ export interface LoadVodOptions {
 }
 
 class PlayerAPI {
-  async loadStream(channelName: string, options: LoadStreamOptions = {}): Promise<BaseResponse<boolean>> {
+  async loadStream(
+    channelName: string,
+    options: LoadStreamOptions = {},
+  ): Promise<BaseResponse<boolean>> {
+    if (
+      !channelName ||
+      typeof channelName !== "string" ||
+      channelName.trim() === ""
+    ) {
+      console.error("[PlayerAPI] Invalid channel name:", channelName);
+      return { status: false, message: "Invalid channel name", data: false };
+    }
     return window.backendAPI.player({
-      method: 'loadStream',
-      params: { channelName, options }
+      method: "loadStream",
+      params: { channelName: channelName.trim(), options },
     });
   }
 
-  async loadVod(vodId: string, options: LoadVodOptions = {}): Promise<BaseResponse<boolean>> {
+  async loadVod(
+    vodId: string,
+    options: LoadVodOptions = {},
+  ): Promise<BaseResponse<boolean>> {
     return window.backendAPI.player({
-      method: 'loadVod',
-      params: { vodId, options }
+      method: "loadVod",
+      params: { vodId, options },
     });
   }
 
   async play(): Promise<BaseResponse<boolean>> {
-    return window.backendAPI.player({ method: 'play' });
+    return window.backendAPI.player({ method: "play" });
   }
 
   async pause(): Promise<BaseResponse<boolean>> {
-    return window.backendAPI.player({ method: 'pause' });
+    return window.backendAPI.player({ method: "pause" });
   }
 
   async setVolume(level: number): Promise<BaseResponse<boolean>> {
     return window.backendAPI.player({
-      method: 'setVolume',
-      params: { level }
+      method: "setVolume",
+      params: { level },
     });
   }
 
   async toggleMute(): Promise<BaseResponse<boolean>> {
-    return window.backendAPI.player({ method: 'toggleMute' });
+    return window.backendAPI.player({ method: "toggleMute" });
   }
 
   async setQuality(quality: string): Promise<BaseResponse<boolean>> {
     return window.backendAPI.player({
-      method: 'setQuality',
-      params: { quality }
+      method: "setQuality",
+      params: { quality },
     });
   }
 
   async fullscreen(): Promise<BaseResponse<boolean>> {
-    return window.backendAPI.player({ method: 'fullscreen' });
+    return window.backendAPI.player({ method: "fullscreen" });
   }
 
   async close(): Promise<void> {
-    return window.backendAPI.player({ method: 'close' });
+    return window.backendAPI.player({ method: "close" });
   }
 }
 

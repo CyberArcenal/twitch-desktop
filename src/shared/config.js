@@ -20,10 +20,13 @@ if (!CLIENT_ID && !IS_DEV) {
 }
 
 const REDIRECT_URI = process.env.TWITCH_REDIRECT_URI || 'http://localhost';
+// src/shared/config.js  (o kung saan man ito)
 const SCOPES = [
   'user:read:email',
   'chat:read',
   'chat:edit',
+  'whispers:read',  
+  'whispers:edit',   
   'channel:read:subscriptions',
   'user:read:follows'
 ].join(' ');

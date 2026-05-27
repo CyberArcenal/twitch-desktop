@@ -239,8 +239,8 @@ async function createMainWindow() {
       preload: path.join(__dirname, "preload.js"),
       nodeIntegration: false,
       contextIsolation: true,
-      webSecurity: !APP_CONFIG.isDev,
-      sandbox: true,
+      webSecurity: false,
+      sandbox: false,
     },
   });
 
