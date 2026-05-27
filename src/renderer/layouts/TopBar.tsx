@@ -7,6 +7,7 @@ import { authAPI } from "../api/core/auth";
 import { userAPI, type TwitchUser } from "../api/core/user";
 import SearchBar from "../components/Shared/SearchBar";
 import NotificationBell from "../components/Shared/NotificationBell";
+import { dialogs } from "../utils/dialogs";
 
 interface TopBarProps {
   toggleSidebar: () => void;
@@ -37,11 +38,15 @@ const TopBar: React.FC<TopBarProps> = ({ toggleSidebar }) => {
     return () => unsubscribe?.();
   }, []);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
+    if(!await dialogs.confirm({title: "Login Required", message: "You need to log in with Twitch to access this feature. Do you want to log in now?"}))return;
     navigate("/login");
   };
 
   const handleLogout = async () => {
+    if (!await dialogs.confirm({title: "Confirm Logout", message: "Are you sure you want to logout?"})) {
+      return;
+    }
     await authAPI.logout();
     setIsLoggedIn(false);
     setUser(null);

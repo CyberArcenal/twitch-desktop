@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Users, Gamepad2, Calendar, Heart, Bookmark, Share2, Check } from 'lucide-react';
 import type { Stream } from '../../../api/core/streams';
 import { followsAPI } from '../../../api/core/follows';
-import { userAPI } from '../../../api/core/user';
 import { watchLaterAPI, type WatchLaterItem } from '../../../api/core/watch-later';
 import { showSuccess, showError } from '../../../utils/notification';
 
@@ -18,40 +17,64 @@ const StreamInfoBar: React.FC<StreamInfoBarProps> = ({ stream, onShare }) => {
   const [isWatchLaterLoading, setIsWatchLaterLoading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string>('./icon.png');
 
-  // Fetch avatar from Twitch API
+  // Fetch avatar – using Twitch API directly (bypass userAPI for now)
   useEffect(() => {
     const fetchAvatar = async () => {
+      if (!stream.user_login) return;
+      console.log('[StreamInfoBar] Fetching avatar for:', stream.user_login);
       try {
-        const res = await userAPI.getUserByName(stream.user_login);
-        if (res.status && res.data?.profile_image_url) {
-          setAvatarUrl(res.data.profile_image_url);
+        // Use the Twitch API endpoint via your backend
+        const token = await window.backendAPI.auth?.({ method: 'getAccessToken' });
+        const clientId = import.meta.env.VITE_TWITCH_CLIENT_ID;
+        const response = await fetch(
+          `https://api.twitch.tv/helix/users?login=${stream.user_login}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token?.data}`,
+              'Client-Id': clientId,
+            },
+          }
+        );
+        const data = await response.json();
+        const user = data.data?.[0];
+        if (user?.profile_image_url) {
+          setAvatarUrl(user.profile_image_url);
+          console.log('[StreamInfoBar] Avatar set from API');
+        } else {
+          console.warn('[StreamInfoBar] No avatar from API, using fallback');
         }
       } catch (err) {
-        console.error('Failed to fetch avatar', err);
+        console.error('[StreamInfoBar] Avatar fetch error:', err);
       }
     };
-    if (stream?.user_login) fetchAvatar();
+    fetchAvatar();
   }, [stream.user_login]);
 
   // Check follow status
   useEffect(() => {
     const checkFollowStatus = async () => {
+      if (!stream.user_id) return;
+      console.log('[StreamInfoBar] Checking follow status for:', stream.user_id);
       try {
         const res = await followsAPI.isFollowing(stream.user_id);
+        console.log('[StreamInfoBar] isFollowing response:', res);
         if (res.status) setIsFollowing(res.data);
       } catch (err) {
-        console.error('Failed to check follow status', err);
+        console.error('[StreamInfoBar] Failed to check follow status', err);
       }
     };
-    if (stream?.user_id) checkFollowStatus();
+    checkFollowStatus();
   }, [stream.user_id]);
 
+  // Follow/Unfollow handler
   const handleFollowToggle = async () => {
+    console.log('[StreamInfoBar] Follow button CLICKED! Current isFollowing:', isFollowing);
     if (isFollowLoading) return;
     setIsFollowLoading(true);
     try {
       if (isFollowing) {
         const res = await followsAPI.unfollow(stream.user_id);
+        console.log('[StreamInfoBar] Unfollow response:', res);
         if (res.status) {
           setIsFollowing(false);
           showSuccess(`Unfollowed ${stream.user_name}`);
@@ -60,6 +83,7 @@ const StreamInfoBar: React.FC<StreamInfoBarProps> = ({ stream, onShare }) => {
         }
       } else {
         const res = await followsAPI.follow(stream.user_id);
+        console.log('[StreamInfoBar] Follow response:', res);
         if (res.status) {
           setIsFollowing(true);
           showSuccess(`Now following ${stream.user_name}`);
@@ -68,6 +92,7 @@ const StreamInfoBar: React.FC<StreamInfoBarProps> = ({ stream, onShare }) => {
         }
       }
     } catch (err: any) {
+      console.error('[StreamInfoBar] Follow error:', err);
       showError(err.message);
     } finally {
       setIsFollowLoading(false);
@@ -75,6 +100,7 @@ const StreamInfoBar: React.FC<StreamInfoBarProps> = ({ stream, onShare }) => {
   };
 
   const handleWatchLater = async () => {
+    console.log('[StreamInfoBar] Watch Later button clicked');
     if (isWatchLaterLoading) return;
     setIsWatchLaterLoading(true);
     try {
@@ -97,6 +123,7 @@ const StreamInfoBar: React.FC<StreamInfoBarProps> = ({ stream, onShare }) => {
   };
 
   const handleShare = () => {
+    console.log('[StreamInfoBar] Share button clicked');
     if (onShare) {
       onShare();
     } else {
@@ -117,6 +144,7 @@ const StreamInfoBar: React.FC<StreamInfoBarProps> = ({ stream, onShare }) => {
             alt={stream.user_name}
             referrerPolicy="no-referrer"
             onError={(e) => {
+              console.warn('[StreamInfoBar] Avatar failed, using fallback');
               (e.target as HTMLImageElement).src = './icon.png';
             }}
           />
@@ -147,11 +175,11 @@ const StreamInfoBar: React.FC<StreamInfoBarProps> = ({ stream, onShare }) => {
           <button
             onClick={handleFollowToggle}
             disabled={isFollowLoading}
-            className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-colors flex items-center gap-2 cursor-pointer ${
+            className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-colors flex items-center gap-2 ${
               isFollowing
                 ? 'bg-[#3a3a3e] text-white hover:bg-[#4a4a4e]'
                 : 'bg-[#9147ff] text-white hover:bg-[#772ce8]'
-            } disabled:opacity-50`}
+            } disabled:opacity-50 cursor-pointer`}
           >
             {isFollowing ? <Check className="w-4 h-4" /> : <Heart className="w-4 h-4" />}
             {isFollowing ? 'Following' : 'Follow'}

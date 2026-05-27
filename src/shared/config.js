@@ -23,12 +23,18 @@ const REDIRECT_URI = process.env.TWITCH_REDIRECT_URI || 'http://localhost';
 // src/shared/config.js  (o kung saan man ito)
 const SCOPES = [
   'user:read:email',
+  'user:read:follows',
+  'user:edit:follows',
   'chat:read',
   'chat:edit',
-  'whispers:read',  
-  'whispers:edit',   
+  'whispers:read',
+  'whispers:edit',
   'channel:read:subscriptions',
-  'user:read:follows'
+  'channel:read:stream_key',
+  'channel:manage:broadcast',
+  'channel:manage:predictions',
+  'channel:read:predictions',
+  'moderator:read:followers',
 ].join(' ');
 
 const TOKEN_URL = 'https://id.twitch.tv/oauth2/token';
