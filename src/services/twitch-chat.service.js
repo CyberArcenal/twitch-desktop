@@ -1,122 +1,128 @@
+// src/main/services/twitch-chat.service.js
+//@ts-check
 const { ChatClient } = require('@twurple/chat');
 const { settingsService } = require('./settings.service');
 const { twitchAuthService } = require('./twitch-auth.service');
 const { CLIENT_ID } = require('../shared/config');
+const { BrowserWindow } = require('electron');
 
-let chatClient = null;
-let currentChannel = null;
-let mainWindow = null;
-let reconnectAttempts = 0;
-const MAX_RECONNECT_ATTEMPTS = 5;
-let reconnectTimer = null;
-
-function initChatService(window) {
-  mainWindow = window;
-}
-
-async function connectToChannel(channelName) {
-  if (chatClient) {
-    await disconnectChat();
+class TwitchChatService {
+  constructor() {
+    this.chatClient = null;
+    this.currentChannel = null;
+    this.mainWindow = null;
+    this.reconnectAttempts = 0;
+    this.MAX_RECONNECT_ATTEMPTS = 5;
+    this.reconnectTimer = null;
   }
 
-  const token = twitchAuthService.getAccessToken();
-  if (!token) throw new Error('Not logged in');
+  initChatService(window) {
+    this.mainWindow = window;
+  }
 
-  const userLogin = settingsService.get('twitch').login;
-  if (!userLogin) throw new Error('User login not found');
-
-  // Auth provider that always returns fresh token
-  const authProvider = {
-    getAccessToken: async () => {
-      let token = twitchAuthService.getAccessToken();
-      if (!token) throw new Error('No access token');
-      return token;
-    },
-    getUserId: async () => settingsService.get('twitch').userId,
-    getClientId: async () => CLIENT_ID
-  };
-
-  chatClient = new ChatClient({ authProvider, channels: [channelName] });
-
-  // Read filters on each message (dynamic)
-  chatClient.onMessage((channel, user, message, msg) => {
-    const filters = settingsService.get('chatFilters') || [];
-    const lowerMsg = message.toLowerCase();
-    const isFiltered = filters.some(filter => lowerMsg.includes(filter));
-    if (isFiltered) return;
-
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('chat:message', {
-        channel: channel.slice(1),
-        user: user,
-        message: message,
-        badges: msg.userInfo.badges,
-        emotes: msg.emoteOffsets,
-        timestamp: new Date().toISOString()
-      });
+  async connectToChannel(channelName) {
+    if (this.chatClient) {
+      await this.disconnectChat();
     }
-  });
 
-  chatClient.onJoin((channel, user) => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      if (user === userLogin) {
-        mainWindow.webContents.send('chat:connected', { channel: channel.slice(1) });
-        reconnectAttempts = 0; // reset on successful connection
-      } else {
-        mainWindow.webContents.send('chat:user-joined', { channel: channel.slice(1), user });
+    const token = twitchAuthService.getAccessToken();
+    if (!token) throw new Error('Not logged in');
+
+    const userLogin = settingsService.get('twitch').login;
+    if (!userLogin) throw new Error('User login not found');
+
+    const authProvider = {
+      getAccessToken: async () => {
+        await twitchAuthService.refreshTokenIfNeeded();
+        const token = twitchAuthService.getAccessToken();
+        if (!token) throw new Error('No access token');
+        return token;
+      },
+      getUserId: async () => settingsService.get('twitch').userId,
+      getClientId: async () => CLIENT_ID
+    };
+
+    this.chatClient = new ChatClient({ authProvider, channels: [channelName] });
+
+    this.chatClient.onMessage((channel, user, message, msg) => {
+      const filters = settingsService.get('chatFilters') || [];
+      const lowerMsg = message.toLowerCase();
+      const isFiltered = filters.some(filter => lowerMsg.includes(filter));
+      if (isFiltered) return;
+
+      if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+        this.mainWindow.webContents.send('chat:message', {
+          channel: channel.slice(1),
+          user: user,
+          message: message,
+          badges: msg.userInfo.badges,
+          emotes: msg.emoteOffsets,
+          timestamp: new Date().toISOString()
+        });
       }
-    }
-  });
+    });
 
-  chatClient.onConnect(() => {
-    console.log(`[Chat] Connected to ${channelName}`);
-    if (reconnectTimer) clearTimeout(reconnectTimer);
-  });
-
-  chatClient.onDisconnect(async (manually) => {
-    console.log(`[Chat] Disconnected from ${channelName}, manually: ${manually}`);
-    if (!manually && currentChannel) {
-      // Auto-reconnect
-      if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-        reconnectAttempts++;
-        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
-        console.log(`[Chat] Reconnecting in ${delay}ms (attempt ${reconnectAttempts})`);
-        reconnectTimer = setTimeout(async () => {
-          try {
-            await connectToChannel(currentChannel);
-          } catch (err) {
-            console.error('[Chat] Reconnect failed:', err);
-          }
-        }, delay);
-      } else {
-        console.error('[Chat] Max reconnect attempts reached');
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('chat:error', { error: 'Chat connection lost permanently' });
+    this.chatClient.onJoin((channel, user) => {
+      if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+        if (user === userLogin) {
+          this.mainWindow.webContents.send('chat:connected', { channel: channel.slice(1) });
+          this.reconnectAttempts = 0;
+        } else {
+          this.mainWindow.webContents.send('chat:user-joined', { channel: channel.slice(1), user });
         }
       }
+    });
+
+    this.chatClient.onConnect(() => {
+      console.log(`[Chat] Connected to ${channelName}`);
+      if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+    });
+
+    this.chatClient.onDisconnect(async (manually) => {
+      console.log(`[Chat] Disconnected from ${channelName}, manually: ${manually}`);
+      if (!manually && this.currentChannel) {
+        if (this.reconnectAttempts < this.MAX_RECONNECT_ATTEMPTS) {
+          this.reconnectAttempts++;
+          const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
+          console.log(`[Chat] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
+          this.reconnectTimer = setTimeout(async () => {
+            try {
+              await this.connectToChannel(this.currentChannel);
+            } catch (err) {
+              console.error('[Chat] Reconnect failed:', err);
+            }
+          }, delay);
+        } else {
+          console.error('[Chat] Max reconnect attempts reached');
+          if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+            this.mainWindow.webContents.send('chat:error', { error: 'Chat connection lost permanently' });
+          }
+        }
+      }
+    });
+
+    await this.chatClient.connect();
+    this.currentChannel = channelName;
+  }
+
+  async sendChatMessage(message) {
+    if (!this.chatClient || !this.currentChannel) throw new Error('Not connected to chat');
+    await this.chatClient.say(this.currentChannel, message);
+  }
+
+  async disconnectChat() {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
     }
-  });
-
-  await chatClient.connect();
-  currentChannel = channelName;
-}
-
-async function sendChatMessage(message) {
-  if (!chatClient || !currentChannel) throw new Error('Not connected to chat');
-  await chatClient.say(currentChannel, message);
-}
-
-async function disconnectChat() {
-  if (reconnectTimer) {
-    clearTimeout(reconnectTimer);
-    reconnectTimer = null;
+    if (this.chatClient) {
+      await this.chatClient.quit();
+      this.chatClient = null;
+      this.currentChannel = null;
+    }
+    this.reconnectAttempts = 0;
   }
-  if (chatClient) {
-    await chatClient.quit();
-    chatClient = null;
-    currentChannel = null;
-  }
-  reconnectAttempts = 0;
 }
 
-module.exports = { initChatService, connectToChannel, sendChatMessage, disconnectChat };
+const twitchChatService = new TwitchChatService();
+module.exports = { twitchChatService, TwitchChatService };

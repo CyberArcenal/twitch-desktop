@@ -19,6 +19,7 @@ class UpdaterHandler {
   setupListeners() {
     this.autoUpdater.autoDownload = false;      // let user confirm download
     this.autoUpdater.autoInstallOnAppQuit = true;
+    this.autoUpdater.allowPrerelease = false;
 
     this.autoUpdater.on('checking-for-update', () => {
       this.sendToRenderer('updater:checking');

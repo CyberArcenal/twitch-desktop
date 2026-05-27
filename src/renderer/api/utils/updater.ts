@@ -67,10 +67,10 @@ class UpdaterAPI {
    */
   async checkForUpdates(): Promise<UpdateCheckResponse> {
     try {
-      if (!window.electronAPI?.updater) {
+      if (!window.backendAPI?.updater) {
         throw new Error('Updater API not available');
       }
-      const response = await window.electronAPI.updater({
+      const response = await window.backendAPI.updater({
         method: 'checkForUpdates',
         params: {},
       });
@@ -87,10 +87,10 @@ class UpdaterAPI {
    */
   async downloadUpdate(): Promise<DownloadResponse> {
     try {
-      if (!window.electronAPI?.updater) {
+      if (!window.backendAPI?.updater) {
         throw new Error('Updater API not available');
       }
-      const response = await window.electronAPI.updater({
+      const response = await window.backendAPI.updater({
         method: 'downloadUpdate',
         params: {},
       });
@@ -107,10 +107,10 @@ class UpdaterAPI {
    */
   async quitAndInstall(): Promise<InstallResponse> {
     try {
-      if (!window.electronAPI?.updater) {
+      if (!window.backendAPI?.updater) {
         throw new Error('Updater API not available');
       }
-      const response = await window.electronAPI.updater({
+      const response = await window.backendAPI.updater({
         method: 'quitAndInstall',
         params: {},
       });
@@ -127,10 +127,10 @@ class UpdaterAPI {
    */
   async getUpdateStatus(): Promise<UpdateStatusResponse> {
     try {
-      if (!window.electronAPI?.updater) {
+      if (!window.backendAPI?.updater) {
         throw new Error('Updater API not available');
       }
-      const response = await window.electronAPI.updater({
+      const response = await window.backendAPI.updater({
         method: 'getUpdateStatus',
         params: {},
       });
@@ -150,42 +150,42 @@ class UpdaterAPI {
    * Listen for "checking for updates" event
    */
   onChecking(callback: () => void): () => void {
-    return window.electronAPI.on('updater:checking', callback);
+    return window.backendAPI.on('updater:checking', callback);
   }
 
   /**
    * Listen for update available event
    */
   onUpdateAvailable(callback: (info: UpdateInfo) => void): () => void {
-    return window.electronAPI.on('updater:update-available', (event, info) => callback(info));
+    return window.backendAPI.on('updater:update-available', (event, info) => callback(info));
   }
 
   /**
    * Listen for update not available event
    */
   onUpdateNotAvailable(callback: (info: UpdateInfo) => void): () => void {
-    return window.electronAPI.on('updater:update-not-available', (event, info) => callback(info));
+    return window.backendAPI.on('updater:update-not-available', (event, info) => callback(info));
   }
 
   /**
    * Listen for download progress
    */
   onDownloadProgress(callback: (progress: DownloadProgress) => void): () => void {
-    return window.electronAPI.on('updater:download-progress', (event, progress) => callback(progress));
+    return window.backendAPI.on('updater:download-progress', (event, progress) => callback(progress));
   }
 
   /**
    * Listen for update downloaded (ready to install)
    */
   onUpdateDownloaded(callback: (info: UpdateInfo) => void): () => void {
-    return window.electronAPI.on('updater:update-downloaded', (event, info) => callback(info));
+    return window.backendAPI.on('updater:update-downloaded', (event, info) => callback(info));
   }
 
   /**
    * Listen for errors
    */
   onError(callback: (errorMessage: string) => void): () => void {
-    return window.electronAPI.on('updater:error', (event, message) => callback(message));
+    return window.backendAPI.on('updater:error', (event, message) => callback(message));
   }
 
   // --------------------------------------------------------------------
@@ -196,7 +196,7 @@ class UpdaterAPI {
    * Check if updater API is available
    */
   async isAvailable(): Promise<boolean> {
-    return !!window.electronAPI?.updater;
+    return !!window.backendAPI?.updater;
   }
 }
 

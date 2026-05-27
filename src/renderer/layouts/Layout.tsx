@@ -3,8 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./SideBar";
 import TopBar from "./TopBar";
-import TitleBar from "../components/UI/TitleBar";
-import { GoLiveModal } from "../components/Modals/GoLiveModal";
+import { NotificationToastListener } from "../components/Shared/NotificationToastListener";
 
 const Layout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -38,14 +37,14 @@ const Layout: React.FC = () => {
           )}
 
           <div className="flex-1 flex flex-col overflow-hidden">
-            <TopBar toggleSidebar={toggleSidebar} onGoLive={() => setShowGoLiveModal(true)} />
+            <TopBar toggleSidebar={toggleSidebar}/>
             <main className="flex-1 overflow-y-auto">
               <Outlet />
             </main>
           </div>
         </div>
+        <NotificationToastListener />
       </div>
-      <GoLiveModal isOpen={showGoLiveModal} onClose={() => setShowGoLiveModal(false)} />
     </>
   );
 };

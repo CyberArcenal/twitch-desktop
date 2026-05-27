@@ -1,61 +1,78 @@
+// src/main/services/twitch-api.service.js
+//@ts-check
 const { twitchAuthService } = require("./twitch-auth.service");
-const { CLIENT_ID, API_BASE, IS_DEV } = require('../shared/config');
+const { CLIENT_ID, API_BASE } = require("../shared/config");
 
-async function fetchTwitch(endpoint, options = {}, retry = true) {
-  const url = `${API_BASE}/${endpoint}`;
-  const headers = { ...options.headers };
-  
-  // Only send auth headers when using real Twitch API
-  if (!IS_DEV) {
+class TwitchApiService {
+  async fetchTwitch(endpoint, options = {}, retry = true) {
+    const url = `${API_BASE}/${endpoint}`;
+    const headers = { ...options.headers };
+
     const token = twitchAuthService.getAccessToken();
-    if (!token) throw new Error('Not authenticated');
-    headers['Authorization'] = `Bearer ${token}`;
-    headers['Client-Id'] = CLIENT_ID;
-  }
-  
-  const res = await fetch(url, { ...options, headers });
-  
-  if (!IS_DEV && res.status === 401 && retry) {
-    const refreshed = await twitchAuthService.refreshTokenIfNeeded();
-    if (refreshed) return fetchTwitch(endpoint, options, false);
-  }
-  
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(error.message || 'API error');
-  }
-  return res.json();
-}
+    if (!token) throw new Error("Not authenticated");
+    headers["Authorization"] = `Bearer ${token}`;
+    headers["Client-Id"] = CLIENT_ID;
 
-const twitchApiService = {
+    const res = await fetch(url, { ...options, headers });
+
+    if (res.status === 401 && retry) {
+      const refreshed = await twitchAuthService.refreshTokenIfNeeded();
+      if (refreshed) return this.fetchTwitch(endpoint, options, false);
+    }
+
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ message: res.statusText }));
+      throw new Error(error.message || "API error");
+    }
+    return res.json();
+  }
+
   async getCurrentUser() {
-    return fetchTwitch("users");
-  },
+    return this.fetchTwitch("users");
+  }
 
   async getFollowedChannels(userId, after = null) {
-    const params = new URLSearchParams({ user_id: userId, first: "100" });
+    const params = new URLSearchParams({ from_id: userId, first: "100" });
     if (after) params.append("after", after);
-    return fetchTwitch(`users/follows?${params}`);
-  },
+    return this.fetchTwitch(`users/follows?${params}`);
+  }
 
   async getStreams(userIds) {
     const params = new URLSearchParams();
     userIds.forEach((id) => params.append("user_id", id));
-    return fetchTwitch(`streams?${params}`);
-  },
+    return this.fetchTwitch(`streams?${params}`);
+  }
 
   async getChannelInfo(broadcasterId) {
-    return fetchTwitch(`channels?broadcaster_id=${broadcasterId}`);
-  },
+    return this.fetchTwitch(`channels?broadcaster_id=${broadcasterId}`);
+  }
 
-  async searchChannels(query) {
-    const params = new URLSearchParams({ query, first: "20" });
-    return fetchTwitch(`search/channels?${params}`);
-  },
+async searchChannels(query, first = 20) {
+  const params = new URLSearchParams({ query, first: String(Math.min(first, 100)) });
+  return this.fetchTwitch(`search/channels?${params}`);
+}
 
   async getGameInfo(gameId) {
-    return fetchTwitch(`games?id=${gameId}`);
-  },
-};
+    return this.fetchTwitch(`games?id=${gameId}`);
+  }
 
-module.exports = { twitchApiService };
+  async searchCategories(query, first = 20) {
+    const params = new URLSearchParams({
+      query,
+      first: String(Math.min(first, 100)),
+    });
+    return this.fetchTwitch(`search/categories?${params}`);
+  }
+
+  async searchStreams(query, first = 20) {
+    // Twitch API has no direct stream search; workaround: search channels, then get streams for those channel IDs
+    const channels = await this.searchChannels(query, first);
+    const channelIds = channels.data.map((c) => c.id);
+    if (channelIds.length === 0) return { data: [] };
+    const streamsData = await this.getStreams(channelIds);
+    return streamsData;
+  }
+}
+
+const twitchApiService = new TwitchApiService();
+module.exports = { twitchApiService, TwitchApiService };

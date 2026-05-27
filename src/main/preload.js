@@ -1,45 +1,39 @@
+// src/main/preload.js
 const { contextBridge, ipcRenderer } = require("electron");
 
-contextBridge.exposeInMainWorld("electronAPI", {
-  // Window controls
-  minimizeWindow: () => ipcRenderer.send("window:minimize"),
-  maximizeWindow: () => ipcRenderer.send("window:maximize"),
-  closeWindow: () => ipcRenderer.send("window:close"),
-  getWindowState: () => ipcRenderer.invoke("window:getState"),
-  onWindowMaximized: (cb) => { ipcRenderer.on("window:maximized", cb); return () => ipcRenderer.removeListener("window:maximized", cb); },
-  onWindowRestored: (cb) => { ipcRenderer.on("window:restored", cb); return () => ipcRenderer.removeListener("window:restored", cb); },
-  onWindowMinimized: (cb) => { ipcRenderer.on("window:minimized", cb); return () => ipcRenderer.removeListener("window:minimized", cb); },
+contextBridge.exposeInMainWorld("backendAPI", {
+  // Window control
+  windowControl: (payload) => ipcRenderer.invoke("window-control", payload),
+  openExternal: (url) => ipcRenderer.invoke("open-external", url),
+  notifyAppReady: () => ipcRenderer.send("app:renderer-ready"),
 
-  // Settings
-  getSettings: () => ipcRenderer.invoke("settings:getAll"),
-  setSetting: (k,v) => ipcRenderer.invoke("settings:set", k, v),
-  addChatFilter: (w) => ipcRenderer.invoke("settings:addFilter", w),
-  removeChatFilter: (w) => ipcRenderer.invoke("settings:removeFilter", w),
+  // Twitch modules
+  auth: (payload) => ipcRenderer.invoke("twitch-auth", payload),
+  chat: (payload) => ipcRenderer.invoke("twitch-chat", payload),
+  streamMonitor: (payload) => ipcRenderer.invoke("stream-monitor", payload),
+  follows: (payload) => ipcRenderer.invoke("follows", payload),
+  notification: (payload) => ipcRenderer.invoke("notification", payload),
+  settings: (payload) => ipcRenderer.invoke("settings", payload),
 
-  // Auth
-  login: () => ipcRenderer.invoke("auth:login"),
-  logout: () => ipcRenderer.invoke("auth:logout"),
-  isLoggedIn: () => ipcRenderer.invoke("auth:isLoggedIn"),
-  getCurrentUser: () => ipcRenderer.invoke("auth:getUser"),
+  games: (payload) => ipcRenderer.invoke("games", payload),
+  user: (payload) => ipcRenderer.invoke("user", payload),
+  clips: (payload) => ipcRenderer.invoke("clips", payload),
+  eventsub: (payload) => ipcRenderer.invoke("eventsub", payload),
+  history: (payload) => ipcRenderer.invoke("history", payload),
+  shortcut: (payload) => ipcRenderer.invoke("shortcut", payload),
 
-  // Twitch API
-  getTwitchUser: () => ipcRenderer.invoke("twitch:getUser"),
-  getFollowedChannels: (userId, after) => ipcRenderer.invoke("twitch:getFollowed", userId, after),
-  getStreams: (userIds) => ipcRenderer.invoke("twitch:getStreams", userIds),
-  searchChannels: (q) => ipcRenderer.invoke("twitch:searchChannels", q),
-  getChannelInfo: (id) => ipcRenderer.invoke("twitch:getChannelInfo", id),
+  themes: (payload) => ipcRenderer.invoke("themes", payload),
+  adBlock: (payload) => ipcRenderer.invoke("ad-block", payload),
+  pip: (payload) => ipcRenderer.invoke("pip", payload),
+  download: (payload) => ipcRenderer.invoke("download", payload),
+  predictions: (payload) => ipcRenderer.invoke("predictions", payload),
+  search: (payload) => ipcRenderer.invoke("search", payload),
 
-  // Chat
-  connectChat: (ch) => ipcRenderer.invoke("chat:connect", ch),
-  sendChatMessage: (msg) => ipcRenderer.invoke("chat:send", msg),
-  disconnectChat: () => ipcRenderer.invoke("chat:disconnect"),
-
-  // Events from main
-  onChatMessage: (cb) => { ipcRenderer.on("chat:message", (_, d) => cb(d)); return () => ipcRenderer.removeAllListeners("chat:message"); },
-  onChatConnected: (cb) => { ipcRenderer.on("chat:connected", (_, d) => cb(d)); return () => ipcRenderer.removeAllListeners("chat:connected"); },
-  onUserJoined: (cb) => { ipcRenderer.on("chat:user-joined", (_, d) => cb(d)); return () => ipcRenderer.removeAllListeners("chat:user-joined"); },
-
-  getUserFollowers: (broadcasterId) => ipcRenderer.invoke('get-user-followers', broadcasterId),
-
-  notifyAppReady: () => ipcRenderer.send('app:renderer-ready'),
+  // Event listeners
+  on: (channel, callback) => {
+    const newCallback = (_, data) => callback(data);
+    ipcRenderer.on(channel, newCallback);
+    return () => ipcRenderer.removeListener(channel, newCallback);
+  },
+  off: (channel, callback) => ipcRenderer.removeListener(channel, callback),
 });

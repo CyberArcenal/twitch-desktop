@@ -1,25 +1,18 @@
-// src/App.tsx
-import { Navigate, Route, Routes } from "react-router-dom";
-import { useEffect } from "react";
-
-// Pages
+// src/routes/App.tsx
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import Layout from "../layouts/Layout";
 import { HelpPage } from "../pages/help";
 import LoginPage from "../pages/auth/login";
-import Profile from "../pages/profile";
-import FollowingPage from "../pages/following";
-import Search from "../pages/search";
-import BrowsePage from "../pages/browse";
-import ChatPage from "../pages/chat";
-import Followers from "../pages/followers";
-import AppearanceSettings from "../pages/settings/appearance";
-import ChatFiltersSettings from "../pages/settings/chat-filters";
-import NotificationsSettings from "../pages/settings/notifications";
-import WatchStreamPage from "../pages/stream";
-import LiveDashboardPage from "../pages/Live";
 
-// Placeholder component for stream player
-const PlaceholderPage = ({ title, message }: { title: string; message?: string }) => {
+// ─── Generic Placeholder (reusable) ─────────────────────────────
+const PlaceholderPage = ({
+  title,
+  message,
+}: {
+  title: string;
+  message?: string;
+}) => {
   const location = window.location.pathname;
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
@@ -30,7 +23,8 @@ const PlaceholderPage = ({ title, message }: { title: string; message?: string }
         {title}
       </h1>
       <p className="text-[#adadb8] max-w-md mb-6">
-        {message || "This feature is not yet implemented. It will be available soon."}
+        {message ||
+          "This page is under construction. It will be available soon."}
       </p>
       <div className="text-xs text-[#5e5e6b] bg-[#1f1f23] px-3 py-1 rounded-full">
         Route: {location}
@@ -39,14 +33,45 @@ const PlaceholderPage = ({ title, message }: { title: string; message?: string }
   );
 };
 
+// ─── Auth Guard (redirect to login if not authenticated) ────────
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        // Make sure your authAPI is correctly imported
+        const { authAPI } = await import("../api/core/auth");
+        const result = await authAPI.isLoggedIn();
+        setIsAuthenticated(result.data);
+        if (!result.data) navigate("/login", { replace: true });
+      } catch (err) {
+        console.error("Auth check failed", err);
+        navigate("/login", { replace: true });
+      }
+    };
+    checkAuth();
+  }, [navigate]);
+
+  if (isAuthenticated === null) {
+    // Optionally show a loading spinner
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="w-8 h-8 border-4 border-[#9146ff] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return isAuthenticated ? <>{children}</> : null;
+};
+
+// ─── Main App ────────────────────────────────────────────────────
 function App() {
   useEffect(() => {
-    // Notify main process that renderer is ready
-    if (typeof window.electronAPI?.notifyAppReady === "function") {
-      window.electronAPI.notifyAppReady();
+    if (typeof window.backendAPI?.notifyAppReady === "function") {
+      window.backendAPI.notifyAppReady();
       console.log("Notified main process: renderer is ready");
-    } else {
-      console.log("Electron API ready (notifyAppReady not available)");
     }
   }, []);
 
@@ -56,34 +81,145 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/help" element={<HelpPage />} />
 
-      {/* Main app with layout */}
-      <Route path="/" element={<Layout />}>
-        <Route index element={<Navigate to="/following" replace />} />
+      {/* Protected routes (require login) */}
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
+        {/* Dashboard */}
+        <Route
+          index
+          element={
+            <PlaceholderPage title="Dashboard" message="Your personalized Twitch overview is coming soon." />
+          }
+        />
+        <Route
+          path="dashboard"
+          element={
+            <PlaceholderPage title="Dashboard" message="Your personalized Twitch overview is coming soon." />
+          }
+        />
 
-        {/* Core Twitch routes */}
-        <Route path="following" element={<FollowingPage />} />
-        <Route path="browse" element={<BrowsePage />} />
-        <Route path="chat" element={<ChatPage />} />
-        <Route path="followers" element={<Followers />} />
-        <Route path="profile" element={<Profile />} />
-        <Route path="search" element={<Search />} />
-        <Route path="live" element={<LiveDashboardPage />} />
-        <Route path="stream/:channel" element={<WatchStreamPage />} />
-        <Route path="/profile" element={<Profile />} />
+        {/* Following */}
+        <Route
+          path="following"
+          element={
+            <PlaceholderPage title="Following" message="Live channels you follow will appear here." />
+          }
+        />
+
+        {/* Browse section */}
+        <Route
+          path="browse/categories"
+          element={
+            <PlaceholderPage title="Categories" message="Browse games and categories." />
+          }
+        />
+        <Route
+          path="browse/top-games"
+          element={
+            <PlaceholderPage title="Top Games" message="Most popular games on Twitch." />
+          }
+        />
+        <Route
+          path="browse/live"
+          element={
+            <PlaceholderPage title="Live Channels" message="Discover live streams right now." />
+          }
+        />
+        <Route
+          path="browse/clips"
+          element={
+            <PlaceholderPage title="Popular Clips" message="Trending clips from the community." />
+          }
+        />
+
+        {/* Library */}
+        <Route
+          path="history"
+          element={
+            <PlaceholderPage title="Watch History" message="Your recently watched streams and VODs." />
+          }
+        />
+        <Route
+          path="watch-later"
+          element={
+            <PlaceholderPage title="Watch Later" message="Videos you saved for later." />
+          }
+        />
+        <Route
+          path="subscriptions"
+          element={
+            <PlaceholderPage title="Subscriptions" message="Manage your channel subscriptions." />
+          }
+        />
+        <Route
+          path="clips"
+          element={
+            <PlaceholderPage title="My Clips" message="Clips you created or liked." />
+          }
+        />
+
+        {/* Community */}
+        <Route
+          path="friends"
+          element={
+            <PlaceholderPage title="Friends" message="See who's online and follow their activity." />
+          }
+        />
+        <Route
+          path="whispers"
+          element={
+            <PlaceholderPage title="Whispers" message="Private messages with other users." />
+          }
+        />
+        <Route
+          path="notifications"
+          element={
+            <PlaceholderPage title="Notifications" message="Alerts for follows, raids, and more." />
+          }
+        />
 
         {/* Settings */}
-        <Route path="settings">
-          <Route path="appearance" element={<AppearanceSettings />} />
-          <Route path="chat-filters" element={<ChatFiltersSettings />} />
-          <Route path="notifications" element={<NotificationsSettings />} />
-          <Route
-            index
-            element={<Navigate to="/settings/appearance" replace />}
-          />
-        </Route>
+        <Route
+          path="settings/stream"
+          element={
+            <PlaceholderPage title="Stream Key" message="Configure your broadcast settings." />
+          }
+        />
+        <Route
+          path="settings/chat"
+          element={
+            <PlaceholderPage title="Chat & Filters" message="Blocked words and chat preferences." />
+          }
+        />
+        <Route
+          path="settings/notifications"
+          element={
+            <PlaceholderPage title="Notifications" message="Desktop and in-app notification settings." />
+          }
+        />
+        <Route
+          path="settings/security"
+          element={
+            <PlaceholderPage title="Security" message="Account security and sessions." />
+          }
+        />
 
-        {/* 404 catch-all */}
-        <Route path="*" element={<PlaceholderPage title="404 - Not Found" message="This page does not exist." />} />
+        {/* 404 – must be last */}
+        <Route
+          path="*"
+          element={
+            <PlaceholderPage
+              title="404 - Not Found"
+              message="The page you're looking for doesn't exist."
+            />
+          }
+        />
       </Route>
     </Routes>
   );

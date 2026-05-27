@@ -1,8 +1,7 @@
 // main.tsx (updated)
 import ReactDOM from 'react-dom/client'
-import './styles/index.css';
+import './styles/App.css';
 import './styles/scrollbar.css';
-import './styles/windows-friendly.css';
 import "reflect-metadata";
 import React from 'react';
 import ConditionalRouter from './components/Shared/ConditionalRouter';

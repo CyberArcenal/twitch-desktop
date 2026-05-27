@@ -1,6 +1,8 @@
+// src/main/services/settings.service.js
+//@ts-check
 const Store = require('electron-store');
+const { logger } = require('../utils/logger');
 
-// Default settings
 const defaults = {
   theme: 'dark',
   notificationsEnabled: true,
@@ -9,46 +11,82 @@ const defaults = {
   twitch: {}
 };
 
-const store = new Store({ defaults });
+class SettingsService {
+  constructor() {
+    this.store = new Store({ defaults });
+    // @ts-ignore
+    logger.debug('[SettingsService] Initialized with defaults', defaults);
+  }
 
-const settingsService = {
   getAll() {
-    return store.store;
-  },
+    const all = this.store.store;
+    // @ts-ignore
+    logger.debug('[SettingsService] getAll called, keys:', Object.keys(all));
+    return all;
+  }
 
+  // @ts-ignore
   get(key) {
-    return store.get(key);
-  },
+    const value = this.store.get(key);
+    // Only log non‑sensitive keys; don't log full tokens
+    if (key === 'twitch') {
+      // @ts-ignore
+      logger.debug('[SettingsService] get(twitch):', { hasToken: !!value?.accessToken, userId: value?.userId });
+    } else {
+      logger.debug(`[SettingsService] get(${key}) =`, value);
+    }
+    return value;
+  }
 
+  // @ts-ignore
   set(key, value) {
-    store.set(key, value);
-  },
+    if (key === 'twitch') {
+      // @ts-ignore
+      logger.debug('[SettingsService] set(twitch): updating tokens', { userId: value?.userId, login: value?.login });
+    } else {
+      logger.debug(`[SettingsService] set(${key}) =`, value);
+    }
+    this.store.set(key, value);
+  }
 
+  // @ts-ignore
   addChatFilter(word) {
-    const filters = store.get('chatFilters');
+    const filters = this.get('chatFilters');
     const lowerWord = word.toLowerCase();
     if (!filters.includes(lowerWord)) {
-      store.set('chatFilters', [...filters, lowerWord]);
+      this.set('chatFilters', [...filters, lowerWord]);
+      logger.debug(`[SettingsService] addChatFilter: added "${word}"`);
+    } else {
+      logger.debug(`[SettingsService] addChatFilter: "${word}" already exists`);
     }
-  },
+  }
 
+  // @ts-ignore
   removeChatFilter(word) {
-    const filters = store.get('chatFilters');
-    store.set('chatFilters', filters.filter(f => f !== word.toLowerCase()));
-  },
+    const filters = this.get('chatFilters');
+    // @ts-ignore
+    this.set('chatFilters', filters.filter(f => f !== word.toLowerCase()));
+    logger.debug(`[SettingsService] removeChatFilter: removed "${word}"`);
+  }
 
-setTwitchTokens(accessToken, refreshToken, userId, login) {
-  store.set('twitch', { accessToken, refreshToken, userId, login });
-},
+  // @ts-ignore
+  setTwitchTokens(accessToken, refreshToken, userId, login) {
+    this.set('twitch', { accessToken, refreshToken, userId, login });
+    // @ts-ignore
+    logger.info('[SettingsService] Twitch tokens saved', { userId, login });
+  }
 
   clearTwitchTokens() {
-    store.set('twitch', {});
-  },
+    this.set('twitch', {});
+    logger.warn('[SettingsService] Twitch tokens cleared');
+  }
 
   reset() {
-    store.clear();
-    store.set(defaults);
+    logger.warn('[SettingsService] Resetting all settings to defaults');
+    this.store.clear();
+    this.store.set(defaults);
   }
-};
+}
 
-module.exports = { settingsService };
+const settingsService = new SettingsService();
+module.exports = { settingsService, SettingsService };

@@ -3,7 +3,7 @@ export {};
 
 declare global {
   interface Window {
-    electronAPI: {
+    backendAPI: {
       // ---------- Window Controls ----------
       minimizeWindow: () => void;
       maximizeWindow: () => void;
@@ -16,39 +16,28 @@ declare global {
       onWindowRestored: (callback: () => void) => () => void;
       onWindowMinimized: (callback: () => void) => () => void;
 
-      // ---------- Settings ----------
-      getSettings: () => Promise<any>;
-      setSetting: (key: string, value: any) => Promise<void>;
-      addChatFilter: (word: string) => Promise<void>;
-      removeChatFilter: (word: string) => Promise<void>;
-      resetSettings: () => Promise<void>;
+      // Sa interface Window.backendAPI
+      player: (payload: any) => Promise<any>;
+      notification: (payload: any) => Promise<any>;
+      auth: (payload: any) => Promise<any>;
+      chat: (payload: any) => Promise<any>;
+      streamMonitor: (payload: any) => Promise<any>;
+      follows: (payload: any) => Promise<any>;
+      notification: (payload: any) => Promise<any>;
+      settings: (payload: any) => Promise<any>;
+      games: (payload: any) => Promise<any>;
+      user: (payload: any) => Promise<any>;
+      clips: (payload: any) => Promise<any>;
+      eventsub: (payload: any) => Promise<any>;
+      history: (payload: any) => Promise<any>;
+      shortcut: (payload: any) => Promise<any>;
 
-      // ---------- Auth ----------
-      login: () => Promise<{
-        accessToken: string;
-        userId: string;
-        login: string;
-      }>;
-      logout: () => Promise<void>;
-      isLoggedIn: () => Promise<boolean>;
-      getCurrentUser: () => Promise<any>;
-
-      // ---------- Twitch API ----------
-      getTwitchUser: () => Promise<any>;
-      getFollowedChannels: (userId: string, after?: string) => Promise<any>;
-      getStreams: (userIds: string[]) => Promise<any>;
-      searchChannels: (query: string) => Promise<any>;
-      getChannelInfo: (broadcasterId: string) => Promise<any>;
-
-      // ---------- Chat ----------
-      connectChat: (channel: string) => Promise<void>;
-      sendChatMessage: (message: string) => Promise<void>;
-      disconnectChat: () => Promise<void>;
-
-      // ---------- Event listeners ----------
-      onChatMessage: (callback: (data: any) => void) => () => void;
-      onChatConnected: (callback: (data: any) => void) => () => void;
-      onUserJoined: (callback: (data: any) => void) => () => void;
+      themes: (payload: any) => Promise<any>;
+      adBlock: (payload: any) => Promise<any>;
+      pip: (payload: any) => Promise<any>;
+      download: (payload: any) => Promise<any>;
+      predictions: (payload: any) => Promise<any>;
+      search: (payload: any) => Promise<any>;
 
       notifyAppReady?: () => void;
 
@@ -64,6 +53,7 @@ declare global {
         channel: string,
         callback: (event: any, ...args: any[]) => void,
       ) => () => void;
+      off: (channel: string, callback: (...args: any[]) => void) => void;
     };
   }
 }
