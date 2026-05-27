@@ -140,8 +140,8 @@ function getIconPath() {
  */
 async function createSplashWindow() {
   splashWindow = new BrowserWindow({
-    width: 400,
-    height: 300,
+ width: 500,   // was 400
+  height: 400,  // was 300
     frame: false,
     transparent: true,
     alwaysOnTop: true,
@@ -331,6 +331,7 @@ function registerIpcHandlers() {
     "./ipc/core/download/index.ipc.js",
     "./ipc/core/predictions/index.ipc.js",
     "./ipc/core/search/index.ipc.js",
+    "./ipc/core/streams/index.ipc.js",
   ];
 
   for (const modulePath of ipcModules) {

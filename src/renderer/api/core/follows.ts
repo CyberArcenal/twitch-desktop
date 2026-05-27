@@ -48,6 +48,8 @@ class FollowsAPI {
     });
   }
 
+  
+
   async clearCache(): Promise<BaseResponse<boolean>> {
     return window.backendAPI.follows({ method: 'clearCache' });
   }

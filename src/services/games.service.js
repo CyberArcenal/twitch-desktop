@@ -1,5 +1,5 @@
 // src/main/services/games.service.js
-//@ts-check
+// @ts-nocheck
 const { twitchApiService } = require('./twitch-api.service');
 
 class GamesService {

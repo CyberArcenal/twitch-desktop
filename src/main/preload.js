@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld("backendAPI", {
   download: (payload) => ipcRenderer.invoke("download", payload),
   predictions: (payload) => ipcRenderer.invoke("predictions", payload),
   search: (payload) => ipcRenderer.invoke("search", payload),
+  streams: (payload) => ipcRenderer.invoke("streams", payload),
 
   // Event listeners
   on: (channel, callback) => {

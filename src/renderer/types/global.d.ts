@@ -38,6 +38,7 @@ declare global {
       download: (payload: any) => Promise<any>;
       predictions: (payload: any) => Promise<any>;
       search: (payload: any) => Promise<any>;
+      streams: (payload: any) => Promise<any>;
 
       notifyAppReady?: () => void;
 

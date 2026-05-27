@@ -10,83 +10,75 @@
         padding: 0;
         box-sizing: border-box;
       }
-
       body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-          'Helvetica Neue', sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         background: transparent;
+        color: #efeff1;
         height: 100vh;
         width: 100vw;
         display: flex;
         justify-content: center;
         align-items: center;
+        text-align: center;
         padding: 20px;
         overflow: hidden;
       }
-
+      /* Exactly like Collectly container, but Twitch dark background */
       .container {
-        max-width: 420px;
+        max-width: 400px;
         width: 90%;
-        background: #1f1f2b;
-        border-radius: 28px;
-        box-shadow: 0 25px 40px -12px rgba(0, 0, 0, 0.6);
-        padding: 2rem 1.8rem;
+        background: #1f1f2b;      /* Twitch dark card */
+        border-radius: 20px;       /* same as Collectly */
+        box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.25);
+        padding: 2rem 1.5rem;
         border: 1px solid rgba(145, 70, 255, 0.3);
-        backdrop-filter: blur(2px);
       }
-
-      /* Twitch purple gradient logo */
+      /* Logo - same size and border-radius as Collectly */
       .logo {
-        width: 72px;
-        height: 72px;
+        width: 64px;
+        height: 64px;
         margin: 0 auto 1.2rem;
-        border-radius: 24px;
+        border-radius: 18px;       /* exactly like Collectly */
         overflow: hidden;
-        box-shadow: 0 10px 20px -8px rgba(145, 70, 255, 0.5);
+        box-shadow: 0 8px 16px -6px rgba(145, 70, 255, 0.3);
         background: linear-gradient(135deg, #9146ff, #772ce8);
         display: flex;
         align-items: center;
         justify-content: center;
         line-height: 0;
         font-size: 0;
-        transition: transform 0.2s ease;
       }
-
       .logo img {
         width: 100%;
         height: 100%;
         object-fit: cover;
         display: block;
+        margin: 0;
+        padding: 0;
+        border: none;
       }
-
       .fallback-svg {
-        width: 42px;
-        height: 42px;
+        width: 36px;
+        height: 36px;
         display: block;
       }
-
       h1 {
-        font-size: 1.9rem;
+        font-size: 1.8rem;
         font-weight: 700;
-        letter-spacing: -0.5px;
+        letter-spacing: -0.01em;
         background: linear-gradient(135deg, #ffffff, #e2c6ff);
         background-clip: text;
         -webkit-background-clip: text;
         color: transparent;
         margin-bottom: 0.25rem;
-        text-align: center;
       }
-
       .sub {
-        font-size: 0.7rem;
+        font-size: 0.75rem;
         color: #a970ff;
         text-transform: uppercase;
-        letter-spacing: 2px;
-        margin-bottom: 2rem;
-        text-align: center;
-        font-weight: 500;
+        letter-spacing: 1px;
+        margin-bottom: 1.8rem;
       }
-
       .progress-bar {
         width: 100%;
         height: 4px;
@@ -95,39 +87,30 @@
         overflow: hidden;
         margin-bottom: 1rem;
       }
-
       .progress-fill {
         width: 0%;
         height: 100%;
         background: #9146ff;
         border-radius: 10px;
-        animation: loading 2.2s ease-in-out infinite;
-        box-shadow: 0 0 6px #9146ff;
+        animation: loading 2s ease-in-out infinite;
       }
-
       .loading-text {
         font-size: 0.85rem;
         font-weight: 500;
         color: #c4c4d4;
-        margin-bottom: 0.8rem;
-        min-height: 2.2rem;
+        margin-bottom: 1rem;
+        min-height: 2rem;
         transition: opacity 0.2s;
-        text-align: center;
       }
-
       .version {
-        margin-top: 1.5rem;
-        font-size: 0.65rem;
+        margin-top: 2rem;
+        font-size: 0.7rem;
         color: #5a5a70;
-        text-align: center;
-        border-top: 1px solid #2d2d3a;
-        padding-top: 1rem;
       }
-
       @keyframes loading {
         0% {
           width: 0%;
-          opacity: 0.8;
+          opacity: 0.7;
         }
         50% {
           width: 100%;
@@ -135,10 +118,9 @@
         }
         100% {
           width: 0%;
-          opacity: 0.8;
+          opacity: 0.7;
         }
       }
-
       .ready {
         color: #b888ff;
         font-weight: 600;
@@ -167,20 +149,20 @@
     </div>
 
     <script>
-      // Fallback Twitch‑style SVG icon
+      // Twitch-style fallback SVG (glitch icon)
       function showFallbackIcon() {
         const container = document.getElementById('logo-container');
         if (!container || container.querySelector('.fallback-svg')) return;
-
+        
         container.innerHTML = '';
-
+        
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('width', '42');
-        svg.setAttribute('height', '42');
+        svg.setAttribute('width', '36');
+        svg.setAttribute('height', '36');
         svg.setAttribute('viewBox', '0 0 24 24');
         svg.setAttribute('fill', 'white');
         svg.classList.add('fallback-svg');
-
+        
         // Twitch "glitch" shape
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', 'M11.571 4.714H9.857v4.286h1.714V4.714zm4.286 0h-1.714v4.286h1.714V4.714zm-8 10.286H4.857v-8H2.143L4 2.286h15.714l1.857 2.714v12H13l-4.286 4.286v-4.286zm8 0h1.714v-8h-1.714v8zm-4.286 0h1.714v-8h-1.714v8z');
@@ -189,7 +171,7 @@
         container.style.background = 'linear-gradient(135deg, #9146ff, #772ce8)';
         console.log('Using fallback Twitch icon');
       }
-
+      
       const iconImg = document.getElementById('app-icon');
       if (iconImg) {
         iconImg.onerror = () => showFallbackIcon();
@@ -200,26 +182,26 @@
 
       // Twitch‑themed loading messages
       const loadingMessages = [
-        'Loading modules...',
-        'Connecting to Twitch API...',
-        'Loading your followed channels...',
-        'Preparing chat engine...',
-        'Checking live streams...',
-        'Almost ready...',
-        'Welcome to Twitch Desktop! 🎮',
+        "Loading modules...",
+        "Connecting to Twitch API...",
+        "Loading your followed channels...",
+        "Preparing chat engine...",
+        "Checking live streams...",
+        "Almost ready...",
+        "Welcome to Twitch Desktop! 🎮",
       ];
       let step = 0;
-      const loadingEl = document.getElementById('loading-text');
+      const loadingEl = document.getElementById("loading-text");
       let msgInterval = setInterval(() => {
-        loadingEl.style.opacity = '0.4';
+        loadingEl.style.opacity = "0.5";
         setTimeout(() => {
           step = (step + 1) % loadingMessages.length;
           loadingEl.textContent = loadingMessages[step];
-          loadingEl.style.opacity = '1';
+          loadingEl.style.opacity = "1";
         }, 150);
-      }, 2000);
+      }, 1800);
 
-      // Mark as ready when renderer signals (or fallback after 8 seconds)
+      // Mark as ready when renderer signals
       if (window.backendAPI && window.backendAPI.on) {
         window.backendAPI.on('app:renderer-ready', () => {
           clearInterval(msgInterval);
@@ -231,8 +213,11 @@
             fill.style.width = '100%';
           }
         });
+      } else {
+        console.warn("backendAPI not available, cannot listen to renderer-ready");
       }
 
+      // Fallback timeout: ensure splash closes even if renderer-ready never fires
       setTimeout(() => {
         clearInterval(msgInterval);
         loadingEl.textContent = 'Ready!';
@@ -244,7 +229,7 @@
         }
       }, 8000);
 
-      // Fetch and display real version from main process
+      // Fetch and display real version from main process (if available)
       if (window.backendAPI && window.backendAPI.appInfo) {
         window.backendAPI.appInfo().then(info => {
           const versionEl = document.getElementById('version-text');

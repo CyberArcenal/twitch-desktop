@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import Layout from "../layouts/Layout";
 import { HelpPage } from "../pages/help";
 import LoginPage from "../pages/auth/login";
+import FollowingPage from "../pages/following";
+import DashboardPage from "../pages/dashboard";
+import BrowseCategoriesPage from "../pages/categories";
 
 // ─── Generic Placeholder (reusable) ─────────────────────────────
 const PlaceholderPage = ({
@@ -91,50 +94,39 @@ function App() {
         }
       >
         {/* Dashboard */}
-        <Route
-          index
-          element={
-            <PlaceholderPage title="Dashboard" message="Your personalized Twitch overview is coming soon." />
-          }
-        />
-        <Route
-          path="dashboard"
-          element={
-            <PlaceholderPage title="Dashboard" message="Your personalized Twitch overview is coming soon." />
-          }
-        />
+        <Route index element={<DashboardPage />} />
+        <Route path="dashboard" element={<DashboardPage />} />
 
         {/* Following */}
-        <Route
-          path="following"
-          element={
-            <PlaceholderPage title="Following" message="Live channels you follow will appear here." />
-          }
-        />
+        <Route path="following" element={<FollowingPage />} />
 
         {/* Browse section */}
-        <Route
-          path="browse/categories"
-          element={
-            <PlaceholderPage title="Categories" message="Browse games and categories." />
-          }
-        />
+        <Route path="/browse/categories" element={<BrowseCategoriesPage />} />
         <Route
           path="browse/top-games"
           element={
-            <PlaceholderPage title="Top Games" message="Most popular games on Twitch." />
+            <PlaceholderPage
+              title="Top Games"
+              message="Most popular games on Twitch."
+            />
           }
         />
         <Route
           path="browse/live"
           element={
-            <PlaceholderPage title="Live Channels" message="Discover live streams right now." />
+            <PlaceholderPage
+              title="Live Channels"
+              message="Discover live streams right now."
+            />
           }
         />
         <Route
           path="browse/clips"
           element={
-            <PlaceholderPage title="Popular Clips" message="Trending clips from the community." />
+            <PlaceholderPage
+              title="Popular Clips"
+              message="Trending clips from the community."
+            />
           }
         />
 
@@ -142,25 +134,37 @@ function App() {
         <Route
           path="history"
           element={
-            <PlaceholderPage title="Watch History" message="Your recently watched streams and VODs." />
+            <PlaceholderPage
+              title="Watch History"
+              message="Your recently watched streams and VODs."
+            />
           }
         />
         <Route
           path="watch-later"
           element={
-            <PlaceholderPage title="Watch Later" message="Videos you saved for later." />
+            <PlaceholderPage
+              title="Watch Later"
+              message="Videos you saved for later."
+            />
           }
         />
         <Route
           path="subscriptions"
           element={
-            <PlaceholderPage title="Subscriptions" message="Manage your channel subscriptions." />
+            <PlaceholderPage
+              title="Subscriptions"
+              message="Manage your channel subscriptions."
+            />
           }
         />
         <Route
           path="clips"
           element={
-            <PlaceholderPage title="My Clips" message="Clips you created or liked." />
+            <PlaceholderPage
+              title="My Clips"
+              message="Clips you created or liked."
+            />
           }
         />
 
@@ -168,19 +172,28 @@ function App() {
         <Route
           path="friends"
           element={
-            <PlaceholderPage title="Friends" message="See who's online and follow their activity." />
+            <PlaceholderPage
+              title="Friends"
+              message="See who's online and follow their activity."
+            />
           }
         />
         <Route
           path="whispers"
           element={
-            <PlaceholderPage title="Whispers" message="Private messages with other users." />
+            <PlaceholderPage
+              title="Whispers"
+              message="Private messages with other users."
+            />
           }
         />
         <Route
           path="notifications"
           element={
-            <PlaceholderPage title="Notifications" message="Alerts for follows, raids, and more." />
+            <PlaceholderPage
+              title="Notifications"
+              message="Alerts for follows, raids, and more."
+            />
           }
         />
 
@@ -188,25 +201,37 @@ function App() {
         <Route
           path="settings/stream"
           element={
-            <PlaceholderPage title="Stream Key" message="Configure your broadcast settings." />
+            <PlaceholderPage
+              title="Stream Key"
+              message="Configure your broadcast settings."
+            />
           }
         />
         <Route
           path="settings/chat"
           element={
-            <PlaceholderPage title="Chat & Filters" message="Blocked words and chat preferences." />
+            <PlaceholderPage
+              title="Chat & Filters"
+              message="Blocked words and chat preferences."
+            />
           }
         />
         <Route
           path="settings/notifications"
           element={
-            <PlaceholderPage title="Notifications" message="Desktop and in-app notification settings." />
+            <PlaceholderPage
+              title="Notifications"
+              message="Desktop and in-app notification settings."
+            />
           }
         />
         <Route
           path="settings/security"
           element={
-            <PlaceholderPage title="Security" message="Account security and sessions." />
+            <PlaceholderPage
+              title="Security"
+              message="Account security and sessions."
+            />
           }
         />
 
