@@ -34,6 +34,18 @@ class UserService {
   }
 
   /**
+   * @param {any} broadcasterId
+   */
+  async getUserSubscribers(broadcasterId, first = 100, after = null) {
+  const params = new URLSearchParams({
+    broadcaster_id: broadcasterId,
+    first: String(Math.min(first, 100))
+  });
+  if (after) params.append('after', after);
+  return await twitchApiService.fetchTwitch(`subscriptions?${params}`);
+}
+
+  /**
    * Get the list of channels the authenticated user subscribes to (requires subscription scope)
    * @returns {Promise<{data: Array, pagination?: object}>}
    */

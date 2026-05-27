@@ -33,6 +33,26 @@ class StreamsAPI {
     });
   }
 
+  async getTopStreams(first: number = 100, after?: string): Promise<BaseResponse<FollowedStreamsResponse>> {
+  return window.backendAPI.streams({
+    method: 'getTopStreams',
+    params: { first, after }
+  });
+}
+
+
+async getTopStreamsWithFilters(
+  first: number = 100,
+  after?: string,
+  gameId?: string,
+  language?: string
+): Promise<BaseResponse<FollowedStreamsResponse>> {
+  return window.backendAPI.streams({
+    method: 'getTopStreamsWithFilters',
+    params: { first, after, gameId, language }
+  });
+}
+
   /**
    * Get streams by specific user IDs
    */

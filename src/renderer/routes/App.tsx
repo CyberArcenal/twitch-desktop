@@ -2,13 +2,27 @@
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Layout from "../layouts/Layout";
-import { HelpPage } from "../pages/help";
 import LoginPage from "../pages/auth/login";
 import FollowingPage from "../pages/following";
 import DashboardPage from "../pages/dashboard";
+import BrowseTopGamesPage from "../pages/browse/top-games";
+import BrowseLivePage from "../pages/browse/live";
+import BrowseClipsPage from "../pages/browse/clips";
+import WatchHistoryPage from "../pages/history";
+import WatchLaterPage from "../pages/watch-later";
+import SubscriptionsPage from "../pages/subscriptions";
+import FriendsPage from "../pages/friends";
+import WhispersPage from "../pages/whispers";
+import StreamSettingsPage from "../pages/settings/stream";
+import ChatSettingsPage from "../pages/settings/chat";
+import NotificationSettingsPage from "../pages/settings/notifications";
+import SecuritySettingsPage from "../pages/settings/security";
+import ChannelPage from "../pages/channel";
 import BrowseCategoriesPage from "../pages/categories";
+import HelpPage from "../pages/help";
+import StreamPlayerPage from "../pages/stream";
 
-// ─── Generic Placeholder (reusable) ─────────────────────────────
+// ─── Generic Placeholder (for pages not yet built) ─────────────
 const PlaceholderPage = ({
   title,
   message,
@@ -44,7 +58,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Make sure your authAPI is correctly imported
         const { authAPI } = await import("../api/core/auth");
         const result = await authAPI.isLoggedIn();
         setIsAuthenticated(result.data);
@@ -58,7 +71,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }, [navigate]);
 
   if (isAuthenticated === null) {
-    // Optionally show a loading spinner
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="w-8 h-8 border-4 border-[#9146ff] border-t-transparent rounded-full animate-spin" />
@@ -96,68 +108,22 @@ function App() {
         {/* Dashboard */}
         <Route index element={<DashboardPage />} />
         <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="/stream/:login" element={<StreamPlayerPage />} />
 
         {/* Following */}
         <Route path="following" element={<FollowingPage />} />
 
         {/* Browse section */}
-        <Route path="/browse/categories" element={<BrowseCategoriesPage />} />
-        <Route
-          path="browse/top-games"
-          element={
-            <PlaceholderPage
-              title="Top Games"
-              message="Most popular games on Twitch."
-            />
-          }
-        />
-        <Route
-          path="browse/live"
-          element={
-            <PlaceholderPage
-              title="Live Channels"
-              message="Discover live streams right now."
-            />
-          }
-        />
-        <Route
-          path="browse/clips"
-          element={
-            <PlaceholderPage
-              title="Popular Clips"
-              message="Trending clips from the community."
-            />
-          }
-        />
+        <Route path="browse/categories" element={<BrowseCategoriesPage />} />
+        <Route path="browse/top-games" element={<BrowseTopGamesPage />} />
+        <Route path="browse/live" element={<BrowseLivePage />} />
+        <Route path="browse/clips" element={<BrowseClipsPage />} />
 
-        {/* Library */}
-        <Route
-          path="history"
-          element={
-            <PlaceholderPage
-              title="Watch History"
-              message="Your recently watched streams and VODs."
-            />
-          }
-        />
-        <Route
-          path="watch-later"
-          element={
-            <PlaceholderPage
-              title="Watch Later"
-              message="Videos you saved for later."
-            />
-          }
-        />
-        <Route
-          path="subscriptions"
-          element={
-            <PlaceholderPage
-              title="Subscriptions"
-              message="Manage your channel subscriptions."
-            />
-          }
-        />
+        {/* Library section */}
+        <Route path="history" element={<WatchHistoryPage />} />
+        <Route path="watch-later" element={<WatchLaterPage />} />
+        <Route path="subscriptions" element={<SubscriptionsPage />} />
+        {/* My Clips – not yet built */}
         <Route
           path="clips"
           element={
@@ -168,25 +134,10 @@ function App() {
           }
         />
 
-        {/* Community */}
-        <Route
-          path="friends"
-          element={
-            <PlaceholderPage
-              title="Friends"
-              message="See who's online and follow their activity."
-            />
-          }
-        />
-        <Route
-          path="whispers"
-          element={
-            <PlaceholderPage
-              title="Whispers"
-              message="Private messages with other users."
-            />
-          }
-        />
+        {/* Community section */}
+        <Route path="friends" element={<FriendsPage />} />
+        <Route path="whispers" element={<WhispersPage />} />
+        {/* Community Notifications – not yet built */}
         <Route
           path="notifications"
           element={
@@ -197,43 +148,14 @@ function App() {
           }
         />
 
-        {/* Settings */}
-        <Route
-          path="settings/stream"
-          element={
-            <PlaceholderPage
-              title="Stream Key"
-              message="Configure your broadcast settings."
-            />
-          }
-        />
-        <Route
-          path="settings/chat"
-          element={
-            <PlaceholderPage
-              title="Chat & Filters"
-              message="Blocked words and chat preferences."
-            />
-          }
-        />
-        <Route
-          path="settings/notifications"
-          element={
-            <PlaceholderPage
-              title="Notifications"
-              message="Desktop and in-app notification settings."
-            />
-          }
-        />
-        <Route
-          path="settings/security"
-          element={
-            <PlaceholderPage
-              title="Security"
-              message="Account security and sessions."
-            />
-          }
-        />
+        {/* Settings section */}
+        <Route path="settings/stream" element={<StreamSettingsPage />} />
+        <Route path="settings/chat" element={<ChatSettingsPage />} />
+        <Route path="settings/notifications" element={<NotificationSettingsPage />} />
+        <Route path="settings/security" element={<SecuritySettingsPage />} />
+
+        {/* Channel page */}
+        <Route path="/channel/:login" element={<ChannelPage />} />
 
         {/* 404 – must be last */}
         <Route

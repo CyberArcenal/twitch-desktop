@@ -1,8 +1,8 @@
 // src/main/services/follows.service.js
 //@ts-check
-const { twitchApiService } = require('./twitch-api.service');
-const { settingsService } = require('./settings.service');
-const { BrowserWindow } = require('electron');
+const { twitchApiService } = require("./twitch-api.service");
+const { settingsService } = require("./settings.service");
+const { BrowserWindow } = require("electron");
 
 class FollowsService {
   constructor() {
@@ -12,26 +12,38 @@ class FollowsService {
     this.mainWindow = null;
   }
 
+  /**
+   * @param {BrowserWindow | null} mainWindow
+   */
   initialize(mainWindow) {
     this.mainWindow = mainWindow;
   }
 
+  /**
+   * @param {string} channel
+   * @param {{ action: string; broadcasterId: any; }} data
+   */
   _sendToRenderers(channel, data) {
     try {
-      BrowserWindow.getAllWindows().forEach(win => {
+      BrowserWindow.getAllWindows().forEach((win) => {
         if (!win.isDestroyed()) win.webContents.send(channel, data);
       });
     } catch (err) {
-      console.warn('[FollowsService] send error:', err);
+      console.warn("[FollowsService] send error:", err);
     }
   }
 
   isCacheValid() {
-    return this.followsCache && (Date.now() - this.cacheTimestamp) < this.CACHE_TTL;
+    return (
+      this.followsCache && Date.now() - this.cacheTimestamp < this.CACHE_TTL
+    );
   }
 
+  /**
+   * @param {any} userId
+   */
   async getFollowedChannels(userId, after = null, forceRefresh = false) {
-    if (!userId) throw new Error('User ID is required');
+    if (!userId) throw new Error("User ID is required");
     if (!forceRefresh && this.isCacheValid()) {
       return this.followsCache;
     }
@@ -40,7 +52,10 @@ class FollowsService {
     let allFollows = [...(response.data || [])];
     let cursor = response.pagination?.cursor;
     while (cursor) {
-      const nextPage = await twitchApiService.getFollowedChannels(userId, cursor);
+      const nextPage = await twitchApiService.getFollowedChannels(
+        userId,
+        cursor,
+      );
       allFollows = allFollows.concat(nextPage.data || []);
       cursor = nextPage.pagination?.cursor;
     }
@@ -48,82 +63,127 @@ class FollowsService {
     const result = {
       data: allFollows,
       total: allFollows.length,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
     this.followsCache = result;
     this.cacheTimestamp = Date.now();
     return result;
   }
 
+  /**
+   * @param {any} userId
+   */
+  // @ts-ignore
+  async getFollowers(userId, after = null) {
+    const { API_BASE, CLIENT_ID } = require("../shared/config");
+    const token = settingsService.get("twitch").accessToken;
+    if (!token) throw new Error("Not authenticated");
+    const url = `${API_BASE}/users/follows?to_id=${userId}&first=100`;
+    const response = await fetch(url, {
+      // @ts-ignore
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Client-Id": CLIENT_ID,
+      },
+    });
+    if (!response.ok) {
+      throw new Error("Failed to fetch followers");
+    }
+    const data = await response.json();
+    return data; // { data: [], pagination: {} }
+  }
+
+  /**
+   * @param {any} broadcasterId
+   */
   async followChannel(broadcasterId) {
-    if (!broadcasterId) throw new Error('Broadcaster ID is required');
-    const token = settingsService.get('twitch').accessToken;
-    if (!token) throw new Error('Not authenticated');
-    const userId = settingsService.get('twitch').userId;
-    if (!userId) throw new Error('User not logged in');
-    const { API_BASE, CLIENT_ID } = require('../shared/config');
+    if (!broadcasterId) throw new Error("Broadcaster ID is required");
+    const token = settingsService.get("twitch").accessToken;
+    if (!token) throw new Error("Not authenticated");
+    const userId = settingsService.get("twitch").userId;
+    if (!userId) throw new Error("User not logged in");
+    const { API_BASE, CLIENT_ID } = require("../shared/config");
 
     const url = `${API_BASE}/users/follows`;
     const response = await fetch(url, {
-      method: 'POST',
+      method: "POST",
+      // @ts-ignore
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Client-Id': CLIENT_ID,
-        'Content-Type': 'application/json'
+        Authorization: `Bearer ${token}`,
+        "Client-Id": CLIENT_ID,
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ from_id: userId, to_id: broadcasterId })
+      body: JSON.stringify({ from_id: userId, to_id: broadcasterId }),
     });
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: response.statusText }));
-      throw new Error(error.message || 'Failed to follow channel');
+      const error = await response
+        .json()
+        .catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || "Failed to follow channel");
     }
     // Invalidate cache
     this.followsCache = null;
     this.cacheTimestamp = 0;
-    this._sendToRenderers('follows:changed', { action: 'follow', broadcasterId });
+    this._sendToRenderers("follows:changed", {
+      action: "follow",
+      broadcasterId,
+    });
     return true;
   }
 
+  /**
+   * @param {any} broadcasterId
+   */
   async unfollowChannel(broadcasterId) {
-    if (!broadcasterId) throw new Error('Broadcaster ID is required');
-    const token = settingsService.get('twitch').accessToken;
-    if (!token) throw new Error('Not authenticated');
-    const userId = settingsService.get('twitch').userId;
-    if (!userId) throw new Error('User not logged in');
-    const { API_BASE, CLIENT_ID } = require('../shared/config');
+    if (!broadcasterId) throw new Error("Broadcaster ID is required");
+    const token = settingsService.get("twitch").accessToken;
+    if (!token) throw new Error("Not authenticated");
+    const userId = settingsService.get("twitch").userId;
+    if (!userId) throw new Error("User not logged in");
+    const { API_BASE, CLIENT_ID } = require("../shared/config");
 
     const url = `${API_BASE}/users/follows?from_id=${userId}&to_id=${broadcasterId}`;
     const response = await fetch(url, {
-      method: 'DELETE',
+      method: "DELETE",
+      // @ts-ignore
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Client-Id': CLIENT_ID
-      }
+        Authorization: `Bearer ${token}`,
+        "Client-Id": CLIENT_ID,
+      },
     });
     if (!response.ok && response.status !== 404) {
-      const error = await response.json().catch(() => ({ message: response.statusText }));
-      throw new Error(error.message || 'Failed to unfollow channel');
+      const error = await response
+        .json()
+        .catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || "Failed to unfollow channel");
     }
     this.followsCache = null;
     this.cacheTimestamp = 0;
-    this._sendToRenderers('follows:changed', { action: 'unfollow', broadcasterId });
+    this._sendToRenderers("follows:changed", {
+      action: "unfollow",
+      broadcasterId,
+    });
     return true;
   }
 
+  /**
+   * @param {any} broadcasterId
+   */
   async isFollowing(broadcasterId) {
     if (!broadcasterId) return false;
-    const userId = settingsService.get('twitch').userId;
+    const userId = settingsService.get("twitch").userId;
     if (!userId) return false;
-    const token = settingsService.get('twitch').accessToken;
+    const token = settingsService.get("twitch").accessToken;
     if (!token) return false;
-    const { API_BASE, CLIENT_ID } = require('../shared/config');
+    const { API_BASE, CLIENT_ID } = require("../shared/config");
 
     const url = `${API_BASE}/users/follows?from_id=${userId}&to_id=${broadcasterId}`;
     const response = await fetch(url, {
+      // @ts-ignore
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Client-Id': CLIENT_ID
-      }
+        Authorization: `Bearer ${token}`,
+        "Client-Id": CLIENT_ID,
+      },
     });
     if (!response.ok) return false;
     const data = await response.json();
@@ -132,20 +192,20 @@ class FollowsService {
 
   saveFollowsToLocalStorage() {
     if (this.followsCache && this.followsCache.data) {
-      settingsService.set('cachedFollows', {
+      settingsService.set("cachedFollows", {
         data: this.followsCache.data,
-        timestamp: this.followsCache.timestamp
+        timestamp: this.followsCache.timestamp,
       });
     }
   }
 
   loadFollowsFromLocalStorage() {
-    const cached = settingsService.get('cachedFollows');
+    const cached = settingsService.get("cachedFollows");
     if (cached && cached.data && cached.timestamp) {
       this.followsCache = {
         data: cached.data,
         total: cached.data.length,
-        timestamp: cached.timestamp
+        timestamp: cached.timestamp,
       };
       this.cacheTimestamp = cached.timestamp;
       return true;
@@ -156,7 +216,7 @@ class FollowsService {
   clearCache() {
     this.followsCache = null;
     this.cacheTimestamp = 0;
-    settingsService.set('cachedFollows', null);
+    settingsService.set("cachedFollows", null);
   }
 }
 

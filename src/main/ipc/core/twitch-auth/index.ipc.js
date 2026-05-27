@@ -1,6 +1,8 @@
 //@ts-check
-const { ipcMain } = require('electron');
-const { twitchAuthService } = require('../../../../services/twitch-auth.service');
+const { ipcMain } = require("electron");
+const {
+  twitchAuthService,
+} = require("../../../../services/twitch-auth.service");
 
 /**
  * @param {Electron.IpcMainInvokeEvent} event
@@ -10,30 +12,33 @@ async function handleAuthRequest(event, payload) {
   const { method, params = {} } = payload;
 
   switch (method) {
-    case 'login':
+    case "login":
       return await twitchAuthService.login();
-    case 'logout':
+    case "logout":
       return await twitchAuthService.logout();
-    case 'isLoggedIn':
+    case "isLoggedIn":
       return twitchAuthService.isLoggedIn();
-    case 'getAccessToken':
+    case "getAccessToken":
       return twitchAuthService.getAccessToken();
-    case 'refreshToken':
+    case "refreshToken":
       return await twitchAuthService.refreshTokenIfNeeded();
+    case "revokeAllTokens":
+      await twitchAuthService.revokeAllTokens();
+      return true;
     default:
       throw new Error(`Unknown auth method: ${method}`);
   }
 }
 
-ipcMain.handle('twitch-auth', async (event, payload) => {
+ipcMain.handle("twitch-auth", async (event, payload) => {
   try {
     const result = await handleAuthRequest(event, payload);
-    return { status: true, message: 'OK', data: result };
+    return { status: true, message: "OK", data: result };
   } catch (err) {
-    console.error('[IPC:twitch-auth]', err);
+    console.error("[IPC:twitch-auth]", err);
     // @ts-ignore
     return { status: false, message: err.message, data: null };
   }
 });
 
-console.log('[IPC] Twitch Auth handler registered');
+console.log("[IPC] Twitch Auth handler registered");

@@ -42,12 +42,14 @@ class NotificationService {
    * @param {Function} [onClick] - optional callback (executed in main process)
    * @returns {boolean} - whether notification was shown
    */
+  // @ts-ignore
   show(title, body, onClick = null) {
     if (!settingsService.get('notificationsEnabled')) return false;
 
     const notification = new Notification({ title, body, silent: false });
 
     if (onClick) {
+      // @ts-ignore
       notification.on('click', onClick);
     } else {
       // Default: send event to renderer when clicked
@@ -70,6 +72,7 @@ class NotificationService {
    * @param {string} gameName
    * @param {Function} [onClick]
    */
+  // @ts-ignore
   notifyStreamLive(channelName, gameName, onClick = null) {
     const title = `${channelName} is live!`;
     const body = `Playing ${gameName}`;
@@ -81,6 +84,7 @@ class NotificationService {
    * @param {string} userName
    * @param {Function} [onClick]
    */
+  // @ts-ignore
   notifyFollow(userName, onClick = null) {
     const title = 'New Follower';
     const body = `${userName} started following you!`;

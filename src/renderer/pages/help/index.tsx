@@ -1,164 +1,237 @@
+// src/pages/help/index.tsx
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Shield, FileText, Mail, Heart, Scale, AlertTriangle } from 'lucide-react';
+import {
+  ArrowLeft,
+  Github,
+  HelpCircle,
+  Keyboard,
+  Mail,
+  Heart,
+  Scale,
+  AlertCircle,
+  Twitch,
+  Users,
+  MessageSquare,
+  MonitorPlay,
+  Bell,
+  Clock,
+} from 'lucide-react';
 
-const electron = (window as any).electron;
+interface AppInfo {
+  name: string;
+  version: string;
+  isDev: boolean;
+  platform: string;
+}
 
-export function HelpPage() {
+const HelpPage: React.FC = () => {
   const navigate = useNavigate();
-  const [licenseType, setLicenseType] = useState<'open' | 'commercial'>('open');
-  const [licensedTo, setLicensedTo] = useState<string | null>(null);
+  const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem('tillify_license_type');
-    if (stored === 'commercial') {
-      setLicenseType('commercial');
-      setLicensedTo(localStorage.getItem('tillify_licensed_to'));
-    }
+    const fetchAppInfo = async () => {
+      if (window.backendAPI?.appInfo) {
+        const info = await window.backendAPI.appInfo();
+        setAppInfo(info);
+      } else {
+        // Fallback
+        setAppInfo({
+          name: 'Twitch Desktop',
+          version: '1.0.0',
+          isDev: false,
+          platform: process.platform,
+        });
+      }
+    };
+    fetchAppInfo();
   }, []);
 
   const openExternal = (url: string) => {
-    if (electron?.openExternal) {
-      electron.openExternal(url);
+    if (window.backendAPI?.openExternal) {
+      window.backendAPI.openExternal(url);
     } else {
       window.open(url, '_blank');
     }
   };
 
-  const goBack = () => {
-    navigate(-1);
-  };
+  const goBack = () => navigate(-1);
+
+  const keyboardShortcuts = [
+    { keys: ['Ctrl', 'K'], description: 'Focus search bar' },
+    { keys: ['Ctrl', 'L'], description: 'Go to live channels' },
+    { keys: ['Ctrl', 'F'], description: 'Focus following page' },
+    { keys: ['Space'], description: 'Play/Pause player' },
+    { keys: ['F'], description: 'Toggle fullscreen' },
+    { keys: ['M'], description: 'Mute/Unmute' },
+    { keys: ['↑', '↓'], description: 'Volume up/down' },
+    { keys: ['Esc'], description: 'Close modal / exit fullscreen' },
+  ];
+
+  const features = [
+    { icon: Twitch, title: 'Watch Live Streams', desc: 'Low-latency playback with chat' },
+    { icon: MessageSquare, title: 'Integrated Chat', desc: 'Emotes, badges, and filters' },
+    { icon: Bell, title: 'Desktop Notifications', desc: 'Get alerts when followed channels go live' },
+    { icon: MonitorPlay, title: 'VOD & Clip Support', desc: 'Watch past broadcasts and clips' },
+    { icon: Clock, title: 'Watch Later', desc: 'Save streams to watch later' },
+    { icon: Users, title: 'Friends & Whispers', desc: 'Direct messages and friend list' },
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
-      {/* Header with Back Button */}
-      <div className="sticky top-0 z-10 bg-slate-900/80 backdrop-blur-md border-b border-slate-700">
+    <div className="min-h-screen bg-[var(--background-color)]">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-[var(--card-bg)]/80 backdrop-blur-md border-b border-[var(--border-color)]">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-4">
           <button
             onClick={goBack}
-            className="p-2 hover:bg-slate-700 rounded-lg transition-colors text-slate-300 hover:text-white"
+            className="p-2 hover:bg-[var(--card-hover-bg)] rounded-lg transition-colors text-[var(--text-secondary)] hover:text-[var(--sidebar-text)]"
             aria-label="Go back"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-xl font-semibold text-white">Help & Legal Information</h1>
+          <h1 className="text-xl font-semibold text-[var(--sidebar-text)]">Help & About</h1>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-        {/* License Status Card */}
-        <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6 backdrop-blur-sm">
-          <div className="flex items-center gap-3 mb-3">
-            <Shield className="w-6 h-6 text-blue-400" />
-            <h2 className="text-xl font-bold text-white">License Status</h2>
+        {/* App Info Card */}
+        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)] p-6">
+          <div className="flex items-center gap-4 mb-4">
+            <img src="./icon.png" alt="Twitch Desktop" className="w-12 h-12 rounded-xl" />
+            <div>
+              <h2 className="text-2xl font-bold text-[var(--sidebar-text)]">
+                {appInfo?.name || 'Twitch Desktop'}
+              </h2>
+              <p className="text-sm text-[var(--text-secondary)]">
+                Version {appInfo?.version || '1.0.0'} • {appInfo?.platform || 'Desktop'}
+                {appInfo?.isDev && ' • Development Mode'}
+              </p>
+            </div>
           </div>
-          {licenseType === 'commercial' ? (
-            <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
-              <p className="text-green-400 font-semibold flex items-center gap-2">
-                ✅ Commercial License – Licensed to: <span className="text-white">{licensedTo || 'Enterprise User'}</span>
-              </p>
-            </div>
-          ) : (
-            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-              <p className="text-blue-400 font-semibold flex items-center gap-2">
-                📖 Open Source License (Apache 2.0)
-              </p>
-              <p className="text-slate-300 text-sm mt-2">
-                You are free to use, modify, and distribute Tillify under the terms of the Apache 2.0 license.
-              </p>
-            </div>
-          )}
+          <p className="text-[var(--text-secondary)] mt-2">
+            A modern, feature‑rich desktop client for Twitch built with Electron, React, TypeScript, and Vite.
+            Experience Twitch like a native app – watch streams, chat, manage follows, and get desktop notifications.
+          </p>
         </div>
 
-        {/* Licensing Section */}
-        <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <FileText className="w-6 h-6 text-blue-400" />
-            <h2 className="text-xl font-bold text-white">Licensing</h2>
+        {/* Features Grid */}
+        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)] p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Twitch className="w-5 h-5 text-[var(--primary-color)]" />
+            <h2 className="text-xl font-bold text-[var(--sidebar-text)]">Features</h2>
           </div>
-          <p className="text-slate-300 mb-4">
-            Tillify is dual‑licensed. You are currently using it under the{' '}
-            {licenseType === 'commercial' ? 'Commercial License' : 'Apache 2.0 open source license'}.
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {features.map((feature, idx) => (
+              <div key={idx} className="flex items-start gap-3 p-3 rounded-lg hover:bg-[var(--card-hover-bg)] transition">
+                <feature.icon className="w-5 h-5 text-[var(--primary-color)] mt-0.5" />
+                <div>
+                  <h3 className="font-medium text-[var(--sidebar-text)]">{feature.title}</h3>
+                  <p className="text-sm text-[var(--text-secondary)]">{feature.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Keyboard Shortcuts */}
+        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)] p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Keyboard className="w-5 h-5 text-[var(--primary-color)]" />
+            <h2 className="text-xl font-bold text-[var(--sidebar-text)]">Keyboard Shortcuts</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {keyboardShortcuts.map((shortcut, idx) => (
+              <div key={idx} className="flex justify-between items-center py-2 border-b border-[var(--border-color)] last:border-0">
+                <span className="text-sm text-[var(--text-secondary)]">{shortcut.description}</span>
+                <div className="flex gap-1">
+                  {shortcut.keys.map((key, kidx) => (
+                    <kbd
+                      key={kidx}
+                      className="px-2 py-1 bg-[var(--card-secondary-bg)] text-[var(--sidebar-text)] rounded text-xs font-mono border border-[var(--border-color)]"
+                    >
+                      {key}
+                    </kbd>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Quick Links */}
+        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)] p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <HelpCircle className="w-5 h-5 text-[var(--primary-color)]" />
+            <h2 className="text-xl font-bold text-[var(--sidebar-text)]">Quick Links</h2>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => openExternal('https://github.com/CyberArcenal/twitch-desktop')}
+              className="flex items-center gap-2 px-4 py-2 bg-[var(--card-secondary-bg)] hover:bg-[var(--card-hover-bg)] rounded-lg text-sm text-[var(--sidebar-text)] transition"
+            >
+              <Github className="w-4 h-4" /> GitHub Repository
+            </button>
+            <button
+              onClick={() => openExternal('https://dev.twitch.tv/docs')}
+              className="flex items-center gap-2 px-4 py-2 bg-[var(--card-secondary-bg)] hover:bg-[var(--card-hover-bg)] rounded-lg text-sm text-[var(--sidebar-text)] transition"
+            >
+              <Twitch className="w-4 h-4" /> Twitch API Docs
+            </button>
+            <button
+              onClick={() => openExternal('mailto:cyberarcenal1@gmail.com?subject=Twitch%20Desktop%20Support')}
+              className="flex items-center gap-2 px-4 py-2 bg-[var(--card-secondary-bg)] hover:bg-[var(--card-hover-bg)] rounded-lg text-sm text-[var(--sidebar-text)] transition"
+            >
+              <Mail className="w-4 h-4" /> Support Email
+            </button>
+          </div>
+        </div>
+
+        {/* License & Disclaimer */}
+        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)] p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Scale className="w-5 h-5 text-[var(--primary-color)]" />
+            <h2 className="text-xl font-bold text-[var(--sidebar-text)]">License</h2>
+          </div>
+          <p className="text-sm text-[var(--text-secondary)] mb-3">
+            Twitch Desktop is open‑source software licensed under the <strong>MIT License</strong>.
+            You are free to use, modify, and distribute this software.
           </p>
           <button
-            onClick={() => openExternal('https://github.com/CyberArcenal/Tillify/blob/main/LICENSE')}
-            className="text-blue-400 hover:text-blue-300 underline flex items-center gap-1"
+            onClick={() => openExternal('https://opensource.org/licenses/MIT')}
+            className="text-[var(--primary-color)] hover:underline text-sm"
           >
-            Read full Apache 2.0 License →
+            Read MIT License →
           </button>
-
-          {licenseType === 'open' && (
-            <div className="mt-6 bg-amber-500/10 border-l-4 border-amber-500 rounded-lg p-4">
-              <p className="font-medium text-amber-400 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4" />
-                Need a Commercial License?
+          <div className="mt-4 pt-4 border-t border-[var(--border-color)]">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-[var(--text-tertiary)] mt-0.5" />
+              <p className="text-xs text-[var(--text-tertiary)]">
+                THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+                INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+                FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
               </p>
-              <p className="text-slate-300 text-sm mt-1">
-                If you use Tillify for proprietary business operations or require support,
-                please contact us to purchase a commercial license.
-              </p>
-              <button
-                onClick={() => openExternal('mailto:cyberarcenal1@gmail.com?subject=Commercial%20License%20Inquiry')}
-                className="mt-3 inline-flex items-center gap-2 px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition-colors text-sm"
-              >
-                <Mail className="w-4 h-4" />
-                Contact Sales
-              </button>
             </div>
-          )}
-        </div>
-
-        {/* Disclaimer */}
-        <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Scale className="w-6 h-6 text-blue-400" />
-            <h2 className="text-xl font-bold text-white">Disclaimer of Warranty & Liability</h2>
-          </div>
-          <div className="bg-slate-900/70 rounded-lg p-4 text-sm font-mono text-slate-400 border border-slate-700">
-            THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-            INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-            FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-            IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-            DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-            ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE.
           </div>
         </div>
 
         {/* Attribution */}
-        <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Heart className="w-6 h-6 text-blue-400" />
-            <h2 className="text-xl font-bold text-white">Attribution</h2>
+        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)] p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Heart className="w-5 h-5 text-[var(--primary-color)]" />
+            <h2 className="text-xl font-bold text-[var(--sidebar-text)]">Acknowledgments</h2>
           </div>
-          <p className="text-slate-300">
-            Powered by <strong className="text-white">Tillify POS</strong> –{' '}
-            <button
-              onClick={() => openExternal('https://github.com/CyberArcenal/Tillify')}
-              className="text-blue-400 hover:text-blue-300 underline"
-            >
-              https://github.com/CyberArcenal/Tillify
-            </button>
+          <p className="text-sm text-[var(--text-secondary)]">
+            Built with ❤️ by <strong>CyberArcenal</strong>.
+            Uses the <strong>Twitch API</strong>, <strong>Electron</strong>, <strong>React</strong>, and <strong>Vite</strong>.
           </p>
-          <p className="text-slate-500 text-sm mt-2">Original author: CyberArcenal</p>
-        </div>
-
-        {/* Contact */}
-        <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Mail className="w-6 h-6 text-blue-400" />
-            <h2 className="text-xl font-bold text-white">Commercial Inquiries & Support</h2>
-          </div>
-          <p className="text-slate-300">
-            Email:{' '}
-            <a href="mailto:cyberarcenal1@gmail.com" className="text-blue-400 hover:text-blue-300">
-              cyberarcenal1@gmail.com
-            </a>
-          </p>
-          <p className="text-slate-500 text-sm mt-3">
-            For enterprise support, custom development, or white‑label licensing, please reach out.
+          <p className="text-xs text-[var(--text-tertiary)] mt-3">
+            Twitch name and logo are trademarks of Twitch Interactive, Inc.
+            This project is not affiliated with or endorsed by Twitch.
           </p>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default HelpPage;

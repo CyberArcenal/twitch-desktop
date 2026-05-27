@@ -7,6 +7,7 @@ const { followsService } = require('../../../../services/follows.service');
  * @param {{ method: any; params?: {} | undefined; }} payload
  */
 // @ts-ignore
+// @ts-ignore
 async function handleFollowsRequest(event, payload) {
   const { method, params = {} } = payload;
 
@@ -17,6 +18,9 @@ async function handleFollowsRequest(event, payload) {
     case 'follow':
       // @ts-ignore
       return await followsService.followChannel(params.broadcasterId);
+      case 'getFollowers':
+  // @ts-ignore
+  return await followsService.getFollowers(params.userId, params.after);
     case 'unfollow':
       // @ts-ignore
       return await followsService.unfollowChannel(params.broadcasterId);

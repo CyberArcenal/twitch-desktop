@@ -27,6 +27,10 @@ class AuthAPI {
   async refreshToken(): Promise<BaseResponse<boolean>> {
     return window.backendAPI.auth({ method: 'refreshToken' });
   }
+  
+  async revokeAllTokens(): Promise<BaseResponse<void>> {
+  return window.backendAPI.auth({ method: 'revokeAllTokens' });
+}
 }
 
 export const authAPI = new AuthAPI();

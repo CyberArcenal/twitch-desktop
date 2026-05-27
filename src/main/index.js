@@ -17,6 +17,7 @@ const url = require("url");
 // ===================== SERVICES =====================
 const { notificationService } = require("../services/notification.service");
 const { playerService } = require("../services/player.service");
+// @ts-ignore
 const { settingsService } = require("../services/settings.service");
 const { twitchAuthService } = require("../services/twitch-auth.service");
 const { twitchApiService } = require("../services/twitch-api.service");
@@ -93,7 +94,10 @@ async function log(level, message, data = null, writeToFile = false) {
     try {
       const logDir = path.join(APP_CONFIG.userDataPath, "logs");
       await fs.mkdir(logDir, { recursive: true });
-      const logFile = path.join(logDir, `twitch-${new Date().toISOString().split("T")[0]}.log`);
+      const logFile = path.join(
+        logDir,
+        `twitch-${new Date().toISOString().split("T")[0]}.log`,
+      );
       const logEntry = `${logMessage}${data ? "\n" + JSON.stringify(data, null, 2) : ""}\n`;
       await fs.appendFile(logFile, logEntry);
     } catch (err) {
@@ -105,9 +109,17 @@ async function log(level, message, data = null, writeToFile = false) {
 // ===================== ERROR HANDLING =====================
 function setupGlobalErrorHandlers() {
   process.on("uncaughtException", (error) => {
-    log(LogLevel.ERROR, "Uncaught Exception:", { message: error.message, stack: error.stack }, true);
+    log(
+      LogLevel.ERROR,
+      "Uncaught Exception:",
+      { message: error.message, stack: error.stack },
+      true,
+    );
     if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send("app:error", { type: "uncaughtException", message: error.message });
+      mainWindow.webContents.send("app:error", {
+        type: "uncaughtException",
+        message: error.message,
+      });
     }
   });
 
@@ -115,8 +127,14 @@ function setupGlobalErrorHandlers() {
     log(LogLevel.ERROR, "Unhandled Rejection:", reason, true);
   });
 
+  // @ts-ignore
   app.on("renderer-process-crashed", (event, webContents, killed) => {
-    log(LogLevel.ERROR, "Renderer process crashed:", { killed, webContentsId: webContents.id }, true);
+    log(
+      LogLevel.ERROR,
+      "Renderer process crashed:",
+      { killed, webContentsId: webContents.id },
+      true,
+    );
   });
 }
 
@@ -130,6 +148,7 @@ function getIconPath() {
     ? path.resolve(__dirname, "..", "..", "build")
     : path.join(process.resourcesPath, "build");
   const iconMap = { win32: "icon.ico", darwin: "icon.icns", linux: "icon.png" };
+  // @ts-ignore
   const iconFile = iconMap[platform] || "icon.png";
   const iconPath = path.join(iconDir, iconFile);
   return fsSync.existsSync(iconPath) ? iconPath : null;
@@ -140,8 +159,8 @@ function getIconPath() {
  */
 async function createSplashWindow() {
   splashWindow = new BrowserWindow({
- width: 500,   // was 400
-  height: 400,  // was 300
+    width: 500, // was 400
+    height: 400, // was 300
     frame: false,
     transparent: true,
     alwaysOnTop: true,
@@ -177,8 +196,15 @@ async function createSplashWindow() {
  */
 async function getMainWindowUrl() {
   if (APP_CONFIG.isDev) return "http://localhost:5173";
-  const indexPath = path.join(__dirname, "..", "..", "dist-renderer", "index.html");
-  if (!fsSync.existsSync(indexPath)) throw new Error(`Renderer build not found at ${indexPath}`);
+  const indexPath = path.join(
+    __dirname,
+    "..",
+    "..",
+    "dist-renderer",
+    "index.html",
+  );
+  if (!fsSync.existsSync(indexPath))
+    throw new Error(`Renderer build not found at ${indexPath}`);
   return url.pathToFileURL(indexPath).href;
 }
 
@@ -189,7 +215,8 @@ async function createMainWindow() {
   log(LogLevel.INFO, "Creating main window...");
 
   const primaryDisplay = screen.getPrimaryDisplay();
-  const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
+  const { width: screenWidth, height: screenHeight } =
+    primaryDisplay.workAreaSize;
   const windowWidth = Math.min(1280, screenWidth - 100);
   const windowHeight = Math.min(768, screenHeight - 100);
   const x = Math.floor((screenWidth - windowWidth) / 2);
@@ -198,13 +225,15 @@ async function createMainWindow() {
   mainWindow = new BrowserWindow({
     width: windowWidth,
     height: windowHeight,
-    x, y,
+    x,
+    y,
     minWidth: 1024,
     minHeight: 600,
     show: false,
     frame: true,
     titleBarStyle: "default",
     backgroundColor: "#0e0e10",
+    // @ts-ignore
     icon: getIconPath(),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -226,14 +255,17 @@ async function createMainWindow() {
     const timeoutId = setTimeout(() => {
       log(LogLevel.WARN, "Renderer-ready timeout – showing main window anyway");
       if (splashWindow && !splashWindow.isDestroyed()) splashWindow.close();
+      // @ts-ignore
       mainWindow.show();
     }, 8000);
 
     ipcMain.once("app:renderer-ready", (event) => {
+      // @ts-ignore
       if (event.sender === mainWindow.webContents) {
         log(LogLevel.INFO, "Received renderer-ready signal");
         clearTimeout(timeoutId);
         if (splashWindow && !splashWindow.isDestroyed()) splashWindow.close();
+        // @ts-ignore
         mainWindow.show();
       }
     });
@@ -253,6 +285,7 @@ async function createMainWindow() {
 // ===================== SERVICE INITIALIZATION =====================
 async function initializeServices() {
   log(LogLevel.INFO, "Initializing services...");
+  // @ts-ignore
   notificationService.initialize(mainWindow);
   streamMonitorService.initStreamMonitor(mainWindow);
   twitchChatService.initChatService(mainWindow);
@@ -276,7 +309,10 @@ async function initializeServices() {
       log(LogLevel.INFO, "User already logged in – starting stream monitor");
       streamMonitorService.startStreamMonitor(60);
     } catch (err) {
-      log(LogLevel.WARN, "Stored token invalid – clearing and requiring re-login");
+      log(
+        LogLevel.WARN,
+        "Stored token invalid – clearing and requiring re-login",
+      );
       await twitchAuthService.logout();
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send("auth:invalid", {});
@@ -292,10 +328,16 @@ function registerIpcHandlers() {
 
   // Basic window controls
   ipcMain.on("window:minimize", () => mainWindow?.minimize());
-  ipcMain.on("window:maximize", () => mainWindow?.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize());
+  // @ts-ignore
+  ipcMain.on("window:maximize", () =>
+    // @ts-ignore
+    mainWindow?.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize(),
+  );
   ipcMain.on("window:close", () => mainWindow?.close());
   ipcMain.on("window:reload", () => mainWindow?.reload());
-  ipcMain.on("window:toggle-devtools", () => mainWindow?.webContents.toggleDevTools());
+  ipcMain.on("window:toggle-devtools", () =>
+    mainWindow?.webContents.toggleDevTools(),
+  );
 
   ipcMain.handle("app:get-info", () => ({
     name: APP_NAME,
@@ -305,8 +347,11 @@ function registerIpcHandlers() {
     arch: process.arch,
   }));
 
-  ipcMain.handle("open-external", async (event, url) => {
-    if (url?.startsWith("http")) await shell.openExternal(url);
+  // @ts-ignore
+  ipcMain.on("app:open-external", (event, url) => {
+    if (typeof url === "string" && url.startsWith("http")) {
+      shell.openExternal(url).catch(console.error);
+    }
   });
 
   // Load modular IPC handlers (all core modules)
@@ -332,6 +377,10 @@ function registerIpcHandlers() {
     "./ipc/core/predictions/index.ipc.js",
     "./ipc/core/search/index.ipc.js",
     "./ipc/core/streams/index.ipc.js",
+    "./ipc/core/watch-later/index.ipc.js",
+    "./ipc/core/whisper/index.ipc.js",
+    "./ipc/core/notification-store/index.ipc.js",
+    "./ipc/core/stream-settings/index.ipc.js",
   ];
 
   for (const modulePath of ipcModules) {
@@ -353,7 +402,10 @@ function registerIpcHandlers() {
 
 // ===================== APP LIFECYCLE =====================
 async function startup() {
-  log(LogLevel.INFO, `Starting ${APP_NAME} v${APP_VERSION} (${APP_CONFIG.isDev ? "Development" : "Production"})`);
+  log(
+    LogLevel.INFO,
+    `Starting ${APP_NAME} v${APP_VERSION} (${APP_CONFIG.isDev ? "Development" : "Production"})`,
+  );
   setupGlobalErrorHandlers();
   await createSplashWindow();
   registerIpcHandlers();
@@ -373,6 +425,7 @@ app.on("activate", async () => {
   if (BrowserWindow.getAllWindows().length === 0) await startup();
 });
 
+// @ts-ignore
 app.on("before-quit", (event) => {
   if (isQuitting) return;
   isQuitting = true;
@@ -382,8 +435,12 @@ app.on("before-quit", (event) => {
 });
 
 // Uncaught errors (already handled by global handlers, but fallback)
-process.on("uncaughtException", (err) => log(LogLevel.ERROR, "Uncaught Exception (fallback)", err));
-process.on("unhandledRejection", (reason) => log(LogLevel.ERROR, "Unhandled Rejection (fallback)", reason));
+process.on("uncaughtException", (err) =>
+  log(LogLevel.ERROR, "Uncaught Exception (fallback)", err),
+);
+process.on("unhandledRejection", (reason) =>
+  log(LogLevel.ERROR, "Unhandled Rejection (fallback)", reason),
+);
 
 // ===================== EXPORTS (for testing) =====================
 if (APP_CONFIG.isDev) {

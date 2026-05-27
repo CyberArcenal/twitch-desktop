@@ -39,8 +39,15 @@ declare global {
       predictions: (payload: any) => Promise<any>;
       search: (payload: any) => Promise<any>;
       streams: (payload: any) => Promise<any>;
+      watchLater: (payload: any) => Promise<any>;
+      whisper: (payload: any) => Promise<any>;
+      notificationStore: (payload: any) => Promise<any>;
+      streamSettings: (payload: any) => Promise<any>;
 
       notifyAppReady?: () => void;
+      openExternal: (url: string) => Promise<void>;
+
+      appInfo: () => Promise<any>;
 
       // 🆕 Updater API (invoke)
       updater: (payload: { method: string; params?: any }) => Promise<{

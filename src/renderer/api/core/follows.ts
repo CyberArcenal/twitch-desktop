@@ -48,6 +48,13 @@ class FollowsAPI {
     });
   }
 
+  async getFollowers(userId: string, after?: string): Promise<BaseResponse<any>> {
+  return window.backendAPI.follows({
+    method: 'getFollowers',
+    params: { userId, after }
+  });
+}
+
   
 
   async clearCache(): Promise<BaseResponse<boolean>> {
