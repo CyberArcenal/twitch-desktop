@@ -40,7 +40,7 @@ async function handleStreamsRequest(event, payload) {
       );
       return result;
     }
-    
+
     case "getStreams": {
       const { userIds, first = 100 } = params;
       if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
@@ -53,16 +53,18 @@ async function handleStreamsRequest(event, payload) {
 
     case "getStreamByUserLogin": {
       const { login } = params;
-      if (!login) return { data: null };
-      // First get user by login to get user_id
+      if (!login) return null;
       const userResult = await twitchApiService.fetchTwitch(
         `users?login=${login}`,
       );
       const user = userResult.data?.[0];
-      if (!user) return { data: null };
+      if (!user) return null;
       const streamsResult = await twitchApiService.getStreams([user.id]);
-      console.log(`[IPC:streams] getStreamByUserLogin for ${login} (user_id: ${user.id})`, { user, streamsResult });
-      return { data: streamsResult.data?.[0] || null };
+      console.log(
+        `[IPC:streams] getStreamByUserLogin for ${login}`,
+        streamsResult.data?.[0],
+      );
+      return streamsResult.data?.[0] || null; // ← return stream object directly
     }
 
     default:
