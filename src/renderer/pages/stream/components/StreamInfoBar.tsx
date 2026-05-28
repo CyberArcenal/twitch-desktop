@@ -175,7 +175,7 @@ const StreamInfoBar: React.FC<StreamInfoBarProps> = ({ stream, onShare }) => {
           <button
             onClick={handleFollowToggle}
             disabled={isFollowLoading}
-            className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-colors flex items-center gap-2 ${
+            className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-colors flex items-center gap-2 hidden ${
               isFollowing
                 ? 'bg-[#3a3a3e] text-white hover:bg-[#4a4a4e]'
                 : 'bg-[#9147ff] text-white hover:bg-[#772ce8]'

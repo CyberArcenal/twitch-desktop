@@ -39,10 +39,10 @@ class ClipsAPI {
     });
   }
 
-  async getTopClips(gameId?: string, period: 'day' | 'week' | 'month' | 'all' = 'week', first: number = 20): Promise<BaseResponse<PaginatedClips>> {
+  async getTopClips(gameId?: string, broadcasterId?: string, period: 'day' | 'week' | 'month' | 'all' = 'week', first: number = 20): Promise<BaseResponse<PaginatedClips>> {
     return window.backendAPI.clips({
       method: 'getTopClips',
-      params: { gameId, period, first }
+      params: { gameId, broadcasterId, period, first }
     });
   }
 }

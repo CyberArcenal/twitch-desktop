@@ -18,16 +18,19 @@ export const useSubscriptions = () => {
       if (!res.status) {
         throw new Error(res.message || 'Failed to fetch subscribers');
       }
-      const data = res.data || [];
       
-      // Enrich with profile images (optional, could fetch per user but expensive)
-      const enriched: SubscriberWithDetails[] = data.map((sub: Subscriber) => {
-        // Calculate tenure in months from subscription start? Not available directly.
-        return {
-          ...sub,
-          profile_image_url: `https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe41b43f5-profile_image-70x70.png`,
-        };
-      });
+      // ✅ Fix: extract the nested `data` array
+      let subscriptions = res.data?.data || [];  // <-- key change
+      if (!Array.isArray(subscriptions)) {
+        subscriptions = [];
+      }
+      
+      // Enrich with default avatar (optional – later we could fetch real ones)
+      const enriched: SubscriberWithDetails[] = subscriptions.map((sub: Subscriber) => ({
+        ...sub,
+        profile_image_url: sub.profile_image_url || 
+          'https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe41b43f5-profile_image-70x70.png',
+      }));
       
       setSubscribers(enriched);
       setTotal(enriched.length);

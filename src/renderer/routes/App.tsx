@@ -21,6 +21,7 @@ import ChannelPage from "../pages/channel";
 import BrowseCategoriesPage from "../pages/categories";
 import HelpPage from "../pages/help";
 import StreamPlayerPage from "../pages/stream";
+import GamePage from "../pages/browse/game";
 
 // ─── Generic Placeholder (for pages not yet built) ─────────────
 const PlaceholderPage = ({
@@ -156,6 +157,7 @@ function App() {
 
         {/* Channel page */}
         <Route path="/channel/:login" element={<ChannelPage />} />
+        <Route path="browse/game/:gameId" element={<GamePage />} />
 
         {/* 404 – must be last */}
         <Route

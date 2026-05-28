@@ -18,23 +18,31 @@ export const usePopularClips = () => {
   
   const cursorRef = useRef<string | null>(null);
   const loadingRef = useRef(false);
+  const hasMoreRef = useRef(true);
+  const periodRef = useRef<Period>('week');
 
-  const fetchClips = useCallback(async (isLoadMore = false, resetPeriod = false) => {
+  // Keep refs in sync with state
+  useEffect(() => {
+    hasMoreRef.current = hasMore;
+  }, [hasMore]);
+  useEffect(() => {
+    periodRef.current = period;
+  }, [period]);
+
+  // Fetch function – no external dependencies (uses refs)
+  const fetchClips = useCallback(async (isLoadMore: boolean = false) => {
     if (loadingRef.current) return;
-    if (isLoadMore && (!hasMore || loadingMore)) return;
+    if (isLoadMore && !hasMoreRef.current) return;
 
     loadingRef.current = true;
-    if (isLoadMore) {
-      setLoadingMore(true);
-    } else {
-      setLoading(true);
-    }
+    isLoadMore ? setLoadingMore(true) : setLoading(true);
     setError(null);
 
     try {
       const response = await clipsAPI.getTopClips(
-        undefined, // gameId
-        period,
+        undefined,
+        undefined,
+        periodRef.current,
         CLIPS_PER_PAGE
       );
       if (!response.status || !response.data?.data) {
@@ -44,7 +52,7 @@ export const usePopularClips = () => {
       const newClips = response.data.data;
       const newCursor = response.data.pagination?.cursor;
 
-      if (resetPeriod || !isLoadMore) {
+      if (!isLoadMore) {
         setClips(newClips);
         setTotal(newClips.length);
       } else {
@@ -58,43 +66,36 @@ export const usePopularClips = () => {
       showError(err.message);
     } finally {
       loadingRef.current = false;
-      if (isLoadMore) {
-        setLoadingMore(false);
-      } else {
-        setLoading(false);
-      }
+      isLoadMore ? setLoadingMore(false) : setLoading(false);
     }
-  }, [period, hasMore, loadingMore]);
+  }, []);
 
   const loadInitial = useCallback(() => {
     cursorRef.current = null;
     setHasMore(true);
-    fetchClips(false, true);
+    fetchClips(false);
   }, [fetchClips]);
 
   const loadMore = useCallback(() => {
-    if (!hasMore || loadingMore || loading) return;
-    fetchClips(true, false);
-  }, [hasMore, loadingMore, loading, fetchClips]);
+    if (!hasMoreRef.current || loadingMore || loading) return;
+    fetchClips(true);
+  }, [loadingMore, loading, fetchClips]);
 
   const changePeriod = useCallback((newPeriod: Period) => {
     setPeriod(newPeriod);
     cursorRef.current = null;
     setHasMore(true);
-    fetchClips(false, true);
+    fetchClips(false);
   }, [fetchClips]);
 
-  const openClipModal = useCallback((clip: Clip) => {
-    setSelectedClip(clip);
-  }, []);
+  const openClipModal = useCallback((clip: Clip) => setSelectedClip(clip), []);
+  const closeClipModal = useCallback(() => setSelectedClip(null), []);
 
-  const closeClipModal = useCallback(() => {
-    setSelectedClip(null);
-  }, []);
-
+  // Only run once on mount
   useEffect(() => {
     loadInitial();
-  }, [loadInitial]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return {
     clips,

@@ -259,6 +259,8 @@ class TwitchApiService {
     if (after) params.append("after", after);
     return this.fetchTwitch(`videos?${params}`);
   }
+
+  
 }
 
 const twitchApiService = new TwitchApiService();
