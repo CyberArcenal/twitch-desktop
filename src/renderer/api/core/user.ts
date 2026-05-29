@@ -15,6 +15,10 @@ export interface TwitchUser {
   created_at: string;
 }
 
+/**
+ * Subscription object returned by Twitch API
+ * (list of users who subscribe to the authenticated channel)
+ */
 export interface Subscription {
   broadcaster_id: string;
   broadcaster_login: string;
@@ -22,13 +26,32 @@ export interface Subscription {
   gifter_id?: string;
   gifter_login?: string;
   gifter_name?: string;
-  tier: string;
+  tier: string;           // '1000' = Tier 1, '2000' = Tier 2, '3000' = Tier 3
   is_gift: boolean;
+  plan_name?: string;
+  // Subscriber info (the user who is subscribed)
+  user_id: string;
+  user_login: string;
+  user_name: string;
 }
 
+/**
+ * Twitch‑style cursor‑based pagination (used by getUserSubscriptions)
+ */
+export interface TwitchPaginatedResult<T> {
+  data: T[];
+  pagination?: {
+    cursor: string;
+  };
+}
+
+/**
+ * Badges result – matches what user.service.js returns:
+ * { global: [], channel: [] }
+ */
 export interface BadgesResult {
-  global: any[];
-  channel: any[];
+  global: any[];   // global badges
+  channel: any[];  // channel‑specific badges
 }
 
 class UserAPI {
@@ -50,8 +73,14 @@ class UserAPI {
     });
   }
 
-  async getUserSubscriptions(): Promise<BaseResponse<Subscription[]>> {
-    return window.backendAPI.user({ method: 'getUserSubscriptions' });
+  /**
+   * Returns the list of subscribers for the authenticated user's channel.
+   * Response uses Twitch's cursor pagination, not page/limit/total.
+   */
+  async getUserSubscriptions(): Promise<BaseResponse<TwitchPaginatedResult<Subscription>>> {
+    const results = await window.backendAPI.user({ method: 'getUserSubscriptions' });
+    console.log('Fetched subscriptions:', results);
+    return results;
   }
 
   async getUserBadges(userId: string): Promise<BaseResponse<BadgesResult>> {

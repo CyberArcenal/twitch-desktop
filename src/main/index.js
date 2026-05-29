@@ -144,14 +144,36 @@ function setupGlobalErrorHandlers() {
  */
 function getIconPath() {
   const platform = process.platform;
-  const iconDir = APP_CONFIG.isDev
-    ? path.resolve(__dirname, "..", "..", "build")
-    : path.join(process.resourcesPath, "build");
-  const iconMap = { win32: "icon.ico", darwin: "icon.icns", linux: "icon.png" };
-  // @ts-ignore
-  const iconFile = iconMap[platform] || "icon.png";
-  const iconPath = path.join(iconDir, iconFile);
-  return fsSync.existsSync(iconPath) ? iconPath : null;
+  const iconFile = {
+    win32: 'icon.ico',
+    darwin: 'icon.icns',
+    linux: 'icon.png'
+  }[platform] || 'icon.png';
+
+  // Listahan ng mga posibleng lokasyon (sa order)
+  const possiblePaths = [
+    // Development mode
+    path.resolve(__dirname, '..', '..', 'build', iconFile),
+    path.resolve(__dirname, '..', '..', 'resources', 'build', iconFile),
+    // Production (packaged)
+    path.join(process.resourcesPath, 'build', iconFile),
+    path.join(process.resourcesPath, 'icon.ico'), // kung direktang nasa resources
+    path.join(process.resourcesPath, '..', 'app.asar.unpacked', 'build', iconFile),
+    path.join(app.getAppPath(), 'build', iconFile),
+    path.join(app.getAppPath(), 'icon.ico'),
+    // Fallback: kung nasa root ng app
+    path.join(path.dirname(app.getPath('exe')), iconFile),
+  ];
+
+  for (const iconPath of possiblePaths) {
+    if (fsSync.existsSync(iconPath)) {
+      console.log(`[Icon] Found at: ${iconPath}`);
+      return iconPath;
+    }
+  }
+
+  console.warn('[Icon] No icon file found, using default Electron icon');
+  return null;
 }
 
 /**

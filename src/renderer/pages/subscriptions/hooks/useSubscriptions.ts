@@ -19,13 +19,14 @@ export const useSubscriptions = () => {
         throw new Error(res.message || 'Failed to fetch subscribers');
       }
       
-      // ✅ Fix: extract the nested `data` array
-      let subscriptions = res.data?.data || [];  // <-- key change
+      // res.data is TwitchPaginatedResult<Subscription>
+      // so res.data.data is the array of Subscription objects
+      let subscriptions = res.data?.data || [];
       if (!Array.isArray(subscriptions)) {
         subscriptions = [];
       }
       
-      // Enrich with default avatar (optional – later we could fetch real ones)
+      // Enrich with default avatar (Twitch API does not return profile_image_url here)
       const enriched: SubscriberWithDetails[] = subscriptions.map((sub: Subscriber) => ({
         ...sub,
         profile_image_url: sub.profile_image_url || 

@@ -1,13 +1,16 @@
 // src/renderer/api/core/chat.ts
-import type { BaseResponse } from './common';
+import type { BaseResponse } from "./common";
 
 export interface ChatMessage {
+  id: string;
   channel: string;
   user: string;
   message: string;
   badges: any;
   emotes: any;
   timestamp: string;
+  replyParentMsgId?: string;
+  parsedMessage?: Array<{ type: 'text' | 'emote'; text: string; name?: string; id?: string }>;
 }
 
 export interface ChatConnected {
@@ -26,19 +29,22 @@ export interface ChatError {
 class ChatAPI {
   async connect(channelName: string): Promise<BaseResponse<void>> {
     return window.backendAPI.chat({
-      method: 'connect',
-      params: { channelName }
+      method: "connect",
+      params: { channelName },
     });
   }
 
   async disconnect(): Promise<BaseResponse<void>> {
-    return window.backendAPI.chat({ method: 'disconnect' });
+    return window.backendAPI.chat({ method: "disconnect" });
   }
 
-  async send(message: string): Promise<BaseResponse<void>> {
+  async send(
+    message: string,
+    replyToMsgId?: string,
+  ): Promise<BaseResponse<void>> {
     return window.backendAPI.chat({
-      method: 'send',
-      params: { message }
+      method: "send",
+      params: { message, replyParentMsgId: replyToMsgId },
     });
   }
 }

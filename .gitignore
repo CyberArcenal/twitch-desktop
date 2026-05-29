@@ -2,3 +2,5 @@ node_modules
 mock-server.js
 TODO
 .env
+/dist
+/release

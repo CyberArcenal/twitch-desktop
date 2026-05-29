@@ -23,7 +23,7 @@ async function handleChatRequest(event, payload) {
       return await twitchChatService.disconnectChat();
     case "send":
       // @ts-ignore
-      return await twitchChatService.sendChatMessage(params.message);
+      return await twitchChatService.sendChatMessage(params.message, params.replyParentMsgId);
     case "connectWhispers":
       await twitchChatService.connectToWhispers();
       return true;

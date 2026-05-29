@@ -1,6 +1,6 @@
 // src/main/services/twitch-chat.service.js
 //@ts-check
-const { ChatClient } = require("@twurple/chat");
+const { ChatClient, parseChatMessage } = require("@twurple/chat");
 const { RefreshingAuthProvider } = require("@twurple/auth");
 const { settingsService } = require("./settings.service");
 // @ts-ignore
@@ -8,6 +8,7 @@ const { twitchAuthService } = require("./twitch-auth.service");
 const { twitchApiService } = require("./twitch-api.service");
 const { CLIENT_ID, CLIENT_SECRET } = require("../shared/config");
 const { BrowserWindow } = require("electron");
+const { logger } = require("../utils/logger");
 
 class TwitchChatService {
   constructor() {
@@ -37,6 +38,7 @@ class TwitchChatService {
 
     this.authProvider = new RefreshingAuthProvider(
       { clientId: CLIENT_ID, clientSecret: CLIENT_SECRET },
+      // @ts-ignore
       {},
     );
 
@@ -179,21 +181,23 @@ class TwitchChatService {
     // @ts-ignore
     this.chatClient.onMessage((channel, user, message, msg) => {
       const filters = settingsService.get("chatFilters") || [];
-      if (
-        filters.some((/** @type {string} */ f) =>
-          message.toLowerCase().includes(f),
-        )
-      )
-        return;
+      if (filters.some((/** @type {string} */ f) => message.toLowerCase().includes(f))) return;
 
       if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+        // ✅ Correct: pass message text and emoteOffsets (Map)
+        const parsedMessage = parseChatMessage(message, msg.emoteOffsets);
+
         this.mainWindow.webContents.send("chat:message", {
+          messageId: msg.id,
           channel: channel.slice(1),
           user,
           message,
+          parsedMessage, // structured parts for emotes
           badges: msg.userInfo.badges,
           emotes: msg.emoteOffsets,
           timestamp: new Date().toISOString(),
+           // @ts-ignore
+           replyParentMsgId: msg.replyParentMsgId || null,
         });
       }
     });
@@ -236,11 +240,21 @@ class TwitchChatService {
 
   /**
    * @param {string} message
+   * @param {string | null} replyParentMsgId
    */
-  async sendChatMessage(message) {
-    if (!this.chatClient || !this.currentChannel)
+  async sendChatMessage(message, replyParentMsgId = null) {
+    if (!this.chatClient || !this.currentChannel) {
       throw new Error("Not connected to chat");
-    await this.chatClient.say(this.currentChannel, message);
+    }
+
+    const attributes = {};
+    if (replyParentMsgId) {
+      attributes.replyTo = replyParentMsgId;
+      logger.info(`[Chat] Sending message as reply to ${replyParentMsgId}`);
+    }
+
+    await this.chatClient.say(this.currentChannel, message, attributes);
+    logger.info(`[Chat] Sent message to ${this.currentChannel}: ${message}`);
   }
 
   /**
@@ -251,7 +265,7 @@ class TwitchChatService {
     if (!this.chatClient) throw new Error("Chat not connected");
     // @ts-ignore
     await this.chatClient.whisper(userLogin, message);
-
+    logger.info(`[Chat] Sent whisper to ${userLogin}: ${message}`);
     const user = await twitchApiService.getUserByName(userLogin);
     // @ts-ignore
     const userId = user?.id;

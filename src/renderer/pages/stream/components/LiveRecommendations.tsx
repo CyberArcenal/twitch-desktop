@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, Gamepad2 } from 'lucide-react';
 import { streamsAPI, type Stream } from '../../../api/core/streams';
+import LiveStreamCard from '../../browse/live/components/LiveStreamCard';
 
 interface LiveRecommendationsProps {
   currentStreamLogin?: string;
@@ -64,26 +65,27 @@ const LiveRecommendations: React.FC<LiveRecommendationsProps> = ({ currentStream
       <h3 className="text-white font-semibold text-base mb-3">Recommended Live Channels</h3>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
         {streams.map((stream) => (
-          <Link
-            key={stream.id}
-            to={`/stream/${stream.user_login}`}
-            className="group block rounded-lg overflow-hidden bg-[#1f1f23] hover:bg-[#2a2a2e] transition-colors"
-          >
-            <div className="relative aspect-video">
-              <img
-                src={stream.thumbnail_url.replace('{width}', '320').replace('{height}', '180')}
-                alt={stream.title}
-                className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
-              />
-              <div className="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-1 rounded">
-                {stream.viewer_count?.toLocaleString()}
-              </div>
-            </div>
-            <div className="p-2">
-              <p className="text-white text-sm font-medium truncate">{stream.user_name}</p>
-              <p className="text-[#adadb8] text-xs truncate">{stream.game_name}</p>
-            </div>
-          </Link>
+          <LiveStreamCard key={stream.id} stream={stream} />
+          // <Link
+          //   key={stream.id}
+          //   to={`/stream/${stream.user_login}`}
+          //   className="group block rounded-lg overflow-hidden bg-[#1f1f23] hover:bg-[#2a2a2e] transition-colors"
+          // >
+          //   <div className="relative aspect-video">
+          //     <img
+          //       src={stream.thumbnail_url.replace('{width}', '320').replace('{height}', '180')}
+          //       alt={stream.title}
+          //       className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
+          //     />
+          //     <div className="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-1 rounded">
+          //       {stream.viewer_count?.toLocaleString()}
+          //     </div>
+          //   </div>
+          //   <div className="p-2">
+          //     <p className="text-white text-sm font-medium truncate">{stream.user_name}</p>
+          //     <p className="text-[#adadb8] text-xs truncate">{stream.game_name}</p>
+          //   </div>
+          // </Link>
         ))}
       </div>
     </div>

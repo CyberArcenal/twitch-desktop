@@ -12,16 +12,17 @@
     "type": "git",
     "url": "https://github.com/CyberArcenal/twitch-desktop.git"
   },
+  "files": [
+  "dist-electron/**/*",
+  "dist-renderer/**/*",
+  "build/**/*"
+],
   "build": {
     "appId": "com.CyberArcenal.twitchdesktop",
     "productName": "Twitch Desktop",
     "directories": {
       "output": "release"
     },
-    "files": [
-      "dist-electron/**/*",
-      "dist-renderer/**/*"
-    ],
     "win": {
       "icon": "build/icon.ico",
       "target": "nsis",
@@ -69,6 +70,7 @@
     "@twurple/api": "^7.0.0",
     "@twurple/auth": "^7.0.0",
     "@twurple/chat": "^7.0.0",
+    "@twurple/common": "^8.1.4",
     "@twurple/eventsub-ws": "^7.0.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
