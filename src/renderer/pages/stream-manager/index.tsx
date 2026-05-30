@@ -60,28 +60,28 @@ const StreamManagerPage: React.FC = () => {
     <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1fr_1fr_1fr] gap-4 h-full p-4 bg-[#0e0e10] overflow-auto">
       {/* Column 1 */}
       <MainVideoCard
-        isLive={isLive}
+        isLive={isLive? isLive:false}
         streamData={streamData}
         onRefresh={checkLiveStatus}
       />
 
       {/* Column 2 */}
       <div className="flex flex-col gap-4">
-        <ConnectionHubCard isLive={isLive} onRefresh={checkLiveStatus} />
-        <ConnectedSoftwareCard isLive={isLive} />
-        <QuickActionsCard isLive={isLive} />
-       <AlertsCard isLive={isLive} channelId={streamData?.user_id} />
+        <ConnectionHubCard isLive={isLive? isLive:false} onRefresh={checkLiveStatus} />
+        <ConnectedSoftwareCard isLive={isLive? isLive:false} />
+        <QuickActionsCard isLive={isLive? isLive:false} />
+       <AlertsCard isLive={isLive? isLive:false} channelId={streamData?.user_id} />
       </div>
 
       {/* Column 3 */}
       <div className="flex flex-col gap-4">
-        <StreamHealthCard isLive={isLive} />
-        <ChatCard channelName={streamData?.user_login} isLive={isLive} />
+        <StreamHealthCard isLive={isLive? isLive:false} />
+        <ChatCard channelName={streamData?.user_login} isLive={isLive? isLive:false} />
       </div>
 
       {/* Column 4 */}
       <div className="flex flex-col gap-4">
-        <CustomAutomationsCard isLive={isLive} />
+        <CustomAutomationsCard isLive={isLive? isLive:false} />
         
       </div>
     </div>
