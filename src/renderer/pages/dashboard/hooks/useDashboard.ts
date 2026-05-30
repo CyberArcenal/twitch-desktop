@@ -1,5 +1,5 @@
 // src/renderer/pages/dashboard/hooks/useDashboard.ts
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { followsAPI, type FollowedChannel } from '../../../api/core/follows';
 import { streamsAPI, type Stream } from '../../../api/core/streams';
 import { historyAPI, type HistoryEntry } from '../../../api/core/history';
@@ -7,6 +7,18 @@ import { userAPI } from '../../../api/core/user';
 import { gamesAPI, type Game } from '../../../api/core/games';
 import { showError } from '../../../utils/notification';
 import type { DashboardStats, LiveFollowed, Recommendation } from '../types';
+
+// Cache keys
+const CACHE_KEY = 'dashboard_cache';
+const CACHE_TIMESTAMP_KEY = 'dashboard_cache_timestamp';
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+interface CachedDashboardData {
+  liveChannels: LiveFollowed[];
+  recommendations: Recommendation[];
+  recentHistory: HistoryEntry[];
+  stats: DashboardStats;
+}
 
 export const useDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -20,10 +32,35 @@ export const useDashboard = () => {
     liveCount: 0,
   });
 
-  const fetchDashboardData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  // Ref to track if we already loaded cache to avoid double render
+  const cacheLoaded = useRef(false);
 
+  // Load cached data immediately on mount
+  useEffect(() => {
+    const loadCachedData = () => {
+      try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        const timestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY);
+        if (cached && timestamp) {
+          const age = Date.now() - parseInt(timestamp, 10);
+          if (age < CACHE_TTL) {
+            const data: CachedDashboardData = JSON.parse(cached);
+            setLiveChannels(data.liveChannels);
+            setRecommendations(data.recommendations);
+            setRecentHistory(data.recentHistory);
+            setStats(data.stats);
+            setLoading(false);
+            cacheLoaded.current = true;
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load dashboard cache', err);
+      }
+    };
+    loadCachedData();
+  }, []);
+
+  const fetchDashboardData = useCallback(async () => {
     try {
       // 1. Get current user ID
       const userRes = await userAPI.getCurrentUser();
@@ -56,19 +93,19 @@ export const useDashboard = () => {
       }
       // Sort by viewer count descending, take top 5
       const topLive = [...live].sort((a, b) => b.stream.viewer_count - a.stream.viewer_count).slice(0, 5);
-      setLiveChannels(topLive);
-      setStats(prev => ({ ...prev, totalFollowed, liveCount: live.length }));
+      
+      // Update stats
+      const newStats = { totalFollowed, totalHoursWatched: 0, liveCount: live.length };
 
-      // 4. Fetch watch history (last 50, then take 5 most recent)
+      // 4. Fetch watch history (last 50)
       const historyRes = await historyAPI.get(50);
       const history = historyRes.status ? historyRes.data : [];
       const sortedHistory = [...history].sort((a, b) => 
         new Date(b.watchedAt).getTime() - new Date(a.watchedAt).getTime()
       );
       const recent = sortedHistory.slice(0, 5);
-      setRecentHistory(recent);
 
-      // 5. Compute total hours watched (sum durations in seconds, convert to hours)
+      // 5. Compute total hours watched
       let totalSeconds = 0;
       history.forEach(entry => {
         if (entry.duration && typeof entry.duration === 'number') {
@@ -76,27 +113,22 @@ export const useDashboard = () => {
         }
       });
       const totalHours = Math.round((totalSeconds / 3600) * 10) / 10;
-      setStats(prev => ({ ...prev, totalHoursWatched: totalHours }));
+      newStats.totalHoursWatched = totalHours;
 
-      // 6. Recommendations based on followed games
-      // Strategy: get distinct game_ids from live streams + followed channels' recent streams?
-      // Simpler: get top streams from games that the user follows (if any live)
+      // 6. Recommendations
       const followedGameIds = new Set<string>();
       for (const stream of liveStreams) {
         if (stream.game_id) followedGameIds.add(stream.game_id);
       }
-      // If no live streams, fallback to top games
       let gameIdArray = Array.from(followedGameIds);
       if (gameIdArray.length === 0) {
-        // No live streams among followed, just get top games overall
         const topGamesRes = await gamesAPI.getTopGames(5);
         if (topGamesRes.status && topGamesRes.data.data) {
           gameIdArray = topGamesRes.data.data.map(g => g.id);
         }
       }
-      // For each game id, fetch a few streams (limit 2 per game, max 6 recos)
       const recs: Recommendation[] = [];
-      for (const gameId of gameIdArray.slice(0, 3)) { // limit to 3 games
+      for (const gameId of gameIdArray.slice(0, 3)) {
         const streamsByGameRes = await gamesAPI.getStreamsByGame(gameId, 2);
         if (streamsByGameRes.status && streamsByGameRes.data.data) {
           for (const stream of streamsByGameRes.data.data) {
@@ -111,7 +143,6 @@ export const useDashboard = () => {
           }
         }
       }
-      // If still less than 3 recs, add some popular streams from top games
       if (recs.length < 3) {
         const topGamesRes = await gamesAPI.getTopGames(5);
         if (topGamesRes.status && topGamesRes.data.data) {
@@ -132,21 +163,43 @@ export const useDashboard = () => {
           }
         }
       }
-      setRecommendations(recs.slice(0, 6));
+      const finalRecs = recs.slice(0, 6);
+
+      // Update state with fresh data
+      setLiveChannels(topLive);
+      setRecommendations(finalRecs);
+      setRecentHistory(recent);
+      setStats(newStats);
+      setLoading(false);
+      setError(null);
+
+      // Save to cache
+      const cacheData: CachedDashboardData = {
+        liveChannels: topLive,
+        recommendations: finalRecs,
+        recentHistory: recent,
+        stats: newStats,
+      };
+      localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+      localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
 
     } catch (err: any) {
       setError(err.message || 'Failed to load dashboard');
       showError(err.message);
-    } finally {
       setLoading(false);
     }
   }, []);
 
+  // Fetch fresh data only if cache was not loaded (or always fetch in background)
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
   const refresh = useCallback(() => {
+    // Force refresh – clear cache and fetch fresh
+    localStorage.removeItem(CACHE_KEY);
+    localStorage.removeItem(CACHE_TIMESTAMP_KEY);
+    setLoading(true);
     fetchDashboardData();
   }, [fetchDashboardData]);
 
