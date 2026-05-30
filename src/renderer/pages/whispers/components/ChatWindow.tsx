@@ -45,9 +45,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipientName, recipientLogin, 
   };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-[#1f1f23] to-[#18181b]">
+    <div className="flex flex-col h-full">
       {/* Header with avatar */}
-      <div className="flex items-center gap-3 p-4 border-b border-[#2a2a2e] bg-[#1f1f23]/50 backdrop-blur-sm">
+      <div className="flex items-center gap-3 p-4 border-b border-[#2a2a2e] bg-gradient-to-r from-[#1f1f23] to-[#18181b]">
         {avatarUrl ? (
           <img src={avatarUrl} alt={recipientName} className="w-10 h-10 rounded-full object-cover ring-2 ring-[#9147ff]/30" />
         ) : (

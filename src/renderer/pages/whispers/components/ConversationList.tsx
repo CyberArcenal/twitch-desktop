@@ -36,13 +36,13 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, sele
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-[#2a2a2e]">
+      <div className="p-4 border-b border-[#2a2a2e] bg-[#1f1f23]/50">
         <h2 className="text-sm font-semibold text-white uppercase tracking-wider flex items-center gap-2">
           <MessageCircle className="w-4 h-4 text-[#9147ff]" /> Whispers
         </h2>
         <p className="text-xs text-[#adadb8] mt-1">Direct messages from other users</p>
       </div>
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-1">
         {conversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <User className="w-12 h-12 text-[#adadb8]/30 mb-2" />
@@ -50,7 +50,7 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, sele
             <p className="text-xs text-[#adadb8]/60">Start a conversation by whispering someone</p>
           </div>
         ) : (
-          <div className="divide-y divide-[#2a2a2e]">
+          <div className="space-y-1">
             {conversations.map((conv) => {
               const avatarUrl = avatars[conv.userId];
               const isSelected = selectedUserId === conv.userId;
@@ -59,18 +59,20 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, sele
                   key={conv.userId}
                   onClick={() => onSelect(conv)}
                   className={`
-                    group relative p-3 cursor-pointer transition-all duration-200
-                    ${isSelected ? 'bg-gradient-to-r from-[#9147ff]/10 to-transparent' : 'hover:bg-[#2a2a2e]/50'}
+                    group relative p-3 rounded-xl cursor-pointer transition-all duration-200
+                    ${isSelected 
+                      ? 'bg-gradient-to-r from-[#9147ff]/15 to-transparent border-l-4 border-l-[#9147ff]' 
+                      : 'hover:bg-[#2a2a2e]/50'
+                    }
                   `}
                 >
                   <div className="flex gap-3">
-                    {/* Avatar */}
                     <div className="flex-shrink-0">
                       {avatarUrl ? (
                         <img
                           src={avatarUrl}
                           alt={conv.userName}
-                          className="w-10 h-10 rounded-full object-cover ring-1 ring-[#9147ff]/30"
+                          className="w-10 h-10 rounded-full object-cover ring-2 ring-[#9147ff]/30"
                         />
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-[#2a2a2e] flex items-center justify-center">
@@ -78,7 +80,6 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, sele
                         </div>
                       )}
                     </div>
-                    {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-baseline">
                         <span className="font-semibold text-white truncate group-hover:text-[#9147ff] transition">
@@ -95,9 +96,6 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, sele
                     <div className="absolute top-3 right-3 bg-[#9147ff] text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-md">
                       {conv.unreadCount}
                     </div>
-                  )}
-                  {isSelected && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#9147ff] rounded-r-full" />
                   )}
                 </div>
               );

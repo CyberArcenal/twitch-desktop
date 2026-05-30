@@ -1,15 +1,15 @@
-// components/CenterPanel.tsx
+// components/MainVideoCard.tsx
 import React, { useState } from 'react';
 import { Edit3, Scissors, Users, Target, UsersRound } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
-interface CenterPanelProps {
+interface MainVideoCardProps {
   isLive: boolean;
   streamData: any;
   onRefresh: () => void;
 }
 
-const CenterPanel: React.FC<CenterPanelProps> = ({ isLive, streamData, onRefresh }) => {
+const MainVideoCard: React.FC<MainVideoCardProps> = ({ isLive, streamData, onRefresh }) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [title, setTitle] = useState(streamData?.title || '');
   const [category, setCategory] = useState(streamData?.game_name || '');
@@ -33,29 +33,29 @@ const CenterPanel: React.FC<CenterPanelProps> = ({ isLive, streamData, onRefresh
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#1f1f23] rounded-xl overflow-hidden">
-      {/* Top stats bar */}
-      <div className="grid grid-cols-4 gap-2 p-3 border-b border-[#2a2a2e]">
+    <div className="bg-[#1f1f23] rounded-xl overflow-hidden shadow-lg border border-[#2a2a2e] h-full flex flex-col">
+      {/* Stats row */}
+    <div className="grid grid-cols-4 gap-2 p-2 border-b border-[#2a2a2e]">
         <div className="text-center">
           <div className="text-[#adadb8] text-xs">Session Time</div>
-          <div className="text-white font-semibold">{isLive ? uptime : '00:00:00'}</div>
+          <div className="text-white font-semibold text-sm">{isLive ? uptime : '00:00:00'}</div>
         </div>
         <div className="text-center">
           <div className="text-[#adadb8] text-xs">Viewers</div>
           <div className="text-white font-semibold">{streamData?.viewer_count?.toLocaleString() || 0}</div>
         </div>
         <div className="text-center">
-          <div className="text-[#adadb8] text-xs">Followers</div>
-          <div className="text-white font-semibold">--</div>
-        </div>
-        <div className="text-center">
           <div className="text-[#adadb8] text-xs">Bitrate</div>
           <div className="text-white font-semibold">-- kbps</div>
         </div>
+        <div className="text-center">
+          <div className="text-[#adadb8] text-xs">Speed</div>
+          <div className="text-white font-semibold">--</div>
+        </div>
       </div>
 
-      {/* Stream preview */}
-      <div className="relative bg-black flex-1 min-h-[300px]">
+      {/* Video preview */}
+      <div className="relative bg-black flex-1 min-h-[250px]">
         {!isLive ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <div className="text-4xl font-bold text-[#adadb8] mb-2">OFFLINE</div>
@@ -69,32 +69,32 @@ const CenterPanel: React.FC<CenterPanelProps> = ({ isLive, streamData, onRefresh
         )}
       </div>
 
-      {/* Quick actions grid (2 rows, 3 columns) */}
+      {/* Action buttons row */}
       <div className="p-3 border-t border-[#2a2a2e]">
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2">
           <button
             onClick={() => setShowEditModal(true)}
-            className="flex items-center justify-center gap-2 bg-[#9147ff] px-3 py-2 rounded-lg hover:bg-[#772ce8] transition"
+            className="flex items-center justify-center gap-2 bg-[#9147ff] px-2 py-1.5 rounded-lg text-sm hover:bg-[#772ce8] transition"
           >
             <Edit3 className="w-4 h-4" /> Edit Stream Info
           </button>
-          <button disabled className="flex items-center justify-center gap-2 bg-[#2a2a2e] px-3 py-2 rounded-lg opacity-50 cursor-not-allowed">
+          <button disabled className="flex items-center justify-center gap-2 bg-[#2a2a2e] px-2 py-1.5 rounded-lg text-sm opacity-50 cursor-not-allowed">
             <Scissors className="w-4 h-4" /> Clip That
           </button>
-          <button className="flex items-center justify-center gap-2 bg-[#2a2a2e] px-3 py-2 rounded-lg hover:bg-[#3a3a4a] transition">
+          <button className="flex items-center justify-center gap-2 bg-[#2a2a2e] px-2 py-1.5 rounded-lg text-sm hover:bg-[#3a3a4a] transition">
             <Users className="w-4 h-4" /> Raid Channel
           </button>
-          <button className="flex items-center justify-center gap-2 bg-[#2a2a2e] px-3 py-2 rounded-lg hover:bg-[#3a3a4a] transition">
+          <button className="flex items-center justify-center gap-2 bg-[#2a2a2e] px-2 py-1.5 rounded-lg text-sm hover:bg-[#3a3a4a] transition">
             <UsersRound className="w-4 h-4" /> Stream Together
           </button>
-          <div className="bg-[#2a2a2e] rounded-lg opacity-30" /> {/* empty slot */}
-          <button className="flex items-center justify-center gap-2 bg-[#2a2a2e] px-3 py-2 rounded-lg hover:bg-[#3a3a4a] transition">
+          <div className="bg-[#2a2a2e] rounded-lg opacity-30" />
+          <button className="flex items-center justify-center gap-2 bg-[#2a2a2e] px-2 py-1.5 rounded-lg text-sm hover:bg-[#3a3a4a] transition">
             <Target className="w-4 h-4" /> Manage Goals
           </button>
         </div>
       </div>
 
-      {/* Edit modal (same as before) */}
+      {/* Edit modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-[#1f1f23] rounded-xl p-6 w-96">
@@ -126,4 +126,4 @@ const CenterPanel: React.FC<CenterPanelProps> = ({ isLive, streamData, onRefresh
   );
 };
 
-export default CenterPanel;
+export default MainVideoCard;

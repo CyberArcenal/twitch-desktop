@@ -55,7 +55,7 @@ const StreamPlayerPage: React.FC = () => {
       <div className="flex-1 flex flex-col justify-between min-w-0 overflow-y-auto">
         {/* Player container */}
         <div className="rounded-xl w-full shadow-2xl bg-black overflow-hidden">
-          <div className="relative w-full" style={{ aspectRatio: "16/9" }}>
+          <div className="relative w-full" style={{ aspectRatio: "16/8" }}>
             <Player
               ref={playerRef}
               channelName={stream.user_login}

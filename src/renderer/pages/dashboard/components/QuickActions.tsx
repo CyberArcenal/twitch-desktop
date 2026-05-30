@@ -18,7 +18,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({ onGoLive }) => {
           Go Live
         </Button>
       )}
-      <Button variant="secondary" size="sm" icon={Compass} onClick={() => navigate('/browse')}>
+      <Button variant="secondary" size="sm" icon={Compass} onClick={() => navigate('browse/categories')}>
         Browse Categories
       </Button>
       <Button variant="secondary" size="sm" icon={Search} onClick={() => navigate('/browse/live')}>
