@@ -157,7 +157,7 @@ Please make sure your code passes linting (`npm run lint`).
 
 ## 📄 License
 
-MIT © [CyberArcenal](https://github.com/CyberArcenal)
+Apache © [CyberArcenal](https://github.com/CyberArcenal)
 
 ---
 

@@ -1,5 +1,5 @@
 // src/renderer/pages/stream-manager/components/AutomationPanel.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Power, Scissors, Users, MessageCircle, Upload, Trash2, Play, Square } from 'lucide-react';
 
 interface AutomationLog {
@@ -14,7 +14,7 @@ interface AutomationPanelProps {
 }
 
 const AutomationPanel: React.FC<AutomationPanelProps> = ({ isLive }) => {
-  // Toggle states
+  // Toggle states – these will be synced with backend in a real implementation
   const [autoRaidEnabled, setAutoRaidEnabled] = useState(false);
   const [autoClipEnabled, setAutoClipEnabled] = useState(false);
   const [autoMessageEnabled, setAutoMessageEnabled] = useState(false);
@@ -23,44 +23,70 @@ const AutomationPanel: React.FC<AutomationPanelProps> = ({ isLive }) => {
   const [scripts, setScripts] = useState<{ name: string; enabled: boolean }[]>([]);
   const [scriptName, setScriptName] = useState('');
 
-  // Automation logs
+  // Automation logs – now received from backend
   const [logs, setLogs] = useState<AutomationLog[]>([]);
   const [automationRunning, setAutomationRunning] = useState(true);
 
-  // Helper to add a log entry
-  const addLog = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
+  // --- Listen for automation logs from backend ---
+  useEffect(() => {
+    const handleAutomationLog = (data: AutomationLog) => {
+      // Ensure the log has a timestamp; use current if missing
+      const logWithTimestamp = {
+        ...data,
+        timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
+      };
+      setLogs(prev => [logWithTimestamp, ...prev.slice(0, 49)]);
+    };
+
+    // Subscribe to the 'automation:log' event
+    window.backendAPI?.on?.('automation:log', handleAutomationLog);
+
+    // Optionally, request current logs from backend when panel mounts
+    // (if backend stores them, you could add a 'automation:getLogs' IPC)
+    // For now, just start fresh.
+
+    return () => {
+      window.backendAPI?.off?.('automation:log', handleAutomationLog);
+    };
+  }, []);
+
+  // Helper to add a local log (only for UI‑triggered actions, but they should go through backend)
+  const addLocalLog = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
     setLogs(prev => [{
       id: Date.now().toString(),
       timestamp: new Date(),
       message,
       type,
-    }, ...prev.slice(0, 49)]); // keep last 50 logs
+    }, ...prev.slice(0, 49)]);
   };
 
-  // Handle toggles (simulate API calls)
+  // Handle toggles – in a real app, these would call IPC to enable/disable
+  // and the backend would respond with a log event.
   const handleToggleAutoRaid = () => {
     const newState = !autoRaidEnabled;
     setAutoRaidEnabled(newState);
-    addLog(`Auto‑raid ${newState ? 'enabled' : 'disabled'}`, newState ? 'success' : 'info');
+    // Emulate backend response: in reality, send IPC and wait for event
+    addLocalLog(`Auto‑raid ${newState ? 'enabled' : 'disabled'}`, newState ? 'success' : 'info');
+    // TODO: send IPC to backend, e.g., window.backendAPI.automation({ method: 'toggleAutoRaid', enabled: newState })
   };
 
   const handleToggleAutoClip = () => {
     const newState = !autoClipEnabled;
     setAutoClipEnabled(newState);
-    addLog(`Auto‑clip ${newState ? 'enabled' : 'disabled'}`, newState ? 'success' : 'info');
+    addLocalLog(`Auto‑clip ${newState ? 'enabled' : 'disabled'}`, newState ? 'success' : 'info');
   };
 
   const handleToggleAutoMessage = () => {
     const newState = !autoMessageEnabled;
     setAutoMessageEnabled(newState);
-    addLog(`Auto‑message ${newState ? 'enabled' : 'disabled'}`, newState ? 'success' : 'info');
+    addLocalLog(`Auto‑message ${newState ? 'enabled' : 'disabled'}`, newState ? 'success' : 'info');
   };
 
-  // Script handling
+  // Script handling (local only; could be extended to backend)
   const handleAddScript = () => {
     if (!scriptName.trim()) return;
     setScripts(prev => [...prev, { name: scriptName.trim(), enabled: true }]);
-    addLog(`Custom script "${scriptName.trim()}" added`, 'success');
+    addLocalLog(`Custom script "${scriptName.trim()}" added`, 'success');
     setScriptName('');
   };
 
@@ -69,29 +95,32 @@ const AutomationPanel: React.FC<AutomationPanelProps> = ({ isLive }) => {
       i === index ? { ...s, enabled: !s.enabled } : s
     ));
     const script = scripts[index];
-    addLog(`Script "${script.name}" ${script.enabled ? 'disabled' : 'enabled'}`, 'info');
+    addLocalLog(`Script "${script.name}" ${script.enabled ? 'disabled' : 'enabled'}`, 'info');
   };
 
   const handleRemoveScript = (index: number) => {
     const script = scripts[index];
     setScripts(prev => prev.filter((_, i) => i !== index));
-    addLog(`Script "${script.name}" removed`, 'error');
+    addLocalLog(`Script "${script.name}" removed`, 'error');
   };
 
-  // Control buttons
+  // Control buttons – also should send IPC to backend
   const handleStartAutomation = () => {
     setAutomationRunning(true);
-    addLog('Automation system started', 'success');
+    addLocalLog('Automation system started', 'success');
+    // TODO: IPC call to start automation system
   };
 
   const handleStopAutomation = () => {
     setAutomationRunning(false);
-    addLog('Automation system stopped', 'error');
+    addLocalLog('Automation system stopped', 'error');
+    // TODO: IPC call to stop automation system
   };
 
   const handleResetLogs = () => {
     setLogs([]);
-    addLog('Automation logs cleared', 'info');
+    addLocalLog('Automation logs cleared', 'info');
+    // Optionally, also tell backend to clear its logs
   };
 
   return (
@@ -190,7 +219,7 @@ const AutomationPanel: React.FC<AutomationPanelProps> = ({ isLive }) => {
         </div>
       </div>
 
-      {/* Automation Logs */}
+      {/* Automation Logs – now updated via IPC callback */}
       <div className="flex-1 p-3 border-b border-[#2a2a2e] overflow-y-auto min-h-[150px]">
         <div className="flex justify-between items-center mb-2">
           <h4 className="text-xs font-medium text-[#adadb8] uppercase">Automation Logs</h4>

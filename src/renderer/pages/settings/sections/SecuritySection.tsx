@@ -7,6 +7,7 @@ import { userAPI, type TwitchUser } from '../../../api/core/user';
 import Button from '../../../components/UI/Button';
 import { dialogs } from '../../../utils/dialogs';
 import { showSuccess, showError } from '../../../utils/notification';
+import LoadingSpinner from '../../../components/Shared/LoadingSpinner';
 
 const SecuritySection: React.FC = () => {
   const navigate = useNavigate();
@@ -56,8 +57,8 @@ const SecuritySection: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#9147ff]" />
+         <div className="flex justify-center items-center h-full">
+        <LoadingSpinner size="medium" text="Loading stream data..." />
       </div>
     );
   }
