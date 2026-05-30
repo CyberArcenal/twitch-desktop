@@ -4,6 +4,7 @@ const { twitchAuthService } = require("./twitch-auth.service");
 const { CLIENT_ID, API_BASE } = require("../shared/config");
 const { logger } = require("../utils/logger");
 const { settingsService } = require("./settings.service");
+const { BrowserWindow } = require("electron");
 
 class TwitchApiService {
   // @ts-ignore
@@ -65,7 +66,9 @@ class TwitchApiService {
    */
   async getFollowedStreams(userId, limit = 100) {
     try {
-      logger.debug(`[TwitchApiService] getFollowedStreams called for user ${userId}`);
+      logger.debug(
+        `[TwitchApiService] getFollowedStreams called for user ${userId}`,
+      );
 
       const followedResponse = await this.getFollowedChannels(userId);
 
@@ -75,13 +78,16 @@ class TwitchApiService {
       }
 
       const broadcasterIds = followedResponse.data.map(
-        (/** @type {{ broadcaster_id: any; }} */ channel) => channel.broadcaster_id
+        (/** @type {{ broadcaster_id: any; }} */ channel) =>
+          channel.broadcaster_id,
       );
 
       const limitedIds = broadcasterIds.slice(0, Math.min(limit, 100));
       const streamsResponse = await this.getStreams(limitedIds);
 
-      logger.debug(`[TwitchApiService] Found ${streamsResponse?.data?.length || 0} live followed streams`);
+      logger.debug(
+        `[TwitchApiService] Found ${streamsResponse?.data?.length || 0} live followed streams`,
+      );
       return streamsResponse;
     } catch (error) {
       // @ts-ignore
@@ -166,7 +172,9 @@ class TwitchApiService {
    */
   async searchStreams(query, first = 20) {
     const channels = await this.searchChannels(query, first);
-    const channelIds = channels.data.map((/** @type {{ id: any; }} */ c) => c.id);
+    const channelIds = channels.data.map(
+      (/** @type {{ id: any; }} */ c) => c.id,
+    );
     if (channelIds.length === 0) return { data: [] };
     return this.getStreams(channelIds);
   }
@@ -188,33 +196,49 @@ class TwitchApiService {
   }
 
   /**
-   * Regenerate stream key (POST)
-   * Requires scope: channel:manage:broadcast
+   * Opens the Twitch Dashboard stream settings page where the user can manually
+   * regenerate their stream key. When the window is closed, sends an event to
+   * the main renderer to refresh the live status.
+   * @returns {Promise<{ status: boolean, message: string }>}
    */
   async regenerateStreamKey() {
     const userId = settingsService.get("twitch")?.userId;
     if (!userId) throw new Error("Not logged in");
 
-    const url = `${API_BASE}/streams/key`;
-    const token = twitchAuthService.getAccessToken();
+    const dashboardUrl = "https://dashboard.twitch.tv/settings/stream";
 
-    const response = await fetch(url, {
-      method: "POST",
-      // @ts-ignore
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Client-Id": CLIENT_ID,
-        "Content-Type": "application/json",
+    const keyWindow = new BrowserWindow({
+      width: 1024,
+      height: 768,
+      parent: BrowserWindow.getFocusedWindow(),
+      modal: false,
+      show: true,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
       },
-      body: JSON.stringify({ broadcaster_id: userId }),
     });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.message || "Failed to regenerate stream key");
-    }
+    // When the dashboard window is closed, notify the renderer to refresh
+    keyWindow.on("closed", () => {
+      // Send event to all renderer windows (similar to notification service)
+      const windows = BrowserWindow.getAllWindows();
+      windows.forEach((win) => {
+        if (!win.isDestroyed()) {
+          win.webContents.send("dashboard:closed", {
+            action: "refresh_live_status",
+          });
+        }
+      });
+    });
 
-    return response.json();
+    await keyWindow.loadURL(dashboardUrl);
+
+    return {
+      status: true,
+      message:
+        "Opened Twitch Dashboard. Please manually regenerate your stream key there.",
+    };
   }
 
   /**
@@ -259,8 +283,6 @@ class TwitchApiService {
     if (after) params.append("after", after);
     return this.fetchTwitch(`videos?${params}`);
   }
-
-  
 }
 
 const twitchApiService = new TwitchApiService();

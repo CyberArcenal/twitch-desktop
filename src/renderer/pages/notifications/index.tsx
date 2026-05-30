@@ -4,6 +4,7 @@ import { useNotifications } from './hooks/useNotifications';
 import NotificationItem from './components/NotificationItem';
 import EmptyState from './components/EmptyState';
 import Button from '../../components/UI/Button';
+import LoadingSpinner from '../../components/Shared/LoadingSpinner';
 
 const NotificationsPage: React.FC = () => {
   const {
@@ -20,8 +21,8 @@ const NotificationsPage: React.FC = () => {
 
   if (loading && notifications.length === 0) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--primary-color)]" />
+        <div className="flex justify-center items-center h-full">
+        <LoadingSpinner size="medium" text="Loading stream data..." />
       </div>
     );
   }

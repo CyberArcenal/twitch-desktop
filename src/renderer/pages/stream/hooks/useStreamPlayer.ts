@@ -4,14 +4,15 @@ import { useParams, useNavigate } from "react-router-dom";
 import { streamsAPI, type Stream } from "../../../api/core/streams";
 import { chatAPI } from "../../../api/core/chat";
 import { watchLaterAPI, type WatchLaterItem } from "../../../api/core/watch-later";
+import { historyAPI } from "../../../api/core/history";
 import { showSuccess, showError } from "../../../utils/notification";
 import type { PlayerRef } from "../components/Player";
 
 export const useStreamPlayer = () => {
   const { login } = useParams<{ login: string }>();
-  console.log("[useStreamPlayer] URL param login =", login);
-  
   const navigate = useNavigate();
+
+  // State declarations (always in same order)
   const [stream, setStream] = useState<Stream | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +20,9 @@ export const useStreamPlayer = () => {
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const playerRef = useRef<PlayerRef>(null);
+  const historyAddedRef = useRef(false);
 
+  // Fetch stream – this is a callback, not a hook
   const fetchStream = useCallback(async () => {
     if (!login) {
       setLoading(false);
@@ -40,10 +43,38 @@ export const useStreamPlayer = () => {
     }
   }, [login]);
 
+  // Effect 1: fetch stream on mount/login change
   useEffect(() => {
     fetchStream();
   }, [fetchStream]);
 
+  // Effect 2: add to history after 30 seconds (ONCE per stream)
+  useEffect(() => {
+    if (!stream) return;
+    const timer = setTimeout(async () => {
+      if (!historyAddedRef.current) {
+        try {
+          console.log('[WatchHistory] Adding stream:', stream.user_name);
+          await historyAPI.add({
+            type: 'stream',
+            channelName: stream.user_name,
+            vodId: null,
+            title: stream.title,
+            thumbnail: stream.thumbnail_url?.replace('{width}', '320').replace('{height}', '180'),
+            watchedAt: new Date().toISOString(),
+            duration: null,
+          });
+          historyAddedRef.current = true;
+          console.log('[WatchHistory] Added successfully');
+        } catch (err) {
+          console.error('[WatchHistory] Error:', err);
+        }
+      }
+    }, 30000);
+    return () => clearTimeout(timer);
+  }, [stream]); // Only depends on stream, no other changing values
+
+  // Effect 3: connect chat when player ready
   useEffect(() => {
     if (!isPlayerReady || !login) return;
     const connectChat = async () => {
@@ -60,6 +91,7 @@ export const useStreamPlayer = () => {
     };
   }, [isPlayerReady, login]);
 
+  // Helper functions
   const addToWatchLater = async () => {
     if (!stream) return;
     const item: Omit<WatchLaterItem, "addedAt"> = {

@@ -1,6 +1,6 @@
 // src/renderer/pages/stream/components/StreamInfoBar.tsx
 import React, { useState, useEffect } from 'react';
-import { Users, Gamepad2, Calendar, Heart, Bookmark, Share2, Check } from 'lucide-react';
+import { Users, Gamepad2, Calendar, Heart, Bookmark, Share2, Check, BookmarkCheck } from 'lucide-react';
 import type { Stream } from '../../../api/core/streams';
 import { followsAPI } from '../../../api/core/follows';
 import { watchLaterAPI, type WatchLaterItem } from '../../../api/core/watch-later';
@@ -14,34 +14,20 @@ interface StreamInfoBarProps {
 const StreamInfoBar: React.FC<StreamInfoBarProps> = ({ stream, onShare }) => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
+  const [isWatchLater, setIsWatchLater] = useState(false);
   const [isWatchLaterLoading, setIsWatchLaterLoading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string>('./icon.png');
 
-  // Fetch avatar – using Twitch API directly (bypass userAPI for now)
+  // Fetch avatar using userAPI instead of raw fetch for consistency
   useEffect(() => {
     const fetchAvatar = async () => {
       if (!stream.user_login) return;
-      console.log('[StreamInfoBar] Fetching avatar for:', stream.user_login);
       try {
-        // Use the Twitch API endpoint via your backend
-        const token = await window.backendAPI.auth?.({ method: 'getAccessToken' });
-        const clientId = import.meta.env.VITE_TWITCH_CLIENT_ID;
-        const response = await fetch(
-          `https://api.twitch.tv/helix/users?login=${stream.user_login}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${token?.data}`,
-              'Client-Id': clientId,
-            },
-          }
-        );
-        const data = await response.json();
-        const user = data.data?.[0];
-        if (user?.profile_image_url) {
-          setAvatarUrl(user.profile_image_url);
-          console.log('[StreamInfoBar] Avatar set from API');
-        } else {
-          console.warn('[StreamInfoBar] No avatar from API, using fallback');
+        // Use existing userAPI or a dedicated avatar endpoint
+        const { userAPI } = await import('../../../api/core/user');
+        const res = await userAPI.getUserByName(stream.user_login);
+        if (res.status && res.data?.profile_image_url) {
+          setAvatarUrl(res.data.profile_image_url);
         }
       } catch (err) {
         console.error('[StreamInfoBar] Avatar fetch error:', err);
@@ -54,10 +40,8 @@ const StreamInfoBar: React.FC<StreamInfoBarProps> = ({ stream, onShare }) => {
   useEffect(() => {
     const checkFollowStatus = async () => {
       if (!stream.user_id) return;
-      console.log('[StreamInfoBar] Checking follow status for:', stream.user_id);
       try {
         const res = await followsAPI.isFollowing(stream.user_id);
-        console.log('[StreamInfoBar] isFollowing response:', res);
         if (res.status) setIsFollowing(res.data);
       } catch (err) {
         console.error('[StreamInfoBar] Failed to check follow status', err);
@@ -66,15 +50,29 @@ const StreamInfoBar: React.FC<StreamInfoBarProps> = ({ stream, onShare }) => {
     checkFollowStatus();
   }, [stream.user_id]);
 
+  // Check if stream is already in Watch Later
+  useEffect(() => {
+    const checkWatchLater = async () => {
+      try {
+        const res = await watchLaterAPI.getAll();
+        if (res.status && res.data) {
+          const exists = res.data.some(item => item.id === `stream_${stream.user_id}`);
+          setIsWatchLater(exists);
+        }
+      } catch (err) {
+        console.error('[StreamInfoBar] Failed to check watch later', err);
+      }
+    };
+    checkWatchLater();
+  }, [stream.user_id]);
+
   // Follow/Unfollow handler
   const handleFollowToggle = async () => {
-    console.log('[StreamInfoBar] Follow button CLICKED! Current isFollowing:', isFollowing);
     if (isFollowLoading) return;
     setIsFollowLoading(true);
     try {
       if (isFollowing) {
         const res = await followsAPI.unfollow(stream.user_id);
-        console.log('[StreamInfoBar] Unfollow response:', res);
         if (res.status) {
           setIsFollowing(false);
           showSuccess(`Unfollowed ${stream.user_name}`);
@@ -83,7 +81,6 @@ const StreamInfoBar: React.FC<StreamInfoBarProps> = ({ stream, onShare }) => {
         }
       } else {
         const res = await followsAPI.follow(stream.user_id);
-        console.log('[StreamInfoBar] Follow response:', res);
         if (res.status) {
           setIsFollowing(true);
           showSuccess(`Now following ${stream.user_name}`);
@@ -92,7 +89,6 @@ const StreamInfoBar: React.FC<StreamInfoBarProps> = ({ stream, onShare }) => {
         }
       }
     } catch (err: any) {
-      console.error('[StreamInfoBar] Follow error:', err);
       showError(err.message);
     } finally {
       setIsFollowLoading(false);
@@ -100,21 +96,36 @@ const StreamInfoBar: React.FC<StreamInfoBarProps> = ({ stream, onShare }) => {
   };
 
   const handleWatchLater = async () => {
-    console.log('[StreamInfoBar] Watch Later button clicked');
     if (isWatchLaterLoading) return;
     setIsWatchLaterLoading(true);
     try {
-      const item: Omit<WatchLaterItem, 'addedAt'> = {
-        id: `stream_${stream.user_id}`,
-        type: 'stream',
-        channelName: stream.user_name,
-        title: stream.title,
-        thumbnail: stream.thumbnail_url,
-        url: `/stream/${stream.user_login}`,
-      };
-      const res = await watchLaterAPI.add(item);
-      if (res.status) showSuccess('Added to Watch Later');
-      else showError(res.message);
+      if (isWatchLater) {
+        // Remove from watch later
+        const id = `stream_${stream.user_id}`;
+        const res = await watchLaterAPI.remove(id);
+        if (res.status) {
+          setIsWatchLater(false);
+          showSuccess('Removed from Watch Later');
+        } else {
+          showError(res.message);
+        }
+      } else {
+        const item: Omit<WatchLaterItem, 'addedAt'> = {
+          id: `stream_${stream.user_id}`,
+          type: 'stream',
+          channelName: stream.user_name,
+          title: stream.title,
+          thumbnail: stream.thumbnail_url,
+          url: `/stream/${stream.user_login}`,
+        };
+        const res = await watchLaterAPI.add(item);
+        if (res.status) {
+          setIsWatchLater(true);
+          showSuccess('Added to Watch Later');
+        } else {
+          showError(res.message);
+        }
+      }
     } catch (err: any) {
       showError(err.message);
     } finally {
@@ -123,7 +134,6 @@ const StreamInfoBar: React.FC<StreamInfoBarProps> = ({ stream, onShare }) => {
   };
 
   const handleShare = () => {
-    console.log('[StreamInfoBar] Share button clicked');
     if (onShare) {
       onShare();
     } else {
@@ -134,35 +144,40 @@ const StreamInfoBar: React.FC<StreamInfoBarProps> = ({ stream, onShare }) => {
   };
 
   return (
-    <div className="bg-[#1f1f23] border-b border-[#2a2a2e] px-4 py-3">
+    <div className="bg-gradient-to-r from-[#1f1f23] to-[#18181b] border-b border-[#2a2a2e] px-5 py-4 shadow-lg">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         {/* Left: Avatar + Title + Stats */}
-        <div className="flex items-start gap-3 flex-1 min-w-0">
-          <img
-            src={avatarUrl}
-            className="w-10 h-10 rounded-full flex-shrink-0"
-            alt={stream.user_name}
-            referrerPolicy="no-referrer"
-            onError={(e) => {
-              console.warn('[StreamInfoBar] Avatar failed, using fallback');
-              (e.target as HTMLImageElement).src = './icon.png';
-            }}
-          />
+        <div className="flex items-start gap-4 flex-1 min-w-0">
+          <div className="relative">
+            <img
+              src={avatarUrl}
+              className="w-12 h-12 rounded-full object-cover ring-2 ring-[#9147ff]/50 shadow-md"
+              alt={stream.user_name}
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = './icon.png';
+              }}
+            />
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-[#1f1f23]"></div>
+          </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-white font-bold text-lg truncate">{stream.title}</h2>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-[#adadb8]">
-              <div className="flex items-center gap-1">
+            <h2 className="text-white font-bold text-xl leading-tight truncate">{stream.title}</h2>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 mt-1.5 text-sm">
+              <div className="flex items-center gap-1.5">
                 <span className="font-semibold text-white">{stream.user_name}</span>
+                {stream.user_name?.toLowerCase() === 'twitch' && (
+                  <span className="bg-[#9147ff] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">Verified</span>
+                )}
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5 text-[#adadb8]">
                 <Users className="w-4 h-4" />
                 <span>{stream.viewer_count?.toLocaleString()} viewers</span>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5 text-[#adadb8]">
                 <Gamepad2 className="w-4 h-4" />
                 <span>{stream.game_name}</span>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5 text-[#adadb8]">
                 <Calendar className="w-4 h-4" />
                 <span>Live since {new Date(stream.started_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
@@ -170,36 +185,43 @@ const StreamInfoBar: React.FC<StreamInfoBarProps> = ({ stream, onShare }) => {
           </div>
         </div>
 
-        {/* Right: Action buttons */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <button
-            onClick={handleFollowToggle}
-            disabled={isFollowLoading}
-            className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-colors flex items-center gap-2 hidden ${
-              isFollowing
-                ? 'bg-[#3a3a3e] text-white hover:bg-[#4a4a4e]'
-                : 'bg-[#9147ff] text-white hover:bg-[#772ce8]'
-            } disabled:opacity-50 cursor-pointer`}
-          >
-            {isFollowing ? <Check className="w-4 h-4" /> : <Heart className="w-4 h-4" />}
-            {isFollowing ? 'Following' : 'Follow'}
-          </button>
+        {/* Right: Action buttons with improved design */}
+        <div className="flex items-center gap-3 flex-shrink-0">
+          {/* Follow button – only show if not current user's own stream */}
+          {stream.user_login !== undefined && (
+            <button
+              onClick={handleFollowToggle}
+              disabled={isFollowLoading}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold text-sm transition-all duration-200 shadow-md hidden ${
+                isFollowing
+                  ? 'bg-[#3a3a4a] text-white hover:bg-[#4a4a5a]'
+                  : 'bg-[#9147ff] text-white hover:bg-[#772ce8]'
+              } disabled:opacity-50`}
+            >
+              {isFollowing ? <Check className="w-4 h-4" /> : <Heart className="w-4 h-4" />}
+              {isFollowing ? 'Following' : 'Follow'}
+            </button>
+          )}
 
           <button
             onClick={handleWatchLater}
             disabled={isWatchLaterLoading}
-            className="p-1.5 hover:bg-[#2a2a2e] rounded-md transition-colors disabled:opacity-50 cursor-pointer"
-            title="Watch Later"
+            className={`p-2 rounded-full transition-all duration-200 ${
+              isWatchLater
+                ? 'bg-[#9147ff] text-white shadow-lg shadow-[#9147ff]/30'
+                : 'bg-[#2a2a2e] text-[#adadb8] hover:bg-[#3a3a4a]'
+            } disabled:opacity-50`}
+            title={isWatchLater ? 'Remove from Watch Later' : 'Save to Watch Later'}
           >
-            <Bookmark className="w-5 h-5 text-[#adadb8]" />
+            {isWatchLater ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
           </button>
 
           <button
             onClick={handleShare}
-            className="p-1.5 hover:bg-[#2a2a2e] rounded-md transition-colors cursor-pointer"
+            className="p-2 rounded-full bg-[#2a2a2e] text-[#adadb8] hover:bg-[#3a3a4a] transition-all duration-200"
             title="Share"
           >
-            <Share2 className="w-5 h-5 text-[#adadb8]" />
+            <Share2 className="w-5 h-5" />
           </button>
         </div>
       </div>

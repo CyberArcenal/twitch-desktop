@@ -22,6 +22,8 @@ import BrowseCategoriesPage from "../pages/categories";
 import HelpPage from "../pages/help";
 import StreamPlayerPage from "../pages/stream";
 import GamePage from "../pages/browse/game";
+import StreamManagerPage from "../pages/stream-manager";
+import SettingsPage from "../pages/settings";
 
 // ─── Generic Placeholder (for pages not yet built) ─────────────
 const PlaceholderPage = ({
@@ -150,14 +152,12 @@ function App() {
         />
 
         {/* Settings section */}
-        <Route path="settings/stream" element={<StreamSettingsPage />} />
-        <Route path="settings/chat" element={<ChatSettingsPage />} />
-        <Route path="settings/notifications" element={<NotificationSettingsPage />} />
-        <Route path="settings/security" element={<SecuritySettingsPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
 
         {/* Channel page */}
         <Route path="/channel/:login" element={<ChannelPage />} />
         <Route path="browse/game/:gameId" element={<GamePage />} />
+        <Route path="/stream-manager" element={<StreamManagerPage />} />
 
         {/* 404 – must be last */}
         <Route

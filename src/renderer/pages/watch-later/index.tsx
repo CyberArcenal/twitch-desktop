@@ -4,6 +4,7 @@ import { RefreshCw, Trash2, Plus } from 'lucide-react';
 import { useWatchLater } from './hooks/useWatchLater';
 import SortableWatchLaterList from './components/SortableWatchLaterList';
 import Button from '../../components/UI/Button';
+import LoadingSpinner from '../../components/Shared/LoadingSpinner';
 
 const WatchLaterPage: React.FC = () => {
   const {
@@ -19,17 +20,17 @@ const WatchLaterPage: React.FC = () => {
 
   if (loading && items.length === 0) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--primary-color)]"></div>
+      <div className="flex justify-center items-center h-full">
+        <LoadingSpinner size="medium" text="Loading your watch later list..." />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center py-12">
+      <div className="text-center py-12 bg-[#1f1f23] rounded-xl m-6">
         <p className="text-red-500 mb-2">Failed to load Watch Later list</p>
-        <p className="text-sm text-[var(--text-secondary)]">{error}</p>
+        <p className="text-sm text-[#adadb8]">{error}</p>
         <Button variant="primary" size="sm" className="mt-4" onClick={refresh}>
           Retry
         </Button>
@@ -42,8 +43,8 @@ const WatchLaterPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--sidebar-text)]">Watch Later</h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">
+          <h1 className="text-2xl font-bold text-white tracking-tight">Watch Later</h1>
+          <p className="text-sm text-[#adadb8] mt-1">
             {items.length} {items.length === 1 ? 'item' : 'items'} saved
           </p>
         </div>
@@ -53,18 +54,27 @@ const WatchLaterPage: React.FC = () => {
               Clear All
             </Button>
           )}
-          <Button variant="ghost" size="sm" onClick={refresh} icon={RefreshCw} disabled={loading}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={refresh}
+            icon={RefreshCw}
+            disabled={loading}
+            className="bg-[#2a2a2e] hover:bg-[#3a3a4a] text-white border-none"
+          >
             Refresh
           </Button>
         </div>
       </div>
 
-      {/* Empty state */}
+      {/* Empty state – glassmorphic */}
       {items.length === 0 && !loading && (
-        <div className="text-center py-12 bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)]">
-          <Plus className="w-12 h-12 mx-auto mb-3 text-[var(--text-tertiary)]" />
-          <p className="text-lg font-medium text-[var(--sidebar-text)]">Your Watch Later list is empty</p>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">
+        <div className="text-center py-16 bg-gradient-to-br from-[#1f1f23] to-[#18181b] rounded-2xl border border-[#2a2a2e] shadow-xl">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#0e0e10] flex items-center justify-center">
+            <Plus className="w-8 h-8 text-[#adadb8]" />
+          </div>
+          <p className="text-lg font-semibold text-white">Your Watch Later list is empty</p>
+          <p className="text-sm text-[#adadb8] mt-1 max-w-md mx-auto">
             Add streams, VODs, or clips from anywhere in the app to watch later.
           </p>
         </div>

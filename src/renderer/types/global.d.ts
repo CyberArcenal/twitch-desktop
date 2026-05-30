@@ -46,6 +46,7 @@ declare global {
 
       notifyAppReady?: () => void;
       openExternal: (url: string) => Promise<void>;
+      openDashboard: (url: string) => Promise<void>;
 
       appInfo: () => Promise<any>;
 

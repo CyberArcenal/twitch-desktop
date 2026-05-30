@@ -1,0 +1,92 @@
+name: Build & Release Twitch Desktop
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install system dependencies (Linux only)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential python3 \
+            libusb-1.0-0-dev libudev-dev \
+            libgbm1 libxkbcommon-x11-0 \
+            libgtk-3-0 libnss3 libatk-bridge2.0-0
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Rebuild native modules
+        run: npx electron-builder install-app-deps
+
+      - name: Create .env file
+        run: |
+          echo "VITE_TWITCH_CLIENT_ID=${{ secrets.TWITCH_CLIENT_ID }}" >> .env
+          echo "TWITCH_CLIENT_ID=${{ secrets.TWITCH_CLIENT_ID }}" >> .env
+          echo "TWITCH_CLIENT_SECRET=${{ secrets.TWITCH_CLIENT_SECRET }}" >> .env
+
+      - name: Build and package (macOS)
+        if: runner.os == 'macOS'
+        run: npm run build
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false   # disables code signing in CI
+
+      - name: Build and package (Windows / Linux)
+        if: runner.os != 'macOS'
+        run: npm run build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: twitch-desktop-${{ runner.os }}
+          path: release/
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure (debug)
+        run: find artifacts -type f
+
+      - name: Upload installers to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/**/*Setup*.exe
+            artifacts/**/*.dmg
+            artifacts/**/*.AppImage
+            artifacts/**/*.deb
+            artifacts/**/latest*.yml
+            artifacts/**/latest*.yaml
+          prerelease: true
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

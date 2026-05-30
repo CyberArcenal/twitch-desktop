@@ -57,6 +57,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onGoLive }) => {
       category: "core",
     },
     {
+      path: "/stream-manager",
+      name: "Stream Manager",
+      icon: Tv,
+      category: "core",
+    },
+    {
       path: "/following",
       name: "Following",
       icon: Users,
@@ -102,12 +108,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onGoLive }) => {
       name: "Settings",
       icon: Settings,
       category: "system",
-      children: [
-        { path: "/settings/stream", name: "Stream Key", icon: MonitorPlay },
-        { path: "/settings/chat", name: "Chat & Filters", icon: ListChecks },
-        { path: "/settings/notifications", name: "Notifications", icon: Bell },
-        { path: "/settings/security", name: "Security", icon: LogOut },
-      ],
     },
   ];
 

@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "description": "A modern Twitch desktop client built with Electron, React, TypeScript, and Vite",
-  "main": "dist-electron/main.js",
+  "main": "src/main/index.js",
   "author": {
     "name": "CyberArcenal",
     "email": "cyberarcenal1@gmail.com"
@@ -13,10 +13,10 @@
     "url": "https://github.com/CyberArcenal/twitch-desktop.git"
   },
   "files": [
-  "dist-electron/**/*",
-  "dist-renderer/**/*",
-  "build/**/*"
-],
+    "dist-electron/**/*",
+    "dist-renderer/**/*",
+    "build/**/*"
+  ],
   "build": {
     "appId": "com.CyberArcenal.twitchdesktop",
     "productName": "Twitch Desktop",
@@ -81,6 +81,8 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.12.0",
+    "react-virtuoso": "^4.18.7",
+    "react-window": "^2.2.7",
     "reflect-metadata": "^0.2.2",
     "tailwind-merge": "^3.4.0"
   },
@@ -91,6 +93,7 @@
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
+    "@types/react-window": "^1.8.8",
     "@vitejs/plugin-react": "^5.1.1",
     "concurrently": "^9.2.1",
     "cors": "^2.8.6",

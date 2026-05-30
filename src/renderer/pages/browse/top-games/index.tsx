@@ -1,12 +1,14 @@
 // src/renderer/pages/browse/top-games/index.tsx
-import React, { useEffect } from 'react';
-import { RefreshCw, Loader2 } from 'lucide-react';
-import { useTopGames } from './hooks/useTopGames';
-import TopGameCard from './components/TopGameCard';
-import Button from '../../../components/UI/Button';
+import React, { useEffect } from "react";
+import { RefreshCw, Loader2 } from "lucide-react";
+import { useTopGames } from "./hooks/useTopGames";
+import TopGameCard from "./components/TopGameCard";
+import Button from "../../../components/UI/Button";
+import LoadingSpinner from "../../../components/Shared/LoadingSpinner";
 
 const TopGamesPage: React.FC = () => {
-  const { games, loading, loadingMore, error, hasMore, loadInitial, loadMore } = useTopGames();
+  const { games, loading, loadingMore, error, hasMore, loadInitial, loadMore } =
+    useTopGames();
 
   useEffect(() => {
     loadInitial();
@@ -14,8 +16,8 @@ const TopGamesPage: React.FC = () => {
 
   if (loading && games.length === 0) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--primary-color)]"></div>
+      <div className="flex justify-center items-center h-full">
+        <LoadingSpinner size="medium" text="Loading stream data..." />
       </div>
     );
   }
@@ -25,7 +27,12 @@ const TopGamesPage: React.FC = () => {
       <div className="text-center py-12">
         <p className="text-red-500 mb-2">Failed to load top games</p>
         <p className="text-sm text-[var(--text-secondary)]">{error}</p>
-        <Button variant="primary" size="sm" className="mt-4" onClick={loadInitial}>
+        <Button
+          variant="primary"
+          size="sm"
+          className="mt-4"
+          onClick={loadInitial}
+        >
           Retry
         </Button>
       </div>
@@ -37,12 +44,20 @@ const TopGamesPage: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--sidebar-text)]">Top Games</h1>
+          <h1 className="text-2xl font-bold text-[var(--sidebar-text)]">
+            Top Games
+          </h1>
           <p className="text-sm text-[var(--text-secondary)] mt-1">
             Ranked by current live viewers • {games.length} games loaded
           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={loadInitial} icon={RefreshCw} disabled={loading}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={loadInitial}
+          icon={RefreshCw}
+          disabled={loading}
+        >
           Refresh
         </Button>
       </div>
@@ -65,7 +80,7 @@ const TopGamesPage: React.FC = () => {
             icon={loadingMore ? Loader2 : undefined}
             iconPosition="left"
           >
-            {loadingMore ? 'Loading...' : 'Load More Games'}
+            {loadingMore ? "Loading..." : "Load More Games"}
           </Button>
         </div>
       )}

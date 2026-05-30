@@ -173,7 +173,7 @@ class TwitchAuthService {
     });
     logger.debug("[Auth] Auth window created");
 
-    const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=${SCOPES}&code_challenge_method=S256&code_challenge=${codeChallenge}&force_verify=true&prompt=consent`;
+    const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=${encodeURIComponent(SCOPES)}&code_challenge_method=S256&code_challenge=${codeChallenge}&force_verify=true&prompt=consent`;
 
     let resolved = false;
     // @ts-ignore
@@ -262,6 +262,23 @@ class TwitchAuthService {
         }
       });
     });
+  }
+
+  /**
+   * @param {any} accessToken
+   */
+  async checkTokenScopes(accessToken) {
+    const url = "https://id.twitch.tv/oauth2/validate";
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const data = await res.json();
+    const required = ["chat:read", "chat:edit"];
+    const missing = required.filter((s) => !data.scopes.includes(s));
+    if (missing.length) {
+      logger.warn(`Token missing scopes: ${missing.join(", ")}`);
+      // Trigger re‑login
+    }
   }
 
   // @ts-ignore

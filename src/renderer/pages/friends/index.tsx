@@ -4,14 +4,15 @@ import { RefreshCw, Users } from 'lucide-react';
 import { useFriends } from './hooks/useFriends';
 import FriendCard from './components/FriendCard';
 import Button from '../../components/UI/Button';
+import LoadingSpinner from '../../components/Shared/LoadingSpinner';
 
 const FriendsPage: React.FC = () => {
   const { friends, loading, error, refresh, unfollow } = useFriends();
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--primary-color)]"></div>
+     <div className="flex justify-center items-center h-full">
+        <LoadingSpinner size="medium" text="Loading stream data..." />
       </div>
     );
   }

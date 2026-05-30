@@ -18,6 +18,7 @@ const url = require("url");
 const { notificationService } = require("../services/notification.service");
 const { playerService } = require("../services/player.service");
 // @ts-ignore
+// @ts-ignore
 const { settingsService } = require("../services/settings.service");
 const { twitchAuthService } = require("../services/twitch-auth.service");
 const { twitchApiService } = require("../services/twitch-api.service");
@@ -128,6 +129,7 @@ function setupGlobalErrorHandlers() {
   });
 
   // @ts-ignore
+  // @ts-ignore
   app.on("renderer-process-crashed", (event, webContents, killed) => {
     log(
       LogLevel.ERROR,
@@ -144,25 +146,33 @@ function setupGlobalErrorHandlers() {
  */
 function getIconPath() {
   const platform = process.platform;
-  const iconFile = {
-    win32: 'icon.ico',
-    darwin: 'icon.icns',
-    linux: 'icon.png'
-  }[platform] || 'icon.png';
+  const iconFile =
+    // @ts-ignore
+    {
+      win32: "icon.ico",
+      darwin: "icon.icns",
+      linux: "icon.png",
+    }[platform] || "icon.png";
 
   // Listahan ng mga posibleng lokasyon (sa order)
   const possiblePaths = [
     // Development mode
-    path.resolve(__dirname, '..', '..', 'build', iconFile),
-    path.resolve(__dirname, '..', '..', 'resources', 'build', iconFile),
+    path.resolve(__dirname, "..", "..", "build", iconFile),
+    path.resolve(__dirname, "..", "..", "resources", "build", iconFile),
     // Production (packaged)
-    path.join(process.resourcesPath, 'build', iconFile),
-    path.join(process.resourcesPath, 'icon.ico'), // kung direktang nasa resources
-    path.join(process.resourcesPath, '..', 'app.asar.unpacked', 'build', iconFile),
-    path.join(app.getAppPath(), 'build', iconFile),
-    path.join(app.getAppPath(), 'icon.ico'),
+    path.join(process.resourcesPath, "build", iconFile),
+    path.join(process.resourcesPath, "icon.ico"), // kung direktang nasa resources
+    path.join(
+      process.resourcesPath,
+      "..",
+      "app.asar.unpacked",
+      "build",
+      iconFile,
+    ),
+    path.join(app.getAppPath(), "build", iconFile),
+    path.join(app.getAppPath(), "icon.ico"),
     // Fallback: kung nasa root ng app
-    path.join(path.dirname(app.getPath('exe')), iconFile),
+    path.join(path.dirname(app.getPath("exe")), iconFile),
   ];
 
   for (const iconPath of possiblePaths) {
@@ -172,7 +182,7 @@ function getIconPath() {
     }
   }
 
-  console.warn('[Icon] No icon file found, using default Electron icon');
+  console.warn("[Icon] No icon file found, using default Electron icon");
   return null;
 }
 
@@ -370,10 +380,45 @@ function registerIpcHandlers() {
   }));
 
   // @ts-ignore
+  // @ts-ignore
   ipcMain.on("app:open-external", (event, url) => {
     if (typeof url === "string" && url.startsWith("http")) {
       shell.openExternal(url).catch(console.error);
     }
+  });
+
+
+  // Open Twitch dashboard inside an Electron window (reusing main window's session)
+  // @ts-ignore
+  ipcMain.handle("open-dashboard", async (event, dashboardUrl) => {
+    if (!dashboardUrl || typeof dashboardUrl !== "string") {
+      throw new Error("Invalid dashboard URL");
+    }
+    const dashboardWindow = new BrowserWindow({
+      width: 1200,
+      height: 800,
+      // @ts-ignore
+      parent: mainWindow,
+      modal: false,
+      show: true,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        // Reuse the same session so user stays logged in
+        session: mainWindow?.webContents.session,
+      },
+    });
+    await dashboardWindow.loadURL(dashboardUrl);
+
+    dashboardWindow.on("closed", () => {
+      // Notify all renderer windows that the dashboard was closed
+      BrowserWindow.getAllWindows().forEach((win) => {
+        if (!win.isDestroyed() && win !== dashboardWindow) {
+          win.webContents.send("dashboard:closed");
+        }
+      });
+    });
+    return true;
   });
 
   // Load modular IPC handlers (all core modules)
@@ -447,6 +492,7 @@ app.on("activate", async () => {
   if (BrowserWindow.getAllWindows().length === 0) await startup();
 });
 
+// @ts-ignore
 // @ts-ignore
 app.on("before-quit", (event) => {
   if (isQuitting) return;

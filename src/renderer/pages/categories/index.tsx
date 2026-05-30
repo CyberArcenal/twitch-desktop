@@ -4,14 +4,15 @@ import { RefreshCw } from 'lucide-react';
 import { useBrowseCategories } from './hooks/useBrowseCategories';
 import CategoryCard from './components/CategoryCard';
 import Button from '../../components/UI/Button';
+import LoadingSpinner from '../../components/Shared/LoadingSpinner';
 
 const BrowseCategoriesPage: React.FC = () => {
   const { games, loading, error, total, refresh } = useBrowseCategories();
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--primary-color)]"></div>
+     <div className="flex justify-center items-center h-full">
+        <LoadingSpinner size="medium" text="Loading stream data..." />
       </div>
     );
   }

@@ -6,6 +6,7 @@ import ClipCard from './components/ClipCard';
 import PeriodSelector from './components/PeriodSelector';
 import ClipModal from './components/ClipModal';
 import Button from '../../../components/UI/Button';
+import LoadingSpinner from '../../../components/Shared/LoadingSpinner';
 
 const PopularClipsPage: React.FC = () => {
   const {
@@ -26,8 +27,8 @@ const PopularClipsPage: React.FC = () => {
 
   if (loading && clips.length === 0) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--primary-color)]"></div>
+     <div className="flex justify-center items-center h-full">
+        <LoadingSpinner size="medium" text="Loading stream data..." />
       </div>
     );
   }

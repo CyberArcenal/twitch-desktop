@@ -1,14 +1,16 @@
 // src/renderer/pages/stream/components/ChatSidebar/hooks/useChatMessages.ts
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { chatAPI, type ChatMessage } from '../../../../../api/core/chat';
 import { userAPI } from '../../../../../api/core/user';
+
+const MAX_MESSAGES = 500; // keep only last 500 messages to prevent memory bloat
 
 export const useChatMessages = (isConnected: boolean) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [currentUser, setCurrentUser] = useState<string>('You');
 
-  // Fetch logged-in user
+  // Fetch logged-in user once
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
@@ -23,16 +25,23 @@ export const useChatMessages = (isConnected: boolean) => {
     fetchCurrentUser();
   }, []);
 
-  // Listen for incoming messages
+  // Listen for incoming messages – with limit
   useEffect(() => {
     if (!isConnected) return;
 
     const handleMessage = (msg: ChatMessage) => {
-      setMessages(prev => [...prev, msg]);
+      setMessages(prev => {
+        const newMessages = [...prev, msg];
+        // Keep only last MAX_MESSAGES
+        if (newMessages.length > MAX_MESSAGES) {
+          return newMessages.slice(-MAX_MESSAGES);
+        }
+        return newMessages;
+      });
     };
     const handleConnected = () => console.log('Chat connected');
     const handleUserJoined = (data: any) => {
-      setMessages(prev => [...prev, {
+      const systemMsg: ChatMessage = {
         id: `system-${Date.now()}`,
         channel: data.channel,
         user: 'system',
@@ -41,7 +50,12 @@ export const useChatMessages = (isConnected: boolean) => {
         emotes: null,
         parsedMessage: undefined,
         timestamp: new Date().toISOString(),
-      }]);
+      };
+      setMessages(prev => {
+        const newMessages = [...prev, systemMsg];
+        if (newMessages.length > MAX_MESSAGES) return newMessages.slice(-MAX_MESSAGES);
+        return newMessages;
+      });
     };
 
     window.backendAPI?.on?.('chat:message', handleMessage);
@@ -55,36 +69,45 @@ export const useChatMessages = (isConnected: boolean) => {
     };
   }, [isConnected]);
 
-  // Auto-scroll
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  // Auto-scroll – use requestAnimationFrame to avoid layout thrashing
+  const scrollToBottom = useCallback(() => {
+    if (messagesEndRef.current) {
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      });
+    }
+  }, []);
 
-  // Send message with optional reply ID
-  const sendMessage = async (text: string, replyToId?: string): Promise<boolean> => {
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
+
+  const sendMessage = useCallback(async (text: string, replyToId?: string): Promise<boolean> => {
     if (!text.trim()) return false;
     try {
       await chatAPI.send(text, replyToId);
-
-      // Optimistically add user's own message
       const localMessage: ChatMessage = {
-          id: `local-${Date.now()}`,
-          channel: '',
-          user: currentUser,
-          message: text,
-          badges: null,
-          emotes: null,
-          timestamp: new Date().toISOString(),
-          replyParentMsgId: replyToId,
-          parsedMessage: undefined
+        id: `local-${Date.now()}`,
+        channel: '',
+        user: currentUser,
+        message: text,
+        badges: null,
+        emotes: null,
+        timestamp: new Date().toISOString(),
+        replyParentMsgId: replyToId,
+        parsedMessage: undefined,
       };
-      setMessages(prev => [...prev, localMessage]);
+      setMessages(prev => {
+        const newMessages = [...prev, localMessage];
+        if (newMessages.length > MAX_MESSAGES) return newMessages.slice(-MAX_MESSAGES);
+        return newMessages;
+      });
       return true;
     } catch (err) {
       console.error(err);
       return false;
     }
-  };
+  }, [currentUser]);
 
   return { messages, messagesEndRef, sendMessage };
 };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import type { ChatMessage } from '../../../../api/core/chat';
 
 interface ChatMessageItemProps {
@@ -47,17 +47,19 @@ const formatTime = (timestamp: string) => {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
-const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, onReplyClick, onMentionClick }) => {
-  const handleReplyClick = () => {
+const ChatMessageItem: React.FC<ChatMessageItemProps> = memo(({ message, onReplyClick, onMentionClick }) => {
+  const handleReplyClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     onReplyClick(message.id);
   };
 
-  const handleMentionClick = () => {
+  const handleMentionClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     onMentionClick(message.user);
   };
 
   return (
-    <div className="group relative flex flex-col text-sm leading-relaxed hover:bg-[#2a2a2e]/30 px-1 py-0.5 rounded transition-colors message-enter">
+    <div className="group relative flex flex-col text-sm leading-relaxed hover:bg-[#2a2a2e]/30 px-1 py-1 rounded transition-colors message-enter">
       {/* Main message row */}
       <div className="flex items-start gap-1">
         <span className="font-semibold text-white flex-shrink-0">{message.user}:</span>
@@ -69,20 +71,26 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, onReplyClick
         </div>
       </div>
 
-      {/* Hover actions row */}
-      <div className="absolute left-0 -bottom-5 z-10 flex gap-2 items-center opacity-0 group-hover:opacity-100 transition-opacity bg-[#9147ff] text-white text-xs rounded-md px-2 py-1 shadow-md">
-        <button onClick={handleMentionClick} className="hover:underline">
+      {/* Hover actions row – inside the same container, below the text */}
+      <div className="mt-1 flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={handleMentionClick}
+          className="text-xs text-[#adadb8] hover:text-[#9147ff] transition-colors"
+        >
           Mention
         </button>
-        <span className="text-white/50">•</span>
-        <button onClick={handleReplyClick} className="hover:underline">
+        <button
+          onClick={handleReplyClick}
+          className="text-xs text-[#adadb8] hover:text-[#9147ff] transition-colors"
+        >
           Reply
         </button>
-        <span className="text-white/50 ml-1">•</span>
-        <span className="text-white/70 text-xs ml-1">{formatTime(message.timestamp)}</span>
+        <span className="text-xs text-[#adadb8]/60">{formatTime(message.timestamp)}</span>
       </div>
     </div>
   );
-};
+});
+
+ChatMessageItem.displayName = 'ChatMessageItem';
 
 export default ChatMessageItem;

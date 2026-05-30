@@ -1,22 +1,41 @@
 // src/renderer/pages/dashboard/index.tsx
-import React from 'react';
-import { RefreshCw } from 'lucide-react';
-import { useDashboard } from './hooks/useDashboard';
-import DashboardWidget from './components/DashboardWidget';
-import LiveChannelCard from './components/LiveChannelCard';
-import RecommendationCard from './components/RecommendationCard';
-import RecentWatchedItem from './components/RecentWatchedItem';
-import StatsCard from './components/StatsCard';
-import QuickActions from './components/QuickActions';
-import Button from '../../components/UI/Button';
+import React, { useMemo } from "react";
+import { RefreshCw } from "lucide-react";
+import { useDashboard } from "./hooks/useDashboard";
+import DashboardWidget from "./components/DashboardWidget";
+import LiveChannelCard from "./components/LiveChannelCard";
+import RecommendationCard from "./components/RecommendationCard";
+import RecentWatchedItem from "./components/RecentWatchedItem";
+import StatsCard from "./components/StatsCard";
+import QuickActions from "./components/QuickActions";
+import Button from "../../components/UI/Button";
+import LoadingSpinner from "../../components/Shared/LoadingSpinner";
 
 const DashboardPage: React.FC = () => {
-  const { loading, error, liveChannels, recommendations, recentHistory, stats, refresh } = useDashboard();
+  const {
+    loading,
+    error,
+    liveChannels,
+    recommendations,
+    recentHistory,
+    stats,
+    refresh,
+  } = useDashboard();
+
+  // Deduplicate recommendations by ID (in case API returns duplicates)
+  const uniqueRecommendations = useMemo(() => {
+    const seen = new Set<string>();
+    return recommendations.filter(rec => {
+      if (seen.has(rec.id)) return false;
+      seen.add(rec.id);
+      return true;
+    });
+  }, [recommendations]);
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--primary-color)]"></div>
+      <div className="flex justify-center items-center h-full">
+        <LoadingSpinner size="medium" text="Loading stream data..." />
       </div>
     );
   }
@@ -37,7 +56,9 @@ const DashboardPage: React.FC = () => {
     <div className="p-4 md:p-6 mx-auto m-1">
       {/* Header with refresh button */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-[var(--sidebar-text)]">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-[var(--sidebar-text)]">
+          Dashboard
+        </h1>
         <Button variant="ghost" size="sm" onClick={refresh} icon={RefreshCw}>
           Refresh
         </Button>
@@ -51,35 +72,53 @@ const DashboardPage: React.FC = () => {
       {/* Quick Actions */}
       <div className="mb-6">
         <DashboardWidget title="Quick Actions">
-          <QuickActions onGoLive={() => console.log('Go Live clicked')} />
+          <QuickActions onGoLive={() => console.log("Go Live clicked")} />
         </DashboardWidget>
       </div>
 
-      {/* Main grid: 3 columns on large screens */}
+      {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column: Currently Live */}
-        <DashboardWidget title="Currently Live" action={liveChannels.length > 0 && <span className="text-xs text-red-500">{liveChannels.length} live</span>}>
+        <DashboardWidget
+          title="Currently Live"
+          action={
+            liveChannels.length > 0 && (
+              <span className="text-xs text-red-500">
+                {liveChannels.length} live
+              </span>
+            )
+          }
+        >
           {liveChannels.length === 0 ? (
-            <p className="text-sm text-[var(--text-secondary)] text-center py-4">No followed channels are live right now.</p>
+            <p className="text-sm text-[var(--text-secondary)] text-center py-4">
+              No followed channels are live right now.
+            </p>
           ) : (
             <div className="space-y-2">
-              {liveChannels.map(channel => (
-                <LiveChannelCard key={channel.broadcaster_id} channel={channel} />
+              {liveChannels.map((channel) => (
+                <LiveChannelCard
+                  key={channel.broadcaster_id}
+                  channel={channel}
+                />
               ))}
               {liveChannels.length < stats.liveCount && (
-                <p className="text-xs text-center text-[var(--text-tertiary)] mt-2">+{stats.liveCount - liveChannels.length} more live</p>
+                <p className="text-xs text-center text-[var(--text-tertiary)] mt-2">
+                  +{stats.liveCount - liveChannels.length} more live
+                </p>
               )}
             </div>
           )}
         </DashboardWidget>
 
-        {/* Middle column: Recommendations */}
+        {/* Middle column: Recommendations (fixed duplicate key) */}
         <DashboardWidget title="Recommended for You">
-          {recommendations.length === 0 ? (
-            <p className="text-sm text-[var(--text-secondary)] text-center py-4">No recommendations available.</p>
+          {uniqueRecommendations.length === 0 ? (
+            <p className="text-sm text-[var(--text-secondary)] text-center py-4">
+              No recommendations available.
+            </p>
           ) : (
             <div className="grid grid-cols-2 gap-3">
-              {recommendations.map(rec => (
+              {uniqueRecommendations.map((rec) => (
                 <RecommendationCard key={rec.id} rec={rec} />
               ))}
             </div>
@@ -89,10 +128,12 @@ const DashboardPage: React.FC = () => {
         {/* Right column: Recently Watched */}
         <DashboardWidget title="Recently Watched">
           {recentHistory.length === 0 ? (
-            <p className="text-sm text-[var(--text-secondary)] text-center py-4">No watch history yet.</p>
+            <p className="text-sm text-[var(--text-secondary)] text-center py-4">
+              No watch history yet.
+            </p>
           ) : (
             <div className="space-y-2">
-              {recentHistory.map(entry => (
+              {recentHistory.map((entry) => (
                 <RecentWatchedItem key={entry.id} entry={entry} />
               ))}
             </div>

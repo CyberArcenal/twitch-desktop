@@ -7,6 +7,7 @@ import ClipsTab from './components/ClipsTab';
 import AboutTab from './components/AboutTab';
 import type { Clip } from '../../api/core/clips';
 import ClipModal from '../browse/clips/components/ClipModal';
+import LoadingSpinner from '../../components/Shared/LoadingSpinner';
 
 const ChannelPage: React.FC = () => {
   const { user, isFollowing, liveStream, recentVideos, clips, loading, activeTab, setActiveTab, toggleFollow } = useChannel();
@@ -14,8 +15,8 @@ const ChannelPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--primary-color)]"></div>
+      <div className="flex justify-center items-center h-full">
+        <LoadingSpinner size="medium" text="Loading stream data..." />
       </div>
     );
   }

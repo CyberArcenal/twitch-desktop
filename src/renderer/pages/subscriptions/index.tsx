@@ -4,14 +4,15 @@ import { RefreshCw, Users } from 'lucide-react';
 import { useSubscriptions } from './hooks/useSubscriptions';
 import SubscriberCard from './components/SubscriberCard';
 import Button from '../../components/UI/Button';
+import LoadingSpinner from '../../components/Shared/LoadingSpinner';
 
 const SubscriptionsPage: React.FC = () => {
   const { subscribers, loading, error, total, refresh } = useSubscriptions();
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--primary-color)]"></div>
+     <div className="flex justify-center items-center h-full">
+        <LoadingSpinner size="medium" text="Loading stream data..." />
       </div>
     );
   }

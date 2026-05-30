@@ -1,4 +1,6 @@
-import React, { type RefObject } from 'react';
+// src/renderer/pages/stream/components/ChatSidebar/ChatMessageList.tsx
+import React, { useRef, useEffect } from 'react';
+import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import ChatMessageItem from './ChatMessageItem';
 import type { ChatMessage } from '../../../../api/core/chat';
 
@@ -6,38 +8,55 @@ interface ChatMessageListProps {
   messages: ChatMessage[];
   filterMessage: (msg: string) => boolean;
   isConnected: boolean;
-  messagesEndRef: RefObject<HTMLDivElement | null>;
   onReplyClick: (messageId: string) => void;
   onMentionClick: (username: string) => void;
+  autoScrollPaused: boolean;
 }
 
 const ChatMessageList: React.FC<ChatMessageListProps> = ({
   messages,
   filterMessage,
   isConnected,
-  messagesEndRef,
   onReplyClick,
   onMentionClick,
+  autoScrollPaused,
 }) => {
+  const virtuosoRef = useRef<VirtuosoHandle>(null);
   const filteredMessages = messages.filter(msg => filterMessage(msg.message));
+  const prevLengthRef = useRef(filteredMessages.length);
+
+  // Auto-scroll to bottom only when NOT paused
+  useEffect(() => {
+    if (!autoScrollPaused && filteredMessages.length > prevLengthRef.current && virtuosoRef.current) {
+      virtuosoRef.current.scrollToIndex({
+        index: filteredMessages.length - 1,
+        behavior: 'smooth',
+      });
+    }
+    prevLengthRef.current = filteredMessages.length;
+  }, [filteredMessages.length, autoScrollPaused]);
+
+  if (!isConnected) {
+    return <div className="text-center text-[#adadb8] text-sm py-4">Connecting to chat...</div>;
+  }
+
+  if (filteredMessages.length === 0) {
+    return <div className="text-center text-[#adadb8] text-sm py-4">No messages yet</div>;
+  }
 
   return (
-    <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-2 space-y-1 custom-scrollbar">
-      {!isConnected && (
-        <p className="text-center text-[#adadb8] text-sm py-4">
-          Connecting to chat...
-        </p>
-      )}
-      {filteredMessages.map((msg, idx) => (
+    <Virtuoso
+      ref={virtuosoRef}
+      data={filteredMessages}
+      itemContent={(index, msg) => (
         <ChatMessageItem
-          key={idx}
           message={msg}
           onReplyClick={onReplyClick}
           onMentionClick={onMentionClick}
         />
-      ))}
-      <div ref={messagesEndRef} />
-    </div>
+      )}
+      style={{ height: '100%' }}
+    />
   );
 };
 

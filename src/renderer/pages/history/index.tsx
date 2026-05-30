@@ -7,6 +7,7 @@ import HistoryTable from './components/HistoryTable';
 import SearchBar from './components/SearchBar';
 import BulkActions from './components/BulkActions';
 import Button from '../../components/UI/Button';
+import LoadingSpinner from '../../components/Shared/LoadingSpinner';
 
 const WatchHistoryPage: React.FC = () => {
   const navigate = useNavigate();
@@ -39,8 +40,8 @@ const WatchHistoryPage: React.FC = () => {
 
   if (loading && entries.length === 0) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--primary-color)]"></div>
+       <div className="flex justify-center items-center h-full">
+        <LoadingSpinner size="medium" text="Loading stream data..." />
       </div>
     );
   }

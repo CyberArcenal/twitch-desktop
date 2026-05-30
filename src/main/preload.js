@@ -30,13 +30,15 @@ contextBridge.exposeInMainWorld("backendAPI", {
   predictions: (payload) => ipcRenderer.invoke("predictions", payload),
   search: (payload) => ipcRenderer.invoke("search", payload),
   streams: (payload) => ipcRenderer.invoke("streams", payload),
-  watchLater: (payload) => ipcRenderer.invoke('watch-later', payload),
-  whisper: (payload) => ipcRenderer.invoke('whisper', payload),
-  notificationStore: (payload) => ipcRenderer.invoke('notification-store', payload),
-  streamSettings: (payload) => ipcRenderer.invoke('stream-settings', payload),
+  watchLater: (payload) => ipcRenderer.invoke("watch-later", payload),
+  whisper: (payload) => ipcRenderer.invoke("whisper", payload),
+  notificationStore: (payload) =>
+    ipcRenderer.invoke("notification-store", payload),
+  streamSettings: (payload) => ipcRenderer.invoke("stream-settings", payload),
 
-  openExternal: (url) => ipcRenderer.invoke("open-external", url),
-  appInfo: () => ipcRenderer.invoke('app:get-info'),
+  openExternal: (url) => ipcRenderer.invoke("app: open-external", url),
+  openDashboard: (url) => ipcRenderer.invoke("open-dashboard", url),
+  appInfo: () => ipcRenderer.invoke("app:get-info"),
   // Event listeners
   on: (channel, callback) => {
     const newCallback = (_, data) => callback(data);

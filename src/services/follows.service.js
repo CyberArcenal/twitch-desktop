@@ -70,28 +70,40 @@ class FollowsService {
     return result;
   }
 
-  /**
-   * @param {any} userId
-   */
-  // @ts-ignore
-  async getFollowers(userId, after = null) {
-    const { API_BASE, CLIENT_ID } = require("../shared/config");
-    const token = settingsService.get("twitch").accessToken;
-    if (!token) throw new Error("Not authenticated");
-    const url = `${API_BASE}/users/follows?to_id=${userId}&first=100`;
-    const response = await fetch(url, {
-      // @ts-ignore
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Client-Id": CLIENT_ID,
-      },
-    });
-    if (!response.ok) {
-      throw new Error("Failed to fetch followers");
-    }
-    const data = await response.json();
-    return data; // { data: [], pagination: {} }
+/**
+ * Get followers of a channel (users who follow the broadcaster)
+ * @param {string} broadcasterId - The ID of the broadcaster whose followers to fetch
+ * @param {string|null} after - Pagination cursor
+ * @returns {Promise<{ data: Array, pagination: object }>}
+ */
+async getFollowers(broadcasterId, after = null) {
+  const token = settingsService.get("twitch").accessToken;
+  if (!token) throw new Error("Not authenticated");
+  const { API_BASE, CLIENT_ID } = require("../shared/config");
+
+  const params = new URLSearchParams({
+    broadcaster_id: broadcasterId,
+    first: "100",
+  });
+  if (after) params.append("after", after);
+
+  const url = `${API_BASE}/channels/followers?${params.toString()}`;
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Client-Id": CLIENT_ID,
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("[FollowsService] getFollowers error:", response.status, errorText);
+    throw new Error(`Failed to fetch followers: ${response.status}`);
   }
+
+  const data = await response.json();
+  return data; // { data: [], pagination: { cursor } }
+}
 
   /**
    * @param {any} broadcasterId
