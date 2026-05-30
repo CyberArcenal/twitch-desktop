@@ -1,5 +1,9 @@
 # 🎮 Twitch Desktop
 
+<p align="center">
+  <img src="https://github.com/CyberArcenal/twitch-desktop/blob/main/screenshots/thumbnail.png?raw=true" width="45%" />
+</p>
+
 [![GitHub Release](https://img.shields.io/github/v/release/CyberArcenal/twitch-desktop?style=flat-square)](https://github.com/CyberArcenal/twitch-desktop/releases)
 [![Electron](https://img.shields.io/badge/Electron-40.x-47848F?style=flat-square&logo=electron)](https://www.electronjs.org/)
 [![React](https://img.shields.io/badge/React-19.x-61DAFB?style=flat-square&logo=react)](https://reactjs.org/)
@@ -29,7 +33,9 @@ Watch streams, chat, manage your follows, and get desktop notifications – all 
 
 ## 🖼️ Screenshots
 
-> *Screenshots will be added soon.*
+![Dashboard](https://github.com/CyberArcenal/twitch-desktop/blob/main/screenshots/ss4.png?raw=true)
+![Stream-Manager](https://github.com/CyberArcenal/twitch-desktop/blob/main/screenshots/ss3.png?raw=true)
+![Live Channels](https://github.com/CyberArcenal/twitch-desktop/blob/main/screenshots/ss1.png?raw=true)
 
 ---
 
