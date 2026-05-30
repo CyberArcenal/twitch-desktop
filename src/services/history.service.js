@@ -1,6 +1,7 @@
 // src/main/services/history.service.js
 //@ts-check
 const Store = require('electron-store');
+const { logger } = require("../utils/logger");
 
 const HISTORY_KEY = 'watchHistory';
 const MAX_HISTORY_SIZE = 500;
@@ -8,6 +9,7 @@ const MAX_HISTORY_SIZE = 500;
 class HistoryService {
   constructor() {
     this.store = new Store({ name: 'history' });
+    logger.debug("[HistoryService] Constructor - store initialized");
   }
 
   /**
@@ -23,9 +25,9 @@ class HistoryService {
    * @returns {Object} The saved entry with id and timestamp
    */
   addToHistory(entry) {
+    logger.info(`[HistoryService] addToHistory called for ${entry.type}: ${entry.channelName}`);
     const history = this._getHistoryArray();
 
-    // Generate unique ID
     const id = `${entry.type}_${entry.type === 'stream' ? entry.channelName : entry.vodId}_${Date.now()}`;
     const watchedAt = entry.watchedAt ? new Date(entry.watchedAt) : new Date();
 
@@ -40,83 +42,93 @@ class HistoryService {
       duration: entry.duration || null,
     };
 
-    // Add to beginning of array (most recent first)
+    // @ts-ignore
     history.unshift(newEntry);
-
-    // Trim to max size
+    // @ts-ignore
     if (history.length > MAX_HISTORY_SIZE) {
+      // @ts-ignore
+      const removed = history.length - MAX_HISTORY_SIZE;
+      // @ts-ignore
       history.length = MAX_HISTORY_SIZE;
+      logger.debug(`[HistoryService] Trimmed ${removed} old entries`);
     }
 
     this.store.set(HISTORY_KEY, history);
+    // @ts-ignore
+    logger.info(`[HistoryService] Added entry id=${id}, total now ${history.length}`);
     return newEntry;
   }
 
   /**
    * Get watch history, most recent first
    * @param {number} limit - Max number of entries to return (default 50)
-   * @returns {Array} Array of history entries
    */
   getHistory(limit = 50) {
     const history = this._getHistoryArray();
-    return history.slice(0, Math.min(limit, history.length));
+    // @ts-ignore
+    const result = history.slice(0, Math.min(limit, history.length));
+    logger.debug(`[HistoryService] getHistory(limit=${limit}) - returning ${result.length} entries`);
+    return result;
   }
 
-  /**
-   * Clear all watch history
-   */
   clearHistory() {
+    logger.warn("[HistoryService] Clearing all watch history");
     this.store.delete(HISTORY_KEY);
   }
 
   /**
-   * Remove a specific entry by its ID
-   * @param {string} id - Entry ID (from addToHistory)
-   * @returns {boolean} True if removed, false if not found
+   * @param {any} id
    */
   removeFromHistory(id) {
+    logger.info(`[HistoryService] removeFromHistory called for id=${id}`);
     const history = this._getHistoryArray();
+    // @ts-ignore
     const initialLength = history.length;
-    const filtered = history.filter(entry => entry.id !== id);
-    if (filtered.length === initialLength) return false;
+    // @ts-ignore
+    const filtered = history.filter((/** @type {{ id: any; }} */ entry) => entry.id !== id);
+    if (filtered.length === initialLength) {
+      logger.warn(`[HistoryService] Entry with id=${id} not found`);
+      return false;
+    }
     this.store.set(HISTORY_KEY, filtered);
+    logger.info(`[HistoryService] Removed entry ${id}, remaining ${filtered.length}`);
     return true;
   }
 
   /**
-   * Remove all entries for a specific channel
-   * @param {string} channelName - Channel name
-   * @returns {number} Number of entries removed
+   * @param {any} channelName
    */
   removeChannelHistory(channelName) {
+    logger.info(`[HistoryService] removeChannelHistory for ${channelName}`);
     const history = this._getHistoryArray();
-    const filtered = history.filter(entry => entry.channelName !== channelName);
+    // @ts-ignore
+    const filtered = history.filter((/** @type {{ channelName: any; }} */ entry) => entry.channelName !== channelName);
+    // @ts-ignore
     const removed = history.length - filtered.length;
     if (removed > 0) {
       this.store.set(HISTORY_KEY, filtered);
+      logger.info(`[HistoryService] Removed ${removed} entries for channel ${channelName}`);
+    } else {
+      logger.debug(`[HistoryService] No entries found for channel ${channelName}`);
     }
     return removed;
   }
 
   /**
-   * Check if a stream/VOD is already in history (to avoid duplicates)
-   * @param {string} type - 'stream' or 'vod'
-   * @param {string} identifier - channelName for stream, vodId for VOD
-   * @returns {boolean}
+   * @param {string} type
+   * @param {any} identifier
    */
   existsInHistory(type, identifier) {
     const history = this._getHistoryArray();
-    if (type === 'stream') {
-      return history.some(e => e.type === 'stream' && e.channelName === identifier);
-    } else {
-      return history.some(e => e.type === 'vod' && e.vodId === identifier);
-    }
+    const exists = type === 'stream'
+      // @ts-ignore
+      ? history.some((/** @type {{ type: string; channelName: any; }} */ e) => e.type === 'stream' && e.channelName === identifier)
+      // @ts-ignore
+      : history.some((/** @type {{ type: string; vodId: any; }} */ e) => e.type === 'vod' && e.vodId === identifier);
+    logger.debug(`[HistoryService] existsInHistory(${type}, ${identifier}): ${exists}`);
+    return exists;
   }
 
-  /**
-   * Internal helper: get history array from store, empty if none
-   * @private
-   */
   _getHistoryArray() {
     return this.store.get(HISTORY_KEY, []);
   }

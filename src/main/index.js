@@ -1,5 +1,7 @@
-// src/main/index.js – Twitch Desktop (aligned with Collectly structure)
 //@ts-check
+
+// src/main/index.js – Twitch Desktop (aligned with Collectly structure)
+
 /**
  * @file Main entry point for Twitch Desktop
  * @version 1.0.0
@@ -17,8 +19,6 @@ const url = require("url");
 // ===================== SERVICES =====================
 const { notificationService } = require("../services/notification.service");
 const { playerService } = require("../services/player.service");
-// @ts-ignore
-// @ts-ignore
 const { settingsService } = require("../services/settings.service");
 const { twitchAuthService } = require("../services/twitch-auth.service");
 const { twitchApiService } = require("../services/twitch-api.service");
@@ -61,13 +61,13 @@ const LogLevel = {
 };
 
 /**
- * Enhanced logging utility
+ * Enhanced logging utility with file writing
  * @param {string} level - Log level (use LogLevel constants)
  * @param {string} message - Log message
  * @param {any} [data] - Optional data
- * @param {boolean} [writeToFile=false] - Write to log file (production only)
+ * @param {boolean} [writeToFile=true] - Write to log file (always true for critical events)
  */
-async function log(level, message, data = null, writeToFile = false) {
+async function log(level, message, data = null, writeToFile = true) {
   const timestamp = new Date().toISOString();
   const prefix = `[${timestamp}] [${APP_CONFIG.appName} ${level}]`;
   const logMessage = `${prefix} ${message}`;
@@ -90,8 +90,8 @@ async function log(level, message, data = null, writeToFile = false) {
     console.dir(data, { depth: 2, colors: APP_CONFIG.isDev });
   }
 
-  // Write to log file in production if requested
-  if (writeToFile && !APP_CONFIG.isDev) {
+  // Write to log file in production or if forced (always true now)
+  if (writeToFile) {
     try {
       const logDir = path.join(APP_CONFIG.userDataPath, "logs");
       await fs.mkdir(logDir, { recursive: true });
@@ -106,6 +106,39 @@ async function log(level, message, data = null, writeToFile = false) {
     }
   }
 }
+
+// ===================== FILE LOGGING SETUP =====================
+const logFilePath = path.join(
+  APP_CONFIG.userDataPath,
+  "logs",
+  `twitch-${new Date().toISOString().split("T")[0]}.log`,
+);
+let logStream = null;
+
+async function ensureLogDir() {
+  const logDir = path.dirname(logFilePath);
+  await fs.mkdir(logDir, { recursive: true });
+}
+
+async function writeToLogFile(message) {
+  try {
+    await ensureLogDir();
+    await fs.appendFile(logFilePath, message + "\n");
+  } catch (err) {
+    // Ignore write errors
+  }
+}
+
+// Override the existing log function to also write to file
+const originalLog = log;
+global.log = async (level, message, data = null, writeToFile = true) => {
+  await originalLog(level, message, data, writeToFile);
+  if (writeToFile) {
+    const timestamp = new Date().toISOString();
+    const line = `[${timestamp}] [${APP_CONFIG.appName} ${level}] ${message}${data ? " " + JSON.stringify(data) : ""}`;
+    await writeToLogFile(line);
+  }
+};
 
 // ===================== ERROR HANDLING =====================
 function setupGlobalErrorHandlers() {
@@ -128,8 +161,6 @@ function setupGlobalErrorHandlers() {
     log(LogLevel.ERROR, "Unhandled Rejection:", reason, true);
   });
 
-  // @ts-ignore
-  // @ts-ignore
   app.on("renderer-process-crashed", (event, webContents, killed) => {
     log(
       LogLevel.ERROR,
@@ -147,21 +178,17 @@ function setupGlobalErrorHandlers() {
 function getIconPath() {
   const platform = process.platform;
   const iconFile =
-    // @ts-ignore
     {
       win32: "icon.ico",
       darwin: "icon.icns",
       linux: "icon.png",
     }[platform] || "icon.png";
 
-  // Listahan ng mga posibleng lokasyon (sa order)
   const possiblePaths = [
-    // Development mode
     path.resolve(__dirname, "..", "..", "build", iconFile),
     path.resolve(__dirname, "..", "..", "resources", "build", iconFile),
-    // Production (packaged)
     path.join(process.resourcesPath, "build", iconFile),
-    path.join(process.resourcesPath, "icon.ico"), // kung direktang nasa resources
+    path.join(process.resourcesPath, iconFile),
     path.join(
       process.resourcesPath,
       "..",
@@ -170,19 +197,17 @@ function getIconPath() {
       iconFile,
     ),
     path.join(app.getAppPath(), "build", iconFile),
-    path.join(app.getAppPath(), "icon.ico"),
-    // Fallback: kung nasa root ng app
+    path.join(app.getAppPath(), iconFile),
     path.join(path.dirname(app.getPath("exe")), iconFile),
   ];
 
   for (const iconPath of possiblePaths) {
     if (fsSync.existsSync(iconPath)) {
-      console.log(`[Icon] Found at: ${iconPath}`);
+      log(LogLevel.DEBUG, `Icon found at: ${iconPath}`);
       return iconPath;
     }
   }
-
-  console.warn("[Icon] No icon file found, using default Electron icon");
+  log(LogLevel.WARN, "No icon file found, using default Electron icon");
   return null;
 }
 
@@ -191,8 +216,8 @@ function getIconPath() {
  */
 async function createSplashWindow() {
   splashWindow = new BrowserWindow({
-    width: 500, // was 400
-    height: 400, // was 300
+    width: 500,
+    height: 400,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
@@ -220,31 +245,48 @@ async function createSplashWindow() {
     `);
   }
   splashWindow.show();
-  log(LogLevel.INFO, "Splash window created");
+  log(LogLevel.INFO, "Splash window created", null, true);
 }
 
 /**
  * Get main window URL (dev server or production file)
  */
 async function getMainWindowUrl() {
-  if (APP_CONFIG.isDev) return "http://localhost:5173";
-  const indexPath = path.join(
-    __dirname,
-    "..",
-    "..",
-    "dist-renderer",
-    "index.html",
+  if (APP_CONFIG.isDev) {
+    const devServerUrl = "http://localhost:5173";
+    log(LogLevel.INFO, `Development mode - URL: ${devServerUrl}`);
+    return devServerUrl;
+  }
+
+  // Production paths to check
+  const possiblePaths = [
+    path.join(__dirname, "..", "..", "dist", "renderer", "index.html"),
+    path.join(process.resourcesPath, "app.asar.unpacked", "dist", "index.html"),
+    path.join(process.resourcesPath, "dist", "index.html"),
+    path.join(app.getAppPath(), "dist", "index.html"),
+  ];
+
+  for (const filePath of possiblePaths) {
+    try {
+      await fs.access(filePath);
+      const fileUrl = url.pathToFileURL(filePath).href;
+      log(LogLevel.INFO, `Found production build at: ${filePath}`);
+      return fileUrl;
+    } catch {
+      continue;
+    }
+  }
+
+  throw new Error(
+    `Production build not found. Checked paths:\n${possiblePaths.join("\n")}`,
   );
-  if (!fsSync.existsSync(indexPath))
-    throw new Error(`Renderer build not found at ${indexPath}`);
-  return url.pathToFileURL(indexPath).href;
 }
 
 /**
  * Create main application window
  */
 async function createMainWindow() {
-  log(LogLevel.INFO, "Creating main window...");
+  log(LogLevel.INFO, "Creating main window...", null, true);
 
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width: screenWidth, height: screenHeight } =
@@ -265,14 +307,14 @@ async function createMainWindow() {
     frame: true,
     titleBarStyle: "default",
     backgroundColor: "#0e0e10",
-    // @ts-ignore
     icon: getIconPath(),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       nodeIntegration: false,
       contextIsolation: true,
-      webSecurity: false,
-      sandbox: false,
+      webSecurity: !APP_CONFIG.isDev,
+      sandbox: !APP_CONFIG.isDev,
+      enableRemoteModule: false,
     },
   });
 
@@ -281,43 +323,103 @@ async function createMainWindow() {
 
   const appUrl = await getMainWindowUrl();
   await mainWindow.loadURL(appUrl);
+  log(LogLevel.INFO, "Main window URL loaded", { url: appUrl }, true);
 
-  // Show only after renderer signals ready
-  mainWindow.once("ready-to-show", () => {
-    const timeoutId = setTimeout(() => {
-      log(LogLevel.WARN, "Renderer-ready timeout – showing main window anyway");
-      if (splashWindow && !splashWindow.isDestroyed()) splashWindow.close();
-      // @ts-ignore
+  // --- Splash closing logic with robust fallbacks ---
+  let splashClosed = false;
+
+  const closeSplash = () => {
+    if (splashClosed) return;
+    splashClosed = true;
+    log(LogLevel.INFO, "closeSplash() called", null, true);
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      splashWindow.close();
+      splashWindow = null;
+      log(LogLevel.INFO, "Splash window closed", null, true);
+    }
+  };
+
+  const showMainWindow = () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.show();
-    }, 8000);
+      mainWindow.focus();
+      log(LogLevel.SUCCESS, "Main window shown", null, true);
+    }
+  };
 
-    ipcMain.once("app:renderer-ready", (event) => {
-      // @ts-ignore
-      if (event.sender === mainWindow.webContents) {
-        log(LogLevel.INFO, "Received renderer-ready signal");
-        clearTimeout(timeoutId);
-        if (splashWindow && !splashWindow.isDestroyed()) splashWindow.close();
-        // @ts-ignore
-        mainWindow.show();
-      }
-    });
+  // 1. When main window finishes loading (fallback)
+  mainWindow.webContents.once("did-finish-load", () => {
+    log(LogLevel.INFO, "Main window did-finish-load event", null, true);
+    closeSplash();
   });
 
-  if (APP_CONFIG.isDev) mainWindow.webContents.openDevTools({ mode: "detach" });
+  // 2. Preferred: renderer signals ready
+  ipcMain.once("app:renderer-ready", (event) => {
+    if (event.sender === mainWindow.webContents) {
+      log(
+        LogLevel.INFO,
+        "Received renderer-ready signal from React",
+        null,
+        true,
+      );
+      closeSplash();
+      showMainWindow();
+    }
+  });
+
+  // 3. Timeout fallback (15 seconds)
+  const forceShowTimeout = setTimeout(() => {
+    if (!splashClosed) {
+      log(
+        LogLevel.WARN,
+        "Force showing main window after timeout (15s)",
+        null,
+        true,
+      );
+      closeSplash();
+      showMainWindow();
+    }
+  }, 15000);
+
+  // 4. Additional safety: when ready-to-show, wait a bit then close splash if still open
+  mainWindow.once("ready-to-show", () => {
+    log(LogLevel.INFO, "Main window ready-to-show event", null, true);
+    setTimeout(() => {
+      if (!splashClosed) {
+        log(
+          LogLevel.WARN,
+          "Splash still open after ready-to-show + 3s, closing it",
+          null,
+          true,
+        );
+        closeSplash();
+        showMainWindow();
+      }
+    }, 3000);
+  });
+
+  // Cleanup timeout on window close
+  mainWindow.once("closed", () => {
+    clearTimeout(forceShowTimeout);
+    ipcMain.removeAllListeners("app:renderer-ready");
+  });
+
+  if (APP_CONFIG.isDev) {
+    mainWindow.webContents.openDevTools({ mode: "detach" });
+  }
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: "deny" };
   });
 
-  log(LogLevel.SUCCESS, "Main window created");
+  log(LogLevel.SUCCESS, "Main window created", null, true);
   return mainWindow;
 }
 
 // ===================== SERVICE INITIALIZATION =====================
 async function initializeServices() {
-  log(LogLevel.INFO, "Initializing services...");
-  // @ts-ignore
+  log(LogLevel.INFO, "Initializing services...", null, true);
   notificationService.initialize(mainWindow);
   streamMonitorService.initStreamMonitor(mainWindow);
   twitchChatService.initChatService(mainWindow);
@@ -326,7 +428,6 @@ async function initializeServices() {
   eventSubService.initialize(mainWindow);
   pipService.initialize(mainWindow);
 
-  // Attach updater handler (if needed)
   try {
     const updaterModule = require("./ipc/utils/updater/index.ipc.js");
     updaterModule.setMainWindow(mainWindow);
@@ -334,16 +435,21 @@ async function initializeServices() {
     log(LogLevel.WARN, "Updater module not loaded", err);
   }
 
-  // Check stored token validity
   if (twitchAuthService.isLoggedIn()) {
     try {
       await twitchApiService.getCurrentUser();
-      log(LogLevel.INFO, "User already logged in – starting stream monitor");
+      log(
+        LogLevel.INFO,
+        "User already logged in – starting stream monitor",
+        null,
+        true,
+      );
       streamMonitorService.startStreamMonitor(60);
     } catch (err) {
       log(
         LogLevel.WARN,
         "Stored token invalid – clearing and requiring re-login",
+        err,
       );
       await twitchAuthService.logout();
       if (mainWindow && !mainWindow.isDestroyed()) {
@@ -351,18 +457,15 @@ async function initializeServices() {
       }
     }
   }
-  log(LogLevel.SUCCESS, "All services initialized");
+  log(LogLevel.SUCCESS, "All services initialized", null, true);
 }
 
 // ===================== IPC HANDLERS =====================
 function registerIpcHandlers() {
-  log(LogLevel.INFO, "Registering IPC handlers...");
+  log(LogLevel.INFO, "Registering IPC handlers...", null, true);
 
-  // Basic window controls
   ipcMain.on("window:minimize", () => mainWindow?.minimize());
-  // @ts-ignore
   ipcMain.on("window:maximize", () =>
-    // @ts-ignore
     mainWindow?.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize(),
   );
   ipcMain.on("window:close", () => mainWindow?.close());
@@ -379,17 +482,12 @@ function registerIpcHandlers() {
     arch: process.arch,
   }));
 
-  // @ts-ignore
-  // @ts-ignore
   ipcMain.on("app:open-external", (event, url) => {
     if (typeof url === "string" && url.startsWith("http")) {
       shell.openExternal(url).catch(console.error);
     }
   });
 
-
-  // Open Twitch dashboard inside an Electron window (reusing main window's session)
-  // @ts-ignore
   ipcMain.handle("open-dashboard", async (event, dashboardUrl) => {
     if (!dashboardUrl || typeof dashboardUrl !== "string") {
       throw new Error("Invalid dashboard URL");
@@ -397,21 +495,17 @@ function registerIpcHandlers() {
     const dashboardWindow = new BrowserWindow({
       width: 1200,
       height: 800,
-      // @ts-ignore
       parent: mainWindow,
       modal: false,
       show: true,
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
-        // Reuse the same session so user stays logged in
         session: mainWindow?.webContents.session,
       },
     });
     await dashboardWindow.loadURL(dashboardUrl);
-
     dashboardWindow.on("closed", () => {
-      // Notify all renderer windows that the dashboard was closed
       BrowserWindow.getAllWindows().forEach((win) => {
         if (!win.isDestroyed() && win !== dashboardWindow) {
           win.webContents.send("dashboard:closed");
@@ -421,7 +515,6 @@ function registerIpcHandlers() {
     return true;
   });
 
-  // Load modular IPC handlers (all core modules)
   const ipcModules = [
     "./ipc/utils/updater/index.ipc.js",
     "./ipc/core/player/index.ipc.js",
@@ -464,7 +557,7 @@ function registerIpcHandlers() {
     }
   }
 
-  log(LogLevel.SUCCESS, "IPC handlers registered");
+  log(LogLevel.SUCCESS, "IPC handlers registered", null, true);
 }
 
 // ===================== APP LIFECYCLE =====================
@@ -472,19 +565,21 @@ async function startup() {
   log(
     LogLevel.INFO,
     `Starting ${APP_NAME} v${APP_VERSION} (${APP_CONFIG.isDev ? "Development" : "Production"})`,
+    null,
+    true,
   );
   setupGlobalErrorHandlers();
   await createSplashWindow();
   registerIpcHandlers();
   await createMainWindow();
   await initializeServices();
-  log(LogLevel.SUCCESS, `${APP_NAME} started successfully`);
+  log(LogLevel.SUCCESS, `${APP_NAME} started successfully`, null, true);
 }
 
 app.on("ready", startup);
 
 app.on("window-all-closed", () => {
-  log(LogLevel.INFO, "All windows closed");
+  log(LogLevel.INFO, "All windows closed", null, true);
   if (process.platform !== "darwin") app.quit();
 });
 
@@ -492,8 +587,6 @@ app.on("activate", async () => {
   if (BrowserWindow.getAllWindows().length === 0) await startup();
 });
 
-// @ts-ignore
-// @ts-ignore
 app.on("before-quit", (event) => {
   if (isQuitting) return;
   isQuitting = true;
@@ -502,15 +595,13 @@ app.on("before-quit", (event) => {
   twitchAuthService.logout().catch(console.error);
 });
 
-// Uncaught errors (already handled by global handlers, but fallback)
 process.on("uncaughtException", (err) =>
-  log(LogLevel.ERROR, "Uncaught Exception (fallback)", err),
+  log(LogLevel.ERROR, "Uncaught Exception (fallback)", err, true),
 );
 process.on("unhandledRejection", (reason) =>
-  log(LogLevel.ERROR, "Unhandled Rejection (fallback)", reason),
+  log(LogLevel.ERROR, "Unhandled Rejection (fallback)", reason, true),
 );
 
-// ===================== EXPORTS (for testing) =====================
 if (APP_CONFIG.isDev) {
   module.exports = { createMainWindow, initializeServices, getIconPath };
 }

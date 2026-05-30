@@ -11,6 +11,10 @@ class LivestreamDownloadService {
     this.currentDownload = null;
   }
 
+  /**
+   * @param {string} channel
+   * @param {{ percent?: number; text?: any; message?: any; url?: any; outputDir?: any; }} data
+   */
   _sendToRenderers(channel, data) {
     try {
       BrowserWindow.getAllWindows().forEach(win => {
@@ -30,11 +34,15 @@ class LivestreamDownloadService {
     return result.filePaths[0];
   }
 
+  /**
+   * @param {string} vodUrl
+   */
   async downloadVod(vodUrl, options = {}) {
     if (this.downloadProcess) {
       throw new Error('Download already in progress');
     }
 
+    // @ts-ignore
     let outputDir = options.outputDir;
     if (!outputDir) {
       outputDir = await this.selectOutputFolder();

@@ -1,13 +1,16 @@
 // src/main/services/eventsub.service.js
 //@ts-check
 // @ts-ignore
+// @ts-ignore
 const { twitchApiService } = require("./twitch-api.service");
 const { twitchAuthService } = require("./twitch-auth.service");
+// @ts-ignore
 // @ts-ignore
 const { settingsService } = require("./settings.service");
 const { BrowserWindow } = require("electron");
 const WebSocket = require("ws");
 const { notificationStore } = require("./notification-store.service");
+const { logger } = require("../utils/logger");
 
 class EventSubService {
   constructor() {
@@ -20,6 +23,7 @@ class EventSubService {
     this.keepAliveInterval = null;
     this.subscriptions = new Map(); // subscriptionId -> { type, condition, userId }
     this.mainWindow = null;
+    logger.debug("[EventSubService] Constructor - instance created");
   }
 
   /**
@@ -27,7 +31,7 @@ class EventSubService {
    */
   initialize(mainWindow) {
     this.mainWindow = mainWindow;
-    console.log("[EventSubService] Initialized");
+    logger.info("[EventSubService] Initialized with mainWindow");
   }
 
   /**
@@ -39,16 +43,20 @@ class EventSubService {
       BrowserWindow.getAllWindows().forEach((win) => {
         if (!win.isDestroyed()) win.webContents.send(channel, data);
       });
+      logger.debug(`[EventSubService] Sent event "${channel}" to renderers`);
     } catch (err) {
-      console.warn("[EventSubService] send error:", err);
+      // @ts-ignore
+      logger.warn(`[EventSubService] Failed to send event "${channel}":`, err);
     }
   }
 
   async getAppAccessToken() {
-    // For now, use the user's access token (needs appropriate scopes)
-    // In production, you'd get an app access token using client credentials
     const token = twitchAuthService.getAccessToken();
-    if (!token) throw new Error("Not authenticated");
+    if (!token) {
+      logger.error("[EventSubService] getAppAccessToken - no access token");
+      throw new Error("Not authenticated");
+    }
+    logger.debug("[EventSubService] getAppAccessToken - token obtained");
     return token;
   }
 
@@ -58,6 +66,9 @@ class EventSubService {
    * @param {{ broadcaster_user_id: any; moderator_user_id?: any; }} condition
    */
   async createSubscription(type, version, condition, transport = null) {
+    logger.info(
+      `[EventSubService] createSubscription - type=${type}, version=${version}, condition=${JSON.stringify(condition)}`,
+    );
     const token = await this.getAppAccessToken();
     const { CLIENT_ID } = require("../shared/config");
     const url = "https://api.twitch.tv/helix/eventsub/subscriptions";
@@ -82,9 +93,14 @@ class EventSubService {
     });
     if (!response.ok) {
       const error = await response.json();
+      logger.error(
+        `[EventSubService] Failed to create subscription ${type}:`,
+        error,
+      );
       throw new Error(`Failed to create subscription: ${error.message}`);
     }
     const data = await response.json();
+    logger.info(`[EventSubService] Subscription created: ${data.data[0]?.id}`);
     return data.data[0];
   }
 
@@ -92,6 +108,7 @@ class EventSubService {
    * @param {any} subscriptionId
    */
   async deleteSubscription(subscriptionId) {
+    logger.info(`[EventSubService] deleteSubscription - id=${subscriptionId}`);
     const token = await this.getAppAccessToken();
     const { CLIENT_ID } = require("../shared/config");
     const url = `https://api.twitch.tv/helix/eventsub/subscriptions?id=${subscriptionId}`;
@@ -104,9 +121,11 @@ class EventSubService {
       },
     });
     if (!response.ok && response.status !== 404) {
-      console.error(
-        `Failed to delete subscription ${subscriptionId}: ${response.status}`,
+      logger.error(
+        `[EventSubService] Failed to delete subscription ${subscriptionId}: ${response.status}`,
       );
+    } else {
+      logger.debug(`[EventSubService] Deleted subscription ${subscriptionId}`);
     }
   }
 
@@ -114,6 +133,7 @@ class EventSubService {
    * @param {any} userId
    */
   async subscribeToStreamOnline(userId) {
+    logger.info(`[EventSubService] subscribeToStreamOnline - userId=${userId}`);
     const subscription = await this.createSubscription("stream.online", "1", {
       broadcaster_user_id: userId,
     });
@@ -122,7 +142,9 @@ class EventSubService {
       condition: { broadcaster_user_id: userId },
       userId,
     });
-    console.log(`[EventSub] Subscribed to stream.online for ${userId}`);
+    logger.info(
+      `[EventSubService] Subscribed to stream.online for ${userId} (id=${subscription.id})`,
+    );
     return subscription;
   }
 
@@ -130,7 +152,7 @@ class EventSubService {
    * @param {any} userId
    */
   async subscribeToFollowEvents(userId) {
-    // Requires moderator:read:followers scope
+    logger.info(`[EventSubService] subscribeToFollowEvents - userId=${userId}`);
     const subscription = await this.createSubscription("channel.follow", "2", {
       broadcaster_user_id: userId,
       moderator_user_id: userId,
@@ -140,7 +162,9 @@ class EventSubService {
       condition: { broadcaster_user_id: userId },
       userId,
     });
-    console.log(`[EventSub] Subscribed to channel.follow for ${userId}`);
+    logger.info(
+      `[EventSubService] Subscribed to channel.follow for ${userId} (id=${subscription.id})`,
+    );
     return subscription;
   }
 
@@ -148,18 +172,24 @@ class EventSubService {
    * @param {any} userId
    */
   async subscribeToSubscriptionEvents(userId) {
-    // Requires channel:read:subscriptions scope
+    logger.info(
+      `[EventSubService] subscribeToSubscriptionEvents - userId=${userId}`,
+    );
     const subscription = await this.createSubscription(
       "channel.subscribe",
       "1",
-      { broadcaster_user_id: userId },
+      {
+        broadcaster_user_id: userId,
+      },
     );
     this.subscriptions.set(subscription.id, {
       type: "channel.subscribe",
       condition: { broadcaster_user_id: userId },
       userId,
     });
-    console.log(`[EventSub] Subscribed to channel.subscribe for ${userId}`);
+    logger.info(
+      `[EventSubService] Subscribed to channel.subscribe for ${userId} (id=${subscription.id})`,
+    );
     return subscription;
   }
 
@@ -171,7 +201,7 @@ class EventSubService {
     const eventType = metadata.subscription_type;
     const eventData = payload.event;
 
-    console.log(`[EventSub] Received event: ${eventType}`, eventData);
+    logger.info(`[EventSubService] Received event: ${eventType}`, eventData);
 
     switch (eventType) {
       case "stream.online":
@@ -233,7 +263,7 @@ class EventSubService {
         });
         break;
       default:
-        console.log(`[EventSub] Unhandled event type: ${eventType}`);
+        logger.warn(`[EventSubService] Unhandled event type: ${eventType}`);
     }
   }
 
@@ -242,21 +272,21 @@ class EventSubService {
    */
   async handleWebSocketMessage(data) {
     const message = JSON.parse(data.toString());
-    switch (message.metadata.message_type) {
+    const msgType = message.metadata.message_type;
+    logger.debug(`[EventSubService] WebSocket message type: ${msgType}`);
+    switch (msgType) {
       case "session_welcome":
         this.sessionId = message.payload.session.id;
         this.connected = true;
-        console.log(
-          `[EventSub] WebSocket connected, session: ${this.sessionId}`,
+        logger.info(
+          `[EventSubService] WebSocket connected, session: ${this.sessionId}`,
         );
         this._sendToRenderers("eventsub:connected", {
           sessionId: this.sessionId,
         });
-        // Resubscribe to previously stored subscriptions if any
         await this.resubscribeAll();
         break;
       case "session_keepalive":
-        // Send pong to keep connection alive (not required by spec, but we can respond)
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
           this.ws.send(JSON.stringify({ type: "pong" }));
         }
@@ -265,25 +295,20 @@ class EventSubService {
         this.handleEvent(message);
         break;
       case "session_reconnect":
-        console.log(
-          "[EventSub] Reconnect requested, new URL:",
+        logger.warn(
+          "[EventSubService] Reconnect requested, new URL:",
           message.payload.session.reconnect_url,
         );
-        // Optionally reconnect using provided URL
         break;
       case "revocation":
-        console.warn(
-          "[EventSub] Subscription revoked:",
+        logger.warn(
+          "[EventSubService] Subscription revoked:",
           message.payload.subscription,
         );
-        // Remove from our map
         this.subscriptions.delete(message.payload.subscription.id);
         break;
       default:
-        console.log(
-          "[EventSub] Unknown message type:",
-          message.metadata.message_type,
-        );
+        logger.debug("[EventSubService] Unknown message type:", msgType);
     }
   }
 
@@ -293,22 +318,24 @@ class EventSubService {
       (this.ws.readyState === WebSocket.OPEN ||
         this.ws.readyState === WebSocket.CONNECTING)
     ) {
-      console.log("[EventSub] Already connected or connecting");
+      logger.debug("[EventSubService] Already connected or connecting");
       return;
     }
 
     const wsUrl = "wss://eventsub.wss.twitch.tv/ws";
+    logger.info(`[EventSubService] Connecting to WebSocket: ${wsUrl}`);
     this.ws = new WebSocket(wsUrl);
     this.ws.on("open", () => {
-      console.log("[EventSub] WebSocket opened");
+      logger.info("[EventSubService] WebSocket opened");
       this.reconnectAttempts = 0;
     });
     this.ws.on("message", (data) => this.handleWebSocketMessage(data));
     this.ws.on("error", (err) => {
-      console.error("[EventSub] WebSocket error:", err);
+      // @ts-ignore
+      logger.error("[EventSubService] WebSocket error:", err);
     });
     this.ws.on("close", (code, reason) => {
-      console.log(`[EventSub] WebSocket closed: ${code} - ${reason}`);
+      logger.warn(`[EventSubService] WebSocket closed: ${code} - ${reason}`);
       this.connected = false;
       this.sessionId = null;
       this._sendToRenderers("eventsub:disconnected", { code, reason });
@@ -318,21 +345,25 @@ class EventSubService {
 
   reconnect() {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error("[EventSub] Max reconnect attempts reached, giving up");
+      logger.error(
+        "[EventSubService] Max reconnect attempts reached, giving up",
+      );
       return;
     }
     const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
     this.reconnectAttempts++;
-    console.log(
-      `[EventSub] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`,
+    logger.info(
+      `[EventSubService] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`,
     );
     setTimeout(() => this.connect(), delay);
   }
 
   async resubscribeAll() {
+    logger.info(
+      `[EventSubService] Resubscribing to ${this.subscriptions.size} stored subscriptions`,
+    );
     for (const [id, sub] of this.subscriptions.entries()) {
       try {
-        // Refresh each subscription
         let newSub;
         switch (sub.type) {
           case "stream.online":
@@ -347,16 +378,23 @@ class EventSubService {
           default:
             continue;
         }
-        // Replace old subscription id with new one
         this.subscriptions.delete(id);
         this.subscriptions.set(newSub.id, { ...sub, id: newSub.id });
+        logger.debug(
+          `[EventSubService] Resubscribed ${sub.type} (old=${id}, new=${newSub.id})`,
+        );
       } catch (err) {
-        console.error(`[EventSub] Failed to resubscribe ${sub.type}:`, err);
+        logger.error(
+          `[EventSubService] Failed to resubscribe ${sub.type}:`,
+          // @ts-ignore
+          err,
+        );
       }
     }
   }
 
   disconnect() {
+    logger.info("[EventSubService] Disconnecting WebSocket");
     if (this.ws) {
       this.ws.close();
       this.ws = null;
@@ -365,12 +403,13 @@ class EventSubService {
     this.sessionId = null;
   }
 
-  // Public methods
   async start() {
+    logger.info("[EventSubService] Starting EventSub service");
     this.connect();
   }
 
   stop() {
+    logger.info("[EventSubService] Stopping EventSub service");
     this.disconnect();
   }
 
