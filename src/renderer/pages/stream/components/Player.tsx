@@ -24,8 +24,9 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({
   onLoad,
 }, ref) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-
   const parentHost = window.location.hostname || 'localhost';
+
+  // Removed controls=false to show the default player controls
   const src = `https://player.twitch.tv/?channel=${encodeURIComponent(channelName)}&parent=${parentHost}&autoplay=${autoplay}`;
 
   const handleLoad = () => {
@@ -33,19 +34,12 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({
   };
 
   useImperativeHandle(ref, () => ({
-    play: () => {
-      // Twitch iframe does not expose play/pause API, so we ignore
-      console.log('[Player] play() not supported in iframe mode');
-    },
+    play: () => console.log('[Player] play() not supported'),
     pause: () => console.log('[Player] pause() not supported'),
     setVolume: () => console.log('[Player] setVolume() not supported'),
     setMuted: () => console.log('[Player] setMuted() not supported'),
     setQuality: () => console.log('[Player] setQuality() not supported'),
-    requestFullscreen: () => {
-      if (iframeRef.current) {
-        iframeRef.current.requestFullscreen();
-      }
-    }
+    requestFullscreen: () => iframeRef.current?.requestFullscreen(),
   }));
 
   return (
