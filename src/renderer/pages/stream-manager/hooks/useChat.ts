@@ -1,3 +1,4 @@
+// src/renderer/pages/stream-manager/hooks/useChat.ts
 import { useState, useEffect, useRef } from 'react';
 import { chatAPI, type ChatMessage } from '../../../api/core/chat';
 import { userAPI } from '../../../api/core/user';
@@ -5,6 +6,7 @@ import { useModeration } from './useModeration';
 
 export const useChat = (channelName?: string, broadcasterId?: string, isLive?: boolean) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [pinnedMessages, setPinnedMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [connected, setConnected] = useState(false);
   const [currentUser, setCurrentUser] = useState('You');
@@ -13,10 +15,29 @@ export const useChat = (channelName?: string, broadcasterId?: string, isLive?: b
   const inputRef = useRef<HTMLInputElement>(null);
   const { banUser, timeoutUser, clearChat } = useModeration(broadcasterId || '');
 
+  // Load pinned messages from localStorage
+  useEffect(() => {
+    if (channelName) {
+      const stored = localStorage.getItem(`pinned_${channelName}`);
+      if (stored) {
+        try {
+          setPinnedMessages(JSON.parse(stored));
+        } catch (e) {}
+      }
+    }
+  }, [channelName]);
+
+  // Save pinned messages to localStorage whenever they change
+  useEffect(() => {
+    if (channelName) {
+      localStorage.setItem(`pinned_${channelName}`, JSON.stringify(pinnedMessages));
+    }
+  }, [pinnedMessages, channelName]);
+
   // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, pinnedMessages]);
 
   // Fetch current user
   useEffect(() => {
@@ -27,7 +48,7 @@ export const useChat = (channelName?: string, broadcasterId?: string, isLive?: b
     fetchUser();
   }, []);
 
-  // Connect/disconnect
+  // Connect/disconnect logic (same as before)
   useEffect(() => {
     if (!channelName || !isLive) {
       if (connected) {
@@ -41,6 +62,11 @@ export const useChat = (channelName?: string, broadcasterId?: string, isLive?: b
       try {
         await chatAPI.connect(channelName);
         setConnected(true);
+        // Load recent messages from backend (if implemented)
+        const recentRes = await chatAPI.getRecentMessages?.(channelName);
+        if (recentRes?.status && recentRes.data) {
+          setMessages(recentRes.data);
+        }
       } catch (err) {
         console.error(err);
         setConnected(false);
@@ -118,8 +144,29 @@ export const useChat = (channelName?: string, broadcasterId?: string, isLive?: b
     }, 0);
   };
 
+  // Pin a message (store copy in pinnedMessages, no effect on Twitch)
+  const pinMessage = (msg: ChatMessage) => {
+    setPinnedMessages(prev => {
+      // Prevent duplicate pin
+      if (prev.some(p => p.id === msg.id)) return prev;
+      return [...prev, msg];
+    });
+  };
+
+  const unpinMessage = (msgId: string) => {
+    setPinnedMessages(prev => prev.filter(msg => msg.id !== msgId));
+  };
+
+  // Delete message locally (remove from messages state)
+  const deleteMessage = (msgId: string) => {
+    setMessages(prev => prev.filter(msg => msg.id !== msgId));
+    // Also remove from pinned if present
+    setPinnedMessages(prev => prev.filter(msg => msg.id !== msgId));
+  };
+
   return {
     messages,
+    pinnedMessages,
     input,
     setInput,
     connected,
@@ -132,5 +179,8 @@ export const useChat = (channelName?: string, broadcasterId?: string, isLive?: b
     mentionUser,
     banUser,
     timeoutUser,
+    pinMessage,
+    unpinMessage,
+    deleteMessage,
   };
 };

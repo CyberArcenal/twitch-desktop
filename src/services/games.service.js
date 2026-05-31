@@ -52,6 +52,23 @@ class GamesService {
     const lowerName = name.toLowerCase();
     return topGames.data.filter(game => game.name.toLowerCase().includes(lowerName));
   }
+
+    /**
+   * Search for categories/games by name (official Twitch search endpoint)
+   * @param {string} query - Search query
+   * @param {number} first - Number of results (max 100)
+   * @returns {Promise<{data: Array, pagination?: object}>}
+   */
+  async searchCategories(query, first = 20) {
+    if (!query || query.trim() === '') {
+      return { data: [] };
+    }
+    const params = new URLSearchParams({
+      query: query.trim(),
+      first: String(Math.min(first, 100))
+    });
+    return await twitchApiService.fetchTwitch(`search/categories?${params}`);
+  }
 }
 
 const gamesService = new GamesService();

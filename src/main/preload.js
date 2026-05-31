@@ -36,6 +36,7 @@ contextBridge.exposeInMainWorld("backendAPI", {
     ipcRenderer.invoke("notification-store", payload),
   streamSettings: (payload) => ipcRenderer.invoke("stream-settings", payload),
   "stream-manager": (payload) => ipcRenderer.invoke("stream-manager", payload),
+   openStreamTogether: (channelName) => ipcRenderer.invoke('open-stream-together', channelName),
 
   openExternal: (url) => ipcRenderer.invoke("app: open-external", url),
   openDashboard: (url) => ipcRenderer.invoke("open-dashboard", url),

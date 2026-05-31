@@ -18,12 +18,20 @@ export interface ClipResult {
 class StreamManagerAPI {
   async updateStreamInfo(
     broadcasterId: string,
-    title: string,
-    gameId: string,
+    data: {
+      title: string;
+      game_id?: string;
+      go_live_notification?: string;
+      broadcaster_language?: string;
+      tags?: string[];
+      is_branded_content?: boolean;
+      content_classification_labels?: string[];
+      is_rerun?: boolean;
+    },
   ): Promise<BaseResponse<boolean>> {
     return window.backendAPI["stream-manager"]({
       method: "updateStreamInfo",
-      params: { broadcasterId, title, gameId },
+      params: { broadcasterId, ...data },
     });
   }
   async createClip(broadcasterId: string): Promise<BaseResponse<ClipResult>> {

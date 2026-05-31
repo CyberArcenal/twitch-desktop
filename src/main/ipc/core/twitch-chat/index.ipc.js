@@ -23,7 +23,10 @@ async function handleChatRequest(event, payload) {
       return await twitchChatService.disconnectChat();
     case "send":
       // @ts-ignore
-      return await twitchChatService.sendChatMessage(params.message, params.replyParentMsgId);
+      return await twitchChatService.sendChatMessage(
+        params.message,
+        params.replyParentMsgId,
+      );
     case "connectWhispers":
       await twitchChatService.connectToWhispers();
       return true;
@@ -56,6 +59,9 @@ async function handleChatRequest(event, payload) {
         // @ts-ignore
         params.settings,
       );
+    // Sa chat IPC handler
+    case "getRecentMessages":
+      return await twitchChatService.getRecentMessages(params.channelName);
     default:
       throw new Error(`Unknown chat method: ${method}`);
   }

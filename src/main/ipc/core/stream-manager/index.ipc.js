@@ -23,6 +23,7 @@ const {
 // @ts-ignore
 // @ts-ignore
 // @ts-ignore
+// @ts-ignore
 async function handleStreamManagerRequest(event, { method, params = {} }) {
   const broadcasterId = settingsService.get("twitch")?.userId;
   if (
@@ -36,13 +37,24 @@ async function handleStreamManagerRequest(event, { method, params = {} }) {
 
   switch (method) {
     case "updateStreamInfo":
-      return await streamManagerService.updateStreamInfo(
-        broadcasterId,
+      return await streamManagerService.updateStreamInfo(broadcasterId, {
         // @ts-ignore
-        params.title,
+        title: params.title,
         // @ts-ignore
-        params.gameId,
-      );
+        game_id: params.game_id,
+        // @ts-ignore
+        go_live_notification: params.go_live_notification,
+        // @ts-ignore
+        broadcaster_language: params.broadcaster_language,
+        // @ts-ignore
+        tags: params.tags,
+        // @ts-ignore
+        is_branded_content: params.is_branded_content,
+        // @ts-ignore
+        content_classification_labels: params.content_classification_labels,
+        // @ts-ignore
+        is_rerun: params.is_rerun,
+      });
     case "createClip":
       return await streamManagerService.createClip(broadcasterId);
     case "startRaid":
@@ -156,11 +168,13 @@ async function handleStreamManagerRequest(event, { method, params = {} }) {
       // params.userId is the Twitch user ID (obtained from a username lookup)
       return await streamManagerService.addModerator(
         broadcasterId,
+        // @ts-ignore
         params.userId,
       );
     case "removeModerator":
       return await streamManagerService.removeModerator(
         broadcasterId,
+        // @ts-ignore
         params.userId,
       );
     case "getUserByName":
@@ -168,6 +182,7 @@ async function handleStreamManagerRequest(event, { method, params = {} }) {
       const {
         twitchApiService,
       } = require("../../../../services/twitch-api.service");
+      // @ts-ignore
       return await twitchApiService.getUserByName(params.username);
     default:
       throw new Error(`Unknown stream-manager method: ${method}`);

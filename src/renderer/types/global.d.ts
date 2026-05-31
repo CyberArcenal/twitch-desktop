@@ -44,6 +44,7 @@ declare global {
       notificationStore: (payload: any) => Promise<any>;
       streamSettings: (payload: any) => Promise<any>;
       "stream-manager": (payload: any) => Promise<any>;
+      openStreamTogether: (channelName: string) => Promise<boolean>;
 
       notifyAppReady?: () => void;
       openExternal: (url: string) => Promise<void>;

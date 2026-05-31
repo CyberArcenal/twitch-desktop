@@ -16,17 +16,20 @@ class AutomationService {
       raidTarget: null,
     };
     this.listenersAttached = false;
+    this.offlineHandled = false; // para iwas multiple raid/clip
   }
 
   start(config) {
     this.config = { ...this.config, ...config };
     this.running = true;
+    this.offlineHandled = false;
     this.attachEventListeners();
     logger.info('[Automation] Started');
   }
 
   stop() {
     this.running = false;
+    this.offlineHandled = false;
     logger.info('[Automation] Stopped');
   }
 
@@ -41,7 +44,7 @@ class AutomationService {
 
   async handleFollow(data) {
     if (!this.running) return;
-    if (this.config.autoMessage) {
+    if (this.config.autoMessage && data?.followerName) {
       const msg = `@${data.followerName} ${this.config.autoMessageText}`;
       await this.sendChatMessage(msg);
     }
@@ -49,31 +52,55 @@ class AutomationService {
 
   async handleSubscription(data) {
     if (!this.running) return;
-    if (this.config.autoMessage) {
+    if (this.config.autoMessage && data?.userName) {
       const msg = `@${data.userName} ${this.config.autoMessageText}`;
       await this.sendChatMessage(msg);
     }
   }
 
-  async handleStreamOffline() {
+  async handleStreamOffline(data) {
     if (!this.running) return;
-    const userId = settingsService.get('twitch')?.userId;
-    if (!userId) return;
+    // Iwas multiple triggers
+    if (this.offlineHandled) return;
+    this.offlineHandled = true;
+
+    const broadcasterId = data?.broadcasterId || settingsService.get('twitch')?.userId;
+    if (!broadcasterId) {
+      logger.warn('[Automation] No broadcaster ID for offline event');
+      return;
+    }
+
     if (this.config.autoRaid && this.config.raidTarget) {
-      await streamManagerService.startRaid(userId, this.config.raidTarget);
+      try {
+        await streamManagerService.startRaid(broadcasterId, this.config.raidTarget);
+        logger.info(`[Automation] Auto-raid to ${this.config.raidTarget} triggered`);
+      } catch (err) {
+        logger.error('[Automation] Auto-raid failed:', err);
+      }
     }
     if (this.config.autoClip) {
-      await streamManagerService.createClip(userId);
+      try {
+        await streamManagerService.createClip(broadcasterId);
+        logger.info('[Automation] Auto-clip triggered');
+      } catch (err) {
+        logger.error('[Automation] Auto-clip failed:', err);
+      }
     }
   }
 
   async sendChatMessage(message) {
-    if (twitchChatService.currentChannel) {
+    if (!twitchChatService.currentChannel) {
+      logger.warn('[Automation] Chat not connected, cannot send auto-message');
+      return;
+    }
+    try {
       await twitchChatService.sendChatMessage(message);
+      logger.debug(`[Automation] Auto-message sent: "${message}"`);
+    } catch (err) {
+      logger.error('[Automation] Failed to send auto-message:', err);
     }
   }
 }
 
-const automationService=new AutomationService()
-
-module.exports = {  automationService, AutomationService };
+const automationService = new AutomationService();
+module.exports = { automationService, AutomationService };

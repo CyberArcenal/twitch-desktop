@@ -1,5 +1,5 @@
 // src/renderer/api/core/games.ts
-import type { BaseResponse } from './common';
+import type { BaseResponse } from "./common";
 
 export interface Game {
   id: string;
@@ -26,31 +26,46 @@ export interface PaginatedResult<T> {
 }
 
 class GamesAPI {
-  async getTopGames(first: number = 20): Promise<BaseResponse<PaginatedResult<Game>>> {
+  async getTopGames(
+    first: number = 20,
+  ): Promise<BaseResponse<PaginatedResult<Game>>> {
     return window.backendAPI.games({
-      method: 'getTopGames',
-      params: { first }
+      method: "getTopGames",
+      params: { first },
     });
   }
 
   async getGameInfo(gameId: string): Promise<BaseResponse<Game | null>> {
     return window.backendAPI.games({
-      method: 'getGameInfo',
-      params: { gameId }
+      method: "getGameInfo",
+      params: { gameId },
     });
   }
 
-  async getStreamsByGame(gameId: string, first: number = 20): Promise<BaseResponse<PaginatedResult<Stream>>> {
+  async getStreamsByGame(
+    gameId: string,
+    first: number = 20,
+  ): Promise<BaseResponse<PaginatedResult<Stream>>> {
     return window.backendAPI.games({
-      method: 'getStreamsByGame',
-      params: { gameId, first }
+      method: "getStreamsByGame",
+      params: { gameId, first },
     });
   }
 
   async getGameByName(name: string): Promise<BaseResponse<Game[]>> {
     return window.backendAPI.games({
-      method: 'getGameByName',
-      params: { name }
+      method: "getGameByName",
+      params: { name },
+    });
+  }
+
+  async searchCategories(
+    query: string,
+    first: number = 20,
+  ): Promise<BaseResponse<any[]>> {
+    return window.backendAPI.games({
+      method: "searchCategories",
+      params: { query, first },
     });
   }
 }

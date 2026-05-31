@@ -10,28 +10,43 @@ class StreamManagerService {
     this.goalsStore = new Store({ name: "streamGoals" });
   }
 
-  async updateStreamInfo(broadcasterId, title, gameId) {
-    logger.info(`[StreamManager] Updating stream info for ${broadcasterId}`);
-    const token = settingsService.get("twitch").accessToken;
-    const { CLIENT_ID, API_BASE } = require("../shared/config");
-    const url = `${API_BASE}/channels?broadcaster_id=${broadcasterId}`;
-    const body = { title, game_id: gameId };
-    const res = await fetch(url, {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Client-Id": CLIENT_ID,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      const error = await res.text();
-      throw new Error(`Failed to update stream info: ${error}`);
-    }
-    logger.success("[StreamManager] Stream info updated");
-    return true;
+async updateStreamInfo(broadcasterId, data) {
+  logger.info(`[StreamManager] Updating stream info for ${broadcasterId}`, data);
+  const token = settingsService.get("twitch").accessToken;
+  const { CLIENT_ID, API_BASE } = require("../shared/config");
+  const url = `${API_BASE}/channels?broadcaster_id=${broadcasterId}`;
+  
+  // Payload para sa Twitch API
+  const body = {
+    title: data.title,
+    game_id: data.game_id,
+    go_live_notification: data.go_live_notification,
+    broadcaster_language: data.broadcaster_language,
+    tags: data.tags,
+    is_branded_content: data.is_branded_content,
+    content_classification_labels: data.content_classification_labels,
+    is_rerun: data.is_rerun,
+  };
+  
+  // Alisin ang undefined fields
+  Object.keys(body).forEach(key => body[key] === undefined && delete body[key]);
+  
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Client-Id": CLIENT_ID,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const error = await res.text();
+    throw new Error(`Failed to update stream info: ${error}`);
   }
+  logger.success("[StreamManager] Stream info updated");
+  return true;
+}
 
   async createClip(broadcasterId) {
     logger.info(`[StreamManager] Creating clip for ${broadcasterId}`);

@@ -10,8 +10,14 @@ export interface ChatMessage {
   emotes: any;
   timestamp: string;
   replyParentMsgId?: string;
-  parsedMessage?: Array<{ type: 'text' | 'emote'; text: string; name?: string; id?: string }>;
-    isFromMe?: boolean; 
+  parsedMessage?: Array<{
+    type: "text" | "emote";
+    text: string;
+    name?: string;
+    id?: string;
+  }>;
+  isFromMe?: boolean;
+  isPinned?: boolean;
 }
 
 export interface ChatConnected {
@@ -46,6 +52,15 @@ class ChatAPI {
     return window.backendAPI.chat({
       method: "send",
       params: { message, replyParentMsgId: replyToMsgId },
+    });
+  }
+
+  async getRecentMessages(
+    channelName: string,
+  ): Promise<BaseResponse<ChatMessage[]>> {
+    return window.backendAPI.chat({
+      method: "getRecentMessages",
+      params: { channelName },
     });
   }
 }

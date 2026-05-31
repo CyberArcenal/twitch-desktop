@@ -1,6 +1,6 @@
 // src/renderer/pages/stream-manager/components/ChatCard.tsx
 import React from "react";
-import { Send, Ban, Clock, Trash2, AtSign } from "lucide-react";
+import { Send, Ban, Clock, Trash2, AtSign, Pin, PinOff } from "lucide-react";
 import { useChat } from "../hooks/useChat";
 
 interface ChatCardProps {
@@ -16,6 +16,7 @@ const ChatCard: React.FC<ChatCardProps> = ({
 }) => {
   const {
     messages,
+    pinnedMessages,
     input,
     setInput,
     connected,
@@ -28,16 +29,20 @@ const ChatCard: React.FC<ChatCardProps> = ({
     mentionUser,
     banUser,
     timeoutUser,
+    pinMessage,
+    unpinMessage,
+    deleteMessage,
   } = useChat(channelName, broadcasterId, isLive);
 
-  const handleSend = () => {
-    sendMessage();
-  };
+  // Combine pinned + normal messages, pinned on top
+  const displayedMessages = [
+    ...pinnedMessages.map(msg => ({ ...msg, isPinned: true })),
+    ...messages.filter(msg => !pinnedMessages.some(p => p.id === msg.id))
+  ];
 
+  const handleSend = () => sendMessage();
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      sendMessage();
-    }
+    if (e.key === "Enter") sendMessage();
   };
 
   return (
@@ -56,10 +61,10 @@ const ChatCard: React.FC<ChatCardProps> = ({
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 space-y-1 text-sm">
-        {messages.map((msg) => (
+        {displayedMessages.map((msg) => (
           <div
             key={msg.id}
-            className="group relative hover:bg-[#2a2a2e]/50 p-1 rounded"
+            className={`group relative hover:bg-[#2a2a2e]/50 p-1 rounded ${msg.isPinned ? 'bg-[#2a2a2e]/30 border-l-2 border-yellow-500' : ''}`}
             onMouseEnter={() => setHoveredMsgId(msg.id)}
             onMouseLeave={() => setHoveredMsgId(null)}
           >
@@ -72,28 +77,58 @@ const ChatCard: React.FC<ChatCardProps> = ({
               </button>
               <span className="text-[#efeff1] break-words">{msg.message}</span>
             </div>
-            {hoveredMsgId === msg.id && !msg.isFromMe && isLive && (
-              <div className="absolute right-0 top-0 flex gap-1 bg-[#1f1f23] p-0.5 rounded shadow">
-                <button
-                  onClick={() => timeoutUser(msg.user, 600)}
-                  className="text-yellow-400 hover:text-yellow-300"
-                  title="Timeout 10 minutes"
-                >
-                  <Clock className="w-3 h-3" />
-                </button>
-                <button
-                  onClick={() => banUser(msg.user)}
-                  className="text-red-400 hover:text-red-300"
-                  title="Ban user"
-                >
-                  <Ban className="w-3 h-3" />
-                </button>
+            {hoveredMsgId === msg.id && (
+              <div className="absolute right-0 top-0 flex gap-1 bg-[#1f1f23] p-0.5 rounded shadow z-10">
+                {!msg.isFromMe && isLive && (
+                  <>
+                    <button
+                      onClick={() => timeoutUser(msg.user, 600)}
+                      className="text-yellow-400 hover:text-yellow-300"
+                      title="Timeout 10 minutes"
+                    >
+                      <Clock className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={() => banUser(msg.user)}
+                      className="text-red-400 hover:text-red-300"
+                      title="Ban user"
+                    >
+                      <Ban className="w-3 h-3" />
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={() => mentionUser(msg.user)}
                   className="text-blue-400 hover:text-blue-300"
                   title="Mention"
                 >
                   <AtSign className="w-3 h-3" />
+                </button>
+                {/* Pin / Unpin */}
+                {msg.isPinned ? (
+                  <button
+                    onClick={() => unpinMessage(msg.id)}
+                    className="text-yellow-400 hover:text-yellow-300"
+                    title="Unpin message"
+                  >
+                    <PinOff className="w-3 h-3" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => pinMessage(msg)}
+                    className="text-gray-400 hover:text-yellow-400"
+                    title="Pin message"
+                  >
+                    <Pin className="w-3 h-3" />
+                  </button>
+                )}
+                {/* Delete (local removal) */}
+                <button
+                  onClick={() => deleteMessage(msg.id)}
+                  className="text-red-400 hover:text-red-300"
+                  title="Delete from view"
+                >
+                  <Trash2 className="w-3 h-3" />
                 </button>
               </div>
             )}
@@ -123,7 +158,7 @@ const ChatCard: React.FC<ChatCardProps> = ({
           </button>
         </div>
         <div className="text-xs text-[#adadb8] text-center mt-2">
-          {!connected && isLive ? "Connecting..." : "Click @username to mention"}
+          {!connected && isLive ? "Connecting..." : "Hover message to pin/delete, @ to mention"}
         </div>
       </div>
     </div>

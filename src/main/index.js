@@ -138,7 +138,12 @@ async function writeToLogFile(message) {
 // Override the existing log function to also write to file
 const originalLog = log;
 // @ts-ignore
-global.log = async (/** @type {string} */ level, /** @type {string} */ message, data = null, writeToFile = true) => {
+global.log = async (
+  /** @type {string} */ level,
+  /** @type {string} */ message,
+  data = null,
+  writeToFile = true,
+) => {
   await originalLog(level, message, data, writeToFile);
   if (writeToFile) {
     const timestamp = new Date().toISOString();
@@ -169,14 +174,21 @@ async function setupGlobalErrorHandlers() {
   });
 
   // @ts-ignore
-  app.on("renderer-process-crashed", (/** @type {any} */ event, /** @type {{ id: any; }} */ webContents, /** @type {any} */ killed) => {
-    log(
-      LogLevel.ERROR,
-      "Renderer process crashed:",
-      { killed, webContentsId: webContents.id },
-      true,
-    );
-  });
+  app.on(
+    "renderer-process-crashed",
+    (
+      /** @type {any} */ event,
+      /** @type {{ id: any; }} */ webContents,
+      /** @type {any} */ killed,
+    ) => {
+      log(
+        LogLevel.ERROR,
+        "Renderer process crashed:",
+        { killed, webContentsId: webContents.id },
+        true,
+      );
+    },
+  );
 }
 
 // ===================== WINDOW MANAGEMENT =====================
@@ -520,6 +532,38 @@ async function registerIpcHandlers() {
         }
       });
     });
+    return true;
+  });
+
+  // Sa src/main/index.js, sa loob ng registerIpcHandlers() function
+
+  ipcMain.handle("open-stream-together", async (event, channelName) => {
+    const twitchLogin = settingsService.get("twitch")?.login;
+    if (!twitchLogin) {
+      throw new Error("Not logged in");
+    }
+
+    const url = `https://dashboard.twitch.tv/u/${twitchLogin}/stream-manager/stream-together`;
+
+    const togetherWindow = new BrowserWindow({
+      width: 1200,
+      height: 800,
+      parent: mainWindow,
+      modal: false,
+      show: true,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        // Gamitin ang parehong session ng mainWindow para hindi na kailangan mag-login ulit
+        session: mainWindow?.webContents.session,
+      },
+    });
+
+    await togetherWindow.loadURL(url);
+    togetherWindow.on("closed", () => {
+      // Optional: magpadala ng event pabalik kung kailangan
+    });
+
     return true;
   });
 

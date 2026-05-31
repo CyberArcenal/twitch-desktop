@@ -1,4 +1,4 @@
-import type { BaseResponse } from './common';
+import type { BaseResponse } from "./common";
 
 export interface IngestServer {
   id: string;
@@ -10,16 +10,18 @@ export interface IngestServer {
 
 class StreamSettingsAPI {
   async getStreamKey(): Promise<BaseResponse<{ stream_key: string }>> {
-    return window.backendAPI.streamSettings({ method: 'getStreamKey' });
+    return window.backendAPI.streamSettings({ method: "getStreamKey" });
   }
 
   async getIngestServers(): Promise<BaseResponse<IngestServer[]>> {
-    return window.backendAPI.streamSettings({ method: 'getIngestServers' });
+    return window.backendAPI.streamSettings({ method: "getIngestServers" });
   }
 
   async regenerateStreamKey(): Promise<BaseResponse<{ stream_key: string }>> {
-    return window.backendAPI.streamSettings({ method: 'regenerateStreamKey' });
+    return window.backendAPI.streamSettings({ method: "regenerateStreamKey" });
   }
+
+
 }
 
 export const streamSettingsAPI = new StreamSettingsAPI();
