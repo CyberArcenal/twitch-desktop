@@ -1,7 +1,6 @@
-// components/ConnectionHubCard.tsx
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Copy, ExternalLink, RefreshCw } from 'lucide-react';
-import { getStoredStreamKey, saveStreamKey } from '../utils/streamKeyStorage';
+import { useStreamKey } from '../hooks/useStreamKey';
 
 interface ConnectionHubCardProps {
   isLive: boolean;
@@ -9,25 +8,7 @@ interface ConnectionHubCardProps {
 }
 
 const ConnectionHubCard: React.FC<ConnectionHubCardProps> = ({ isLive, onRefresh }) => {
-  const [streamKey, setStreamKey] = useState('');
-  const [showKey, setShowKey] = useState(false);
-
-  useEffect(() => {
-    const saved = getStoredStreamKey();
-    if (saved) setStreamKey(saved);
-  }, []);
-
-  const handleSaveKey = () => {
-    if (streamKey) saveStreamKey(streamKey);
-  };
-
-  const handleCopyKey = () => {
-    navigator.clipboard.writeText(streamKey);
-  };
-
-  const handleOpenDashboard = () => {
-    window.backendAPI.openDashboard('https://dashboard.twitch.tv/settings/stream');
-  };
+  const { streamKey, setStreamKey, showKey, setShowKey, saveKey, copyKey, openDashboard } = useStreamKey();
 
   return (
     <div className="bg-[#1f1f23] rounded-xl p-4 shadow-lg border border-[#2a2a2e]">
@@ -39,17 +20,17 @@ const ConnectionHubCard: React.FC<ConnectionHubCardProps> = ({ isLive, onRefresh
             type={showKey ? 'text' : 'password'}
             value={streamKey}
             onChange={(e) => setStreamKey(e.target.value)}
-            onBlur={handleSaveKey}
+            onBlur={saveKey}
             placeholder="Your stream key"
             className="flex-1 bg-[#0e0e10] border border-[#2a2a2e] rounded-lg px-2 py-1 text-sm text-white"
           />
           <button onClick={() => setShowKey(!showKey)} className="px-2 py-1 bg-[#2a2a2e] rounded text-xs">
             {showKey ? 'Hide' : 'Show'}
           </button>
-          <button onClick={handleCopyKey} className="px-2 py-1 bg-[#9147ff] rounded">
+          <button onClick={copyKey} className="px-2 py-1 bg-[#9147ff] rounded">
             <Copy className="w-4 h-4" />
           </button>
-          <button onClick={handleOpenDashboard} className="px-2 py-1 bg-[#3a3a4a] rounded">
+          <button onClick={openDashboard} className="px-2 py-1 bg-[#3a3a4a] rounded">
             <ExternalLink className="w-4 h-4" />
           </button>
         </div>

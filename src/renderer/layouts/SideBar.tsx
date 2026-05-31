@@ -302,7 +302,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onGoLive }) => {
       className={`
         fixed md:relative inset-y-0 left-0
         bg-[var(--sidebar-bg)] border-r border-[var(--sidebar-border)]
-        rounded-r-3xl shadow-xl
+        rounded-r-3xl shadow-2xl
         transform transition-all duration-300 ease-in-out
         z-30 flex flex-col h-screen
         ${isOpen ? "translate-x-0" : "-translate-x-full"}
@@ -311,7 +311,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onGoLive }) => {
       `}
     >
       {/* Header */}
-      <div className="flex-shrink-0 border-b border-[var(--sidebar-border)] bg-[var(--card-bg)] p-6">
+      <div className="flex-shrink-0 border-b border-[var(--sidebar-border)] bg-[var(--card-bg)] p-6 rounded-tr-3xl">
         <div className="flex items-center gap-3">
           <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center overflow-hidden">
             <img
@@ -359,7 +359,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onGoLive }) => {
         <div className="p-4">
           <button
             onClick={onGoLive}
-            className="w-full bg-gradient-to-r from-[#9146ff] to-[#772ce8] hover:opacity-90 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-md"
+            className="w-full bg-gradient-to-r from-[#9146ff] to-[#772ce8] hover:opacity-90 text-white font-semibold py-2 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-md"
           >
             <Radio className="w-4 h-4" />
             {isOpen && <span>Go Live</span>}
@@ -368,14 +368,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onGoLive }) => {
       )}
 
       {/* Footer */}
-      <div className="p-4 border-t border-[var(--sidebar-border)] text-center flex-shrink-0">
+      <div className="p-4 border-t border-[var(--sidebar-border)] text-center flex-shrink-0 rounded-br-3xl">
         {isOpen ? (
           <p className="text-xs text-[var(--sidebar-text)] opacity-70">
-            v{version} • © {new Date().getFullYear()} {title}
+            {version} • © {new Date().getFullYear()} {title}
           </p>
         ) : (
           <p className="text-xs text-[var(--sidebar-text)] opacity-70">
-            v{version}
+            {version}
           </p>
         )}
       </div>

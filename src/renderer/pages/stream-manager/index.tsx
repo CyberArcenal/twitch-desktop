@@ -1,7 +1,6 @@
 // src/renderer/pages/stream-manager/index.tsx
-import React, { useState, useEffect } from "react";
-import { userAPI } from "../../api/core/user";
-import { streamsAPI } from "../../api/core/streams";
+import React from "react";
+import { useLiveStatus } from "./hooks/useLiveStatus";
 import LoadingSpinner from "../../components/Shared/LoadingSpinner";
 import MainVideoCard from "./components/MainVideoCard";
 import QuickActionsCard from "./components/QuickActionsCard";
@@ -11,42 +10,10 @@ import StreamHealthCard from "./components/StreamHealthCard";
 import ChatCard from "./components/ChatCard";
 import CustomAutomationsCard from "./components/CustomAutomationsCard";
 import AlertsCard from "./components/AlertsCard";
+import CollaborationCard from "./components/CollaborationCard";
 
 const StreamManagerPage: React.FC = () => {
-  const [isLive, setIsLive] = useState<boolean | null>(null);
-  const [streamData, setStreamData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  const checkLiveStatus = async () => {
-    try {
-      const userRes = await userAPI.getCurrentUser();
-      if (!userRes.status || !userRes.data) {
-        setIsLive(false);
-        return;
-      }
-      const streamRes = await streamsAPI.getStreamByUserLogin(
-        userRes.data.login,
-      );
-      if (streamRes.status && streamRes.data) {
-        setIsLive(true);
-        setStreamData(streamRes.data);
-      } else {
-        setIsLive(false);
-        setStreamData(null);
-      }
-    } catch (err) {
-      console.error("Failed to check live status:", err);
-      setIsLive(false);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    checkLiveStatus();
-    const interval = setInterval(checkLiveStatus, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  const { isLive, streamData, loading, refresh } = useLiveStatus();
 
   if (loading) {
     return (
@@ -58,31 +25,28 @@ const StreamManagerPage: React.FC = () => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1fr_1fr_1fr] gap-4 h-full p-4 bg-[#0e0e10] overflow-auto">
-      {/* Column 1 */}
       <MainVideoCard
-        isLive={isLive? isLive:false}
+        isLive={isLive || false}
         streamData={streamData}
-        onRefresh={checkLiveStatus}
+        onRefresh={refresh}
       />
-
-      {/* Column 2 */}
       <div className="flex flex-col gap-4">
-        <ConnectionHubCard isLive={isLive? isLive:false} onRefresh={checkLiveStatus} />
-        <ConnectedSoftwareCard isLive={isLive? isLive:false} />
-        <QuickActionsCard isLive={isLive? isLive:false} />
-       <AlertsCard isLive={isLive? isLive:false} channelId={streamData?.user_id} />
+        <ConnectionHubCard isLive={isLive || false} onRefresh={refresh} />
+        <ConnectedSoftwareCard isLive={isLive || false} />
+        <QuickActionsCard isLive={isLive || false} />
+        <AlertsCard isLive={isLive || false} channelId={streamData?.user_id} />
       </div>
-
-      {/* Column 3 */}
       <div className="flex flex-col gap-4">
-        <StreamHealthCard isLive={isLive? isLive:false} />
-        <ChatCard channelName={streamData?.user_login} isLive={isLive? isLive:false} />
+        <StreamHealthCard isLive={isLive || false} />
+        <ChatCard
+          channelName={streamData?.user_login}
+          broadcasterId={streamData?.user_id}
+          isLive={isLive || false}
+        />
       </div>
-
-      {/* Column 4 */}
       <div className="flex flex-col gap-4">
-        <CustomAutomationsCard isLive={isLive? isLive:false} />
-        
+        <CustomAutomationsCard isLive={isLive || false} />
+        <CollaborationCard />
       </div>
     </div>
   );

@@ -1,17 +1,19 @@
-// components/QuickActionsCard.tsx
 import React from 'react';
-import { Play, Radio, Zap, Target } from 'lucide-react';
+import { Radio, Zap, Target, Megaphone } from 'lucide-react';
+import { useQuickActions } from '../hooks/useQuickActions';
 
 interface QuickActionsCardProps {
   isLive: boolean;
 }
 
 const QuickActionsCard: React.FC<QuickActionsCardProps> = ({ isLive }) => {
+  const { runAds, openGoals, raidShortcut, shoutout } = useQuickActions(isLive);
+
   const actions = [
-    { icon: Play, label: 'Start stream', color: '#9147ff' },
-    { icon: Radio, label: 'Run ads', color: '#2a2a2e' },
-    { icon: Zap, label: 'Raid shortcuts', color: '#2a2a2e' },
-    { icon: Target, label: 'Stream Goals', color: '#2a2a2e' },
+    { icon: Megaphone, label: 'Shoutout', onClick: shoutout, color: '#9147ff' },
+    { icon: Radio, label: 'Run ads', onClick: runAds, color: '#2a2a2e' },
+    { icon: Zap, label: 'Raid shortcuts', onClick: raidShortcut, color: '#2a2a2e' },
+    { icon: Target, label: 'Stream Goals', onClick: openGoals, color: '#2a2a2e' },
   ];
 
   return (
@@ -21,6 +23,7 @@ const QuickActionsCard: React.FC<QuickActionsCardProps> = ({ isLive }) => {
         {actions.map((action, idx) => (
           <button
             key={idx}
+            onClick={action.onClick}
             className="flex flex-col items-center justify-center gap-2 py-3 rounded-xl transition-all hover:scale-105"
             style={{ backgroundColor: action.color, color: 'white' }}
           >

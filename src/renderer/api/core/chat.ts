@@ -11,6 +11,7 @@ export interface ChatMessage {
   timestamp: string;
   replyParentMsgId?: string;
   parsedMessage?: Array<{ type: 'text' | 'emote'; text: string; name?: string; id?: string }>;
+    isFromMe?: boolean; 
 }
 
 export interface ChatConnected {

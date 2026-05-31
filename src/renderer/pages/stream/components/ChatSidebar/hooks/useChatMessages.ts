@@ -97,11 +97,11 @@ export const useChatMessages = (isConnected: boolean) => {
         replyParentMsgId: replyToId,
         parsedMessage: undefined,
       };
-      setMessages(prev => {
-        const newMessages = [...prev, localMessage];
-        if (newMessages.length > MAX_MESSAGES) return newMessages.slice(-MAX_MESSAGES);
-        return newMessages;
-      });
+      // setMessages(prev => {
+      //   const newMessages = [...prev, localMessage];
+      //   if (newMessages.length > MAX_MESSAGES) return newMessages.slice(-MAX_MESSAGES);
+      //   return newMessages;
+      // });
       return true;
     } catch (err) {
       console.error(err);
@@ -109,5 +109,5 @@ export const useChatMessages = (isConnected: boolean) => {
     }
   }, [currentUser]);
 
-  return { messages, messagesEndRef, sendMessage };
+  return { messages, messagesEndRef, sendMessage, currentUser };
 };

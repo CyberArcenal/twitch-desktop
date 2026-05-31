@@ -1,14 +1,13 @@
-// components/ConnectedSoftwareCard.tsx
 import React from 'react';
 import { Monitor } from 'lucide-react';
+import { useOBSConnection } from '../hooks/useOBSConnection';
 
 interface ConnectedSoftwareCardProps {
   isLive: boolean;
 }
 
-const ConnectedSoftwareCard: React.FC<ConnectedSoftwareCardProps> = ({ isLive }) => {
-  // Auto‑detect would be implemented via WebSocket or scanning processes
-  const isConnected = false; // placeholder
+const ConnectedSoftwareCard: React.FC<ConnectedSoftwareCardProps> = () => {
+  const { isConnected, softwareName } = useOBSConnection();
 
   return (
     <div className="bg-[#1f1f23] rounded-xl p-4 shadow-lg border border-[#2a2a2e]">
@@ -20,7 +19,7 @@ const ConnectedSoftwareCard: React.FC<ConnectedSoftwareCardProps> = ({ isLive })
         </span>
       </div>
       <p className="text-xs text-[#adadb8] mt-2">
-        {isConnected ? 'OBS Studio • Streaming to Twitch' : 'No streaming software detected'}
+        {isConnected ? `${softwareName} • Streaming to Twitch` : 'No streaming software detected'}
       </p>
     </div>
   );

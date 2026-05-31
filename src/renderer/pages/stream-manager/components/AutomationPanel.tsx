@@ -1,6 +1,8 @@
-// components/AutomationPanel.tsx
+// src/renderer/pages/stream-manager/components/AutomationPanel.tsx
 import React, { useState, useEffect } from "react";
 import { Upload, Trash2, Play, Square } from "lucide-react";
+import { streamManagerAPI } from "../../../api/core/streamManager";
+import { useAutomation } from "../hooks/useAutomation";
 
 interface AutomationLog {
   id: string;
@@ -14,14 +16,46 @@ interface AutomationPanelProps {
 }
 
 const AutomationPanel: React.FC<AutomationPanelProps> = ({ isLive }) => {
-  const [autoRaidEnabled, setAutoRaidEnabled] = useState(false);
-  const [autoClipEnabled, setAutoClipEnabled] = useState(false);
-  const [autoMessageEnabled, setAutoMessageEnabled] = useState(false);
+
+
+    const {
+    autoRaidEnabled, setAutoRaidEnabled,
+    autoClipEnabled, setAutoClipEnabled,
+    autoMessageEnabled, setAutoMessageEnabled,
+    autoMessageText, setAutoMessageText,
+    raidTarget, setRaidTarget,
+    automationRunning, setAutomationRunning,
+    logs, setLogs,
+    startAutomation,
+    stopAutomation,
+    addLog,
+    clearLogs,
+  } = useAutomation();
+
+
+  
+
   const [scripts, setScripts] = useState<{ name: string; enabled: boolean }[]>([]);
   const [scriptName, setScriptName] = useState("");
-  const [logs, setLogs] = useState<AutomationLog[]>([]);
-  const [automationRunning, setAutomationRunning] = useState(true);
 
+
+  // Load initial status from backend
+  useEffect(() => {
+    const loadStatus = async () => {
+      const res = await streamManagerAPI.getAutomationStatus();
+      if (res.status && res.data) {
+        setAutomationRunning(res.data.running);
+        setAutoRaidEnabled(res.data.config.autoRaid);
+        setAutoClipEnabled(res.data.config.autoClip);
+        setAutoMessageEnabled(res.data.config.autoMessage);
+        setAutoMessageText(res.data.config.autoMessageText);
+        setRaidTarget(res.data.config.raidTarget || "");
+      }
+    };
+    loadStatus();
+  }, []);
+
+  // Listen for automation logs from backend
   useEffect(() => {
     const handleAutomationLog = (data: AutomationLog) => {
       const logWithTimestamp = { ...data, timestamp: data.timestamp ? new Date(data.timestamp) : new Date() };
@@ -33,6 +67,33 @@ const AutomationPanel: React.FC<AutomationPanelProps> = ({ isLive }) => {
 
   const addLocalLog = (message: string, type: "info" | "success" | "error" = "info") => {
     setLogs((prev) => [{ id: Date.now().toString(), timestamp: new Date(), message, type }, ...prev.slice(0, 49)]);
+  };
+
+  const handleStartAutomation = async () => {
+    const config = {
+      autoRaid: autoRaidEnabled,
+      autoClip: autoClipEnabled,
+      autoMessage: autoMessageEnabled,
+      autoMessageText,
+      raidTarget: raidTarget || null,
+    };
+    const res = await streamManagerAPI.startAutomation(config);
+    if (res.status) {
+      setAutomationRunning(true);
+      addLocalLog("Automation system started", "success");
+    } else {
+      addLocalLog(`Failed to start automation: ${res.message}`, "error");
+    }
+  };
+
+  const handleStopAutomation = async () => {
+    const res = await streamManagerAPI.stopAutomation();
+    if (res.status) {
+      setAutomationRunning(false);
+      addLocalLog("Automation system stopped", "info");
+    } else {
+      addLocalLog(`Failed to stop automation: ${res.message}`, "error");
+    }
   };
 
   const handleToggleAutoRaid = () => {
@@ -70,16 +131,6 @@ const AutomationPanel: React.FC<AutomationPanelProps> = ({ isLive }) => {
     const script = scripts[index];
     setScripts((prev) => prev.filter((_, i) => i !== index));
     addLocalLog(`Script "${script.name}" removed`, "error");
-  };
-
-  const handleStartAutomation = () => {
-    setAutomationRunning(true);
-    addLocalLog("Automation system started", "success");
-  };
-
-  const handleStopAutomation = () => {
-    setAutomationRunning(false);
-    addLocalLog("Automation system stopped", "error");
   };
 
   const handleResetLogs = () => {
@@ -124,6 +175,28 @@ const AutomationPanel: React.FC<AutomationPanelProps> = ({ isLive }) => {
                 <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${autoMessageEnabled ? "translate-x-5" : ""}`} />
               </button>
             </div>
+            {autoMessageEnabled && (
+              <div className="mt-2">
+                <input
+                  type="text"
+                  value={autoMessageText}
+                  onChange={(e) => setAutoMessageText(e.target.value)}
+                  placeholder="Auto‑message text"
+                  className="w-full bg-[#0e0e10] border border-[#2a2a2e] rounded px-2 py-1 text-sm text-white"
+                />
+              </div>
+            )}
+            {autoRaidEnabled && (
+              <div className="mt-2">
+                <input
+                  type="text"
+                  value={raidTarget}
+                  onChange={(e) => setRaidTarget(e.target.value)}
+                  placeholder="Raid target channel (e.g., channelname)"
+                  className="w-full bg-[#0e0e10] border border-[#2a2a2e] rounded px-2 py-1 text-sm text-white"
+                />
+              </div>
+            )}
           </div>
         </div>
 

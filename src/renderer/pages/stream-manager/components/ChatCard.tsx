@@ -1,34 +1,60 @@
-// components/ChatCard.tsx
-import React, { useState } from 'react';
-import { Send, Ban, Clock, Trash2 } from 'lucide-react';
-import { useChatMessages } from '../../stream/components/ChatSidebar/hooks/useChatMessages';
-import { useModeration } from '../hooks/useModeration';
+// src/renderer/pages/stream-manager/components/ChatCard.tsx
+import React from "react";
+import { Send, Ban, Clock, Trash2, AtSign } from "lucide-react";
+import { useChat } from "../hooks/useChat";
 
 interface ChatCardProps {
   channelName?: string;
+  broadcasterId?: string;
   isLive: boolean;
 }
 
-const ChatCard: React.FC<ChatCardProps> = ({ channelName, isLive }) => {
-  const { messages, messagesEndRef, sendMessage } = useChatMessages(isLive && !!channelName);
-  const { banUser, timeoutUser, clearChat } = useModeration(channelName || '');
-  const [input, setInput] = useState('');
-  const [hoveredMsgId, setHoveredMsgId] = useState<string | null>(null);
+const ChatCard: React.FC<ChatCardProps> = ({
+  channelName,
+  broadcasterId,
+  isLive,
+}) => {
+  const {
+    messages,
+    input,
+    setInput,
+    connected,
+    hoveredMsgId,
+    setHoveredMsgId,
+    messagesEndRef,
+    inputRef,
+    sendMessage,
+    clearChatMessages,
+    mentionUser,
+    banUser,
+    timeoutUser,
+  } = useChat(channelName, broadcasterId, isLive);
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
-    await sendMessage(input);
-    setInput('');
+  const handleSend = () => {
+    sendMessage();
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      sendMessage();
+    }
   };
 
   return (
     <div className="bg-[#1f1f23] rounded-xl shadow-lg border border-[#2a2a2e] flex flex-col h-full min-h-[300px]">
       <div className="p-3 border-b border-[#2a2a2e] flex justify-between items-center">
-        <h3 className="text-sm font-semibold text-white">My Chat</h3>
-        <button onClick={clearChat} className="text-red-400 text-xs hover:text-red-300">
+        <h3 className="text-sm font-semibold text-white">
+          My Chat {connected ? "🟢" : "🔴"}
+        </h3>
+        <button
+          onClick={clearChatMessages}
+          className="text-red-400 text-xs hover:text-red-300"
+          title="Clear all messages"
+        >
           <Trash2 className="w-3 h-3" />
         </button>
       </div>
+
       <div className="flex-1 overflow-y-auto p-3 space-y-1 text-sm">
         {messages.map((msg) => (
           <div
@@ -38,16 +64,36 @@ const ChatCard: React.FC<ChatCardProps> = ({ channelName, isLive }) => {
             onMouseLeave={() => setHoveredMsgId(null)}
           >
             <div className="flex gap-1">
-              <span className="font-semibold text-white">{msg.user}:</span>
+              <button
+                onClick={() => mentionUser(msg.user)}
+                className={`font-semibold ${msg.isFromMe ? "text-[#9147ff]" : "text-white"} hover:underline`}
+              >
+                {msg.user}:
+              </button>
               <span className="text-[#efeff1] break-words">{msg.message}</span>
             </div>
-            {hoveredMsgId === msg.id && isLive && (
+            {hoveredMsgId === msg.id && !msg.isFromMe && isLive && (
               <div className="absolute right-0 top-0 flex gap-1 bg-[#1f1f23] p-0.5 rounded shadow">
-                <button onClick={() => timeoutUser(msg.user, 600)} className="text-yellow-400 hover:text-yellow-300">
+                <button
+                  onClick={() => timeoutUser(msg.user, 600)}
+                  className="text-yellow-400 hover:text-yellow-300"
+                  title="Timeout 10 minutes"
+                >
                   <Clock className="w-3 h-3" />
                 </button>
-                <button onClick={() => banUser(msg.user)} className="text-red-400 hover:text-red-300">
+                <button
+                  onClick={() => banUser(msg.user)}
+                  className="text-red-400 hover:text-red-300"
+                  title="Ban user"
+                >
                   <Ban className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => mentionUser(msg.user)}
+                  className="text-blue-400 hover:text-blue-300"
+                  title="Mention"
+                >
+                  <AtSign className="w-3 h-3" />
                 </button>
               </div>
             )}
@@ -55,23 +101,29 @@ const ChatCard: React.FC<ChatCardProps> = ({ channelName, isLive }) => {
         ))}
         <div ref={messagesEndRef} />
       </div>
+
       <div className="p-3 border-t border-[#2a2a2e]">
         <div className="flex gap-2">
           <input
+            ref={inputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            placeholder={isLive ? "Send a message..." : "Chat only when live"}
-            disabled={!isLive}
+            onKeyPress={handleKeyPress}
+            placeholder={connected ? "Send a message..." : "Connecting to chat..."}
+            disabled={!connected}
             className="flex-1 bg-[#0e0e10] border border-[#2a2a2e] rounded px-2 py-1 text-sm text-white placeholder-[#adadb8] disabled:opacity-50"
           />
-          <button onClick={handleSend} disabled={!isLive} className="p-1 bg-[#9147ff] rounded hover:bg-[#772ce8] disabled:opacity-50">
+          <button
+            onClick={handleSend}
+            disabled={!connected}
+            className="p-1 bg-[#9147ff] rounded hover:bg-[#772ce8] disabled:opacity-50"
+          >
             <Send className="w-4 h-4 text-white" />
           </button>
         </div>
         <div className="text-xs text-[#adadb8] text-center mt-2">
-          Animated Emotes can be disabled in Settings
+          {!connected && isLive ? "Connecting..." : "Click @username to mention"}
         </div>
       </div>
     </div>

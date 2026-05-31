@@ -4,16 +4,16 @@ const { ChatClient, parseChatMessage } = require("@twurple/chat");
 const { RefreshingAuthProvider } = require("@twurple/auth");
 const { settingsService } = require("./settings.service");
 // @ts-ignore
-// @ts-ignore
 const { twitchAuthService } = require("./twitch-auth.service");
 const { twitchApiService } = require("./twitch-api.service");
-const { CLIENT_ID, CLIENT_SECRET } = require("../shared/config");
+const { CLIENT_ID, CLIENT_SECRET, SCOPES } = require("../shared/config");
 const { BrowserWindow } = require("electron");
 const { logger } = require("../utils/logger");
 
 class TwitchChatService {
   constructor() {
-    this.chatClient = null;
+    this.chatClient = null; // channel chat client
+    this.whisperClient = null; // whispers client
     this.currentChannel = null;
     this.mainWindow = null;
     this.reconnectAttempts = 0;
@@ -23,6 +23,7 @@ class TwitchChatService {
     this.currentUserLogin = null;
     this.whisperListenersSetup = false;
     this.authProvider = null;
+
     logger.debug("[TwitchChatService] Constructor - instance created");
   }
 
@@ -47,61 +48,104 @@ class TwitchChatService {
     logger.info(
       `[Chat] getAuthProvider - creating new RefreshingAuthProvider for user ${twitchData.userId}`,
     );
+
+    // ✅ FIXED: Proper token store with all required fields
+    const tokenStore = {
+      getUserToken: async (userId) => {
+        const data = settingsService.get("twitch");
+        if (data && data.userId === userId) {
+          // Convert scope to string if it's an array
+          let scopeString = data.scope || "chat:read chat:edit";
+          if (Array.isArray(scopeString)) {
+            scopeString = scopeString.join(" ");
+          }
+          return {
+            accessToken: data.accessToken,
+            refreshToken: data.refreshToken,
+            expiresIn: data.expiresIn || 3600,
+            obtainmentTimestamp: data.obtainmentTimestamp || Date.now(),
+            scope: scopeString,
+          };
+        }
+        return null;
+      },
+      setUserToken: async (userId, token) => {
+        const existing = settingsService.get("twitch") || {};
+        settingsService.setTwitchTokens(
+          token.accessToken,
+          token.refreshToken || existing.refreshToken || "",
+          userId,
+          existing.login || "",
+          token.expiresIn,
+          token.obtainmentTimestamp,
+          token.scope || "chat:read chat:edit",
+        );
+        logger.info(`[Chat] setUserToken - token updated for ${userId}`);
+      },
+      removeUserToken: async (userId) => {
+        logger.warn(`[Chat] removeUserToken called for ${userId}`);
+      },
+    };
+
     this.authProvider = new RefreshingAuthProvider(
       { clientId: CLIENT_ID, clientSecret: CLIENT_SECRET },
-      // @ts-ignore
-      {},
+      tokenStore,
     );
 
-    await this.authProvider.addUser(
-      twitchData.userId,
-      {
-        accessToken: twitchData.accessToken,
-        refreshToken: twitchData.refreshToken,
-        expiresIn: 0,
-        obtainmentTimestamp: Date.now(),
-      },
-      ["chat", "whispers"],
-    );
-    logger.info(
-      "[Chat] getAuthProvider - user added with intents: chat, whispers",
-    );
+    // ✅ FIXED: Use addUserForToken with proper intent array
+    const tokenData = {
+      accessToken: twitchData.accessToken,
+      refreshToken: twitchData.refreshToken,
+      expiresIn: twitchData.expiresIn || 3600,
+      obtainmentTimestamp: twitchData.obtainmentTimestamp || Date.now(),
+    };
 
+    // ✅ FIXED: Add user with 'chat' intent - this is the key!
+    await this.authProvider.addUserForToken(tokenData, ["chat"]);
+
+    logger.info("[Chat] AuthProvider - user added with 'chat' intent");
+
+    // ✅ FIXED: Event handling for token refresh
     this.authProvider.onRefresh(async (userId, newTokenData) => {
       if (userId === twitchData.userId) {
-        logger.info(
-          `[Chat] AuthProvider onRefresh - refreshing tokens for user ${userId}`,
-        );
+        logger.info(`[Chat] Token refreshed for user ${userId}`);
         settingsService.setTwitchTokens(
           newTokenData.accessToken,
           newTokenData.refreshToken || twitchData.refreshToken,
           twitchData.userId,
           twitchData.login,
-        );
-        logger.debug(
-          "[Chat] AuthProvider onRefresh - tokens updated in settings",
+          newTokenData.expiresIn,
+          newTokenData.obtainmentTimestamp,
+          newTokenData.scope || "chat:read chat:edit",
         );
       }
+    });
+
+    this.authProvider.onRefreshFailure(async (userId, error) => {
+      logger.error(`[Chat] Token refresh failed for ${userId}:`, error);
     });
 
     return this.authProvider;
   }
 
   async connectToWhispers() {
-    if (this.chatClient && this.whisperListenersSetup) {
-      logger.debug("[Chat] connectToWhispers - already connected");
-      return;
-    }
+    if (this.whisperClient) return;
 
     logger.info("[Chat] connectToWhispers - starting whisper connection");
     try {
       const authProvider = await this.getAuthProvider();
-      this.chatClient = new ChatClient({ authProvider, channels: [] });
-      logger.debug("[Chat] connectToWhispers - ChatClient created");
+      this.whisperClient = new ChatClient({ authProvider, channels: [] });
+      this.setupWhisperListeners(); // attaches to this.whisperClient
+      await this.whisperClient.connect();
 
-      this.setupWhisperListeners();
-      await this.chatClient.connect();
-      this.whisperListenersSetup = true;
+      // Auto-reconnect for whispers
+      this.whisperClient.onDisconnect(async (manually) => {
+        if (!manually) {
+          logger.warn("[Chat] Whisper client disconnected, reconnecting...");
+          await this.connectToWhispers();
+        }
+      });
+
       logger.success(
         "[Chat] connectToWhispers - whisper service connected successfully",
       );
@@ -112,7 +156,7 @@ class TwitchChatService {
   }
 
   /**
-   * @param {any} window
+   * @param {BrowserWindow | null} window
    */
   async initChatService(window) {
     this.mainWindow = window;
@@ -124,13 +168,16 @@ class TwitchChatService {
 
   setupWhisperListeners() {
     if (this.whisperListenersSetup) return;
+    if (!this.whisperClient) {
+      logger.warn("[Chat] setupWhisperListeners - whisperClient not ready");
+      return;
+    }
     this.whisperListenersSetup = true;
     logger.debug(
       "[Chat] setupWhisperListeners - attaching whisper event handlers",
     );
 
-    // @ts-ignore
-    this.chatClient.onWhisper((sender, message, msg) => {
+    this.whisperClient.onWhisper((sender, message, msg) => {
       // @ts-ignore
       const userId = sender.id;
       // @ts-ignore
@@ -181,6 +228,7 @@ class TwitchChatService {
         Array.from(this.conversations.values()),
       );
     });
+
     logger.info("[Chat] setupWhisperListeners - whisper listeners active");
   }
 
@@ -189,9 +237,7 @@ class TwitchChatService {
    */
   async connectToChannel(channelName) {
     if (this.chatClient) {
-      logger.debug(
-        `[Chat] connectToChannel - disconnecting existing chat before connecting to ${channelName}`,
-      );
+      logger.debug(`[Chat] connectToChannel - disconnecting existing chat`);
       await this.disconnectChat();
     }
 
@@ -200,26 +246,26 @@ class TwitchChatService {
     );
     try {
       const authProvider = await this.getAuthProvider();
+
+      // ✅ FIXED: Simplified ChatClient configuration
       this.chatClient = new ChatClient({
         authProvider,
         channels: [channelName],
+        webSocket: true,
+        isBot: false,
+        logger: {
+          minLevel: "debug",
+        },
       });
-      logger.debug(
-        `[Chat] connectToChannel - ChatClient created for channel ${channelName}`,
-      );
 
+      // ✅ FIXED: Setup listeners before connecting
       this.setupChatListeners(channelName);
+
       await this.chatClient.connect();
       this.currentChannel = channelName;
-      logger.success(
-        `[Chat] connectToChannel - successfully connected to #${channelName}`,
-      );
+      logger.success(`[Chat] Successfully connected to #${channelName}`);
     } catch (err) {
-      logger.error(
-        `[Chat] connectToChannel - failed to connect to ${channelName}:`,
-        // @ts-ignore
-        err,
-      );
+      logger.error(`[Chat] Failed to connect to ${channelName}:`, err);
       throw err;
     }
   }
@@ -234,51 +280,68 @@ class TwitchChatService {
     );
 
     // @ts-ignore
+    this.chatClient.onConnect(() => {
+      logger.info(`[Chat] Connected and authenticated to ${channelName}`);
+      this._sendToRenderers("chat:connected", { channel: channelName });
+    });
+
+    // @ts-ignore
     this.chatClient.onMessage((channel, user, message, msg) => {
+      logger.debug(
+        `[Chat] RAW MESSAGE: channel=${channel}, user=${user}, msg=${message}`,
+      );
       const filters = settingsService.get("chatFilters") || [];
-      // @ts-ignore
-      if (filters.some((f) => message.toLowerCase().includes(f))) {
+      if (
+        filters.some((/** @type {string} */ f) =>
+          message.toLowerCase().includes(f),
+        )
+      ) {
         logger.debug(`[Chat] Message filtered (${user}): "${message}"`);
         return;
       }
 
-      if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-        const parsedMessage = parseChatMessage(message, msg.emoteOffsets);
-        logger.debug(
-          `[Chat] Message from ${user} in ${channel}: "${message}" (emotes: ${msg.emoteOffsets?.size || 0})`,
-        );
+      const isFromMe = user === this.currentUserLogin;
 
-        this.mainWindow.webContents.send("chat:message", {
-          messageId: msg.id,
-          channel: channel.slice(1),
-          user,
-          message,
-          parsedMessage,
-          badges: msg.userInfo.badges,
-          emotes: msg.emoteOffsets,
-          timestamp: new Date().toISOString(),
-          // @ts-ignore
-          replyParentMsgId: msg.replyParentMsgId || null,
-        });
+      const chatMessage = {
+        messageId: msg.id,
+        channel: channel.slice(1),
+        user: user,
+        message: message,
+        parsedMessage: parseChatMessage(message, msg.emoteOffsets),
+        badges: msg.userInfo.badges,
+        emotes: msg.emoteOffsets,
+        timestamp: new Date().toISOString(),
+        isFromMe: isFromMe,
+        replyParentMsgId: msg.parentMessageId || null,
+      };
+
+      if (isFromMe) {
+        logger.success(
+          `[Chat] OWN MESSAGE received via onMessage: "${message}" (ID: ${msg.id})`,
+        );
       }
+
+      // Use unified sender
+      // @ts-ignore
+      this._sendToRenderers("chat:message", chatMessage);
     });
 
     // @ts-ignore
     this.chatClient.onJoin((channel, user) => {
-      if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-        if (user === userLogin) {
-          logger.info(`[Chat] Own user ${user} joined ${channel}`);
-          this.mainWindow.webContents.send("chat:connected", {
-            channel: channel.slice(1),
-          });
-          this.reconnectAttempts = 0;
-        } else {
-          logger.debug(`[Chat] User ${user} joined ${channel}`);
-          this.mainWindow.webContents.send("chat:user-joined", {
-            channel: channel.slice(1),
-            user,
-          });
-        }
+      if (user === userLogin) {
+        logger.info(`[Chat] Own user ${user} joined ${channel}`);
+        this._sendToRenderers("chat:connected", {
+          // @ts-ignore
+          channel: channel.slice(1),
+        });
+        this.reconnectAttempts = 0;
+      } else {
+        logger.debug(`[Chat] User ${user} joined ${channel}`);
+        this._sendToRenderers("chat:user-joined", {
+          // @ts-ignore
+          channel: channel.slice(1),
+          user,
+        });
       }
     });
 
@@ -319,27 +382,59 @@ class TwitchChatService {
 
   /**
    * @param {string} message
-   * @param {string | null} replyParentMsgId
    */
   async sendChatMessage(message, replyParentMsgId = null) {
-    if (!this.chatClient || !this.currentChannel) {
-      logger.error("[Chat] sendChatMessage - not connected to chat");
-      throw new Error("Not connected to chat");
-    }
+    if (!this.chatClient || !this.currentChannel)
+      throw new Error("Not connected");
 
-    const attributes = {};
-    if (replyParentMsgId) {
-      attributes.replyTo = replyParentMsgId;
-      logger.info(
-        `[Chat] Sending reply message (replying to ${replyParentMsgId})`,
-      );
-    }
+    try {
+      await this.chatClient.say(this.currentChannel, message, {
+        // @ts-ignore
+        replyTo: replyParentMsgId,
+      });
 
-    logger.debug(
-      `[Chat] Sending message to ${this.currentChannel}: "${message}"`,
-    );
-    await this.chatClient.say(this.currentChannel, message, attributes);
-    logger.info(`[Chat] Message sent to ${this.currentChannel}`);
+      // --- LOCAL ECHO ---
+      // Siguraduhin na hindi mapuputol ang pangalan ng channel kung wala itong '#'
+      const cleanChannel = this.currentChannel.startsWith("#")
+        ? this.currentChannel.slice(1)
+        : this.currentChannel;
+
+      // --- LOCAL ECHO ---
+      const syntheticMessage = {
+        messageId: `local-${Date.now()}`,
+        channel: cleanChannel,
+        user: this.currentUserLogin,
+        message: message,
+        parsedMessage: [{ type: "text", text: message }],
+        badges: [],
+        emotes: new Map(),
+        timestamp: new Date().toISOString(),
+        isFromMe: true,
+        replyParentMsgId: replyParentMsgId || null,
+      };
+      // @ts-ignore
+      this._sendToRenderers("chat:message", syntheticMessage);
+      // --- END LOCAL ECHO ---
+
+      logger.success(`Message sent: "${message}"`);
+    } catch (err) {
+      // @ts-ignore
+      let friendlyMessage = err.message;
+      // @ts-ignore
+      if (err.message.includes("message was denied")) {
+        friendlyMessage =
+          "Message blocked by Twitch (slow mode, banned word, or duplicate).";
+        // @ts-ignore
+      } else if (err.message.includes("ratelimit")) {
+        friendlyMessage = "You're sending messages too fast. Please wait.";
+      }
+      this._sendToRenderers("chat:send-error", {
+        // @ts-ignore
+        message,
+        error: friendlyMessage,
+      });
+      throw err;
+    }
   }
 
   /**
@@ -347,13 +442,13 @@ class TwitchChatService {
    * @param {any} message
    */
   async sendWhisper(userLogin, message) {
-    if (!this.chatClient) {
-      logger.error("[Chat] sendWhisper - chat client not connected");
-      throw new Error("Chat not connected");
+    if (!this.whisperClient) {
+      logger.error("[Chat] sendWhisper - whisper client not connected");
+      throw new Error("Whisper not connected");
     }
     logger.info(`[Chat] Sending whisper to ${userLogin}: "${message}"`);
     // @ts-ignore
-    await this.chatClient.whisper(userLogin, message);
+    await this.whisperClient.whisper(userLogin, message);
     logger.debug(`[Chat] Whisper sent to ${userLogin}`);
 
     const user = await twitchApiService.getUserByName(userLogin);
@@ -403,16 +498,20 @@ class TwitchChatService {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
-      logger.debug("[Chat] disconnectChat - cleared reconnect timer");
     }
     if (this.chatClient) {
-      logger.info("[Chat] disconnectChat - quitting chat client");
       await this.chatClient.quit();
       this.chatClient = null;
-      this.currentChannel = null;
-      logger.info("[Chat] disconnectChat - chat client disconnected");
     }
+    this.currentChannel = null;
     this.reconnectAttempts = 0;
+  }
+
+  async disconnectWhispers() {
+    if (this.whisperClient) {
+      await this.whisperClient.quit();
+      this.whisperClient = null;
+    }
     this.whisperListenersSetup = false;
   }
 
@@ -425,7 +524,7 @@ class TwitchChatService {
       BrowserWindow.getAllWindows().forEach((win) => {
         if (!win.isDestroyed()) win.webContents.send(channel, data);
       });
-      logger.debug(`[Chat] Sent event "${channel}" to renderers`);
+      // logger.debug(`[Chat] Sent event "${channel}" to renderers`);
     } catch (err) {
       logger.warn(
         `[Chat] Failed to send event "${channel}" to renderers:`,
@@ -465,10 +564,11 @@ class TwitchChatService {
     const conv = this.conversations.get(userId);
     if (conv) {
       conv.unreadCount = 0;
-      // @ts-ignore
-      conv.messages.forEach((m) => {
-        if (!m.isFromMe) m.read = true;
-      });
+      conv.messages.forEach(
+        (/** @type {{ isFromMe: any; read: boolean; }} */ m) => {
+          if (!m.isFromMe) m.read = true;
+        },
+      );
       this._sendToRenderers(
         "whisper:conversations-updated",
         Array.from(this.conversations.values()),

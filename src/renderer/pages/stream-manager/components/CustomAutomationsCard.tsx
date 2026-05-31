@@ -1,6 +1,8 @@
-// components/CustomAutomationsCard.tsx
+// src/renderer/pages/stream-manager/components/CustomAutomationsCard.tsx
 import React, { useState } from "react";
 import AutomationPanel from "./AutomationPanel";
+import SceneManager from "./SceneManager";
+import AlertConfigurator from "./AlertConfigurator";
 
 interface CustomAutomationsCardProps {
   isLive: boolean;
@@ -23,20 +25,16 @@ const CustomAutomationsCard: React.FC<CustomAutomationsCardProps> = ({ isLive })
                 : "text-[#adadb8] hover:text-white"
             }`}
           >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            {tab === "automations" ? "Automations" : tab === "scenes" ? "Scenes" : "Alerts"}
           </button>
         ))}
       </div>
 
-      {/* Content area – takes all remaining space and scrolls if needed */}
+      {/* Content area */}
       <div className="flex-1 overflow-y-auto">
         {activeTab === "automations" && <AutomationPanel isLive={isLive} />}
-        {activeTab === "scenes" && (
-          <div className="h-full flex items-center justify-center text-[#adadb8]">Scene management coming soon</div>
-        )}
-        {activeTab === "alerts" && (
-          <div className="h-full flex items-center justify-center text-[#adadb8]">Alert configuration coming soon</div>
-        )}
+        {activeTab === "scenes" && <SceneManager />}
+        {activeTab === "alerts" && <AlertConfigurator />}
       </div>
     </div>
   );

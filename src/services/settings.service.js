@@ -55,15 +55,19 @@ class SettingsService {
   // @ts-ignore
   get(key) {
     const value = this.store.get(key);
-    // Only log non‑sensitive keys; don't log full tokens
     if (key === "twitch") {
-      // @ts-ignore
-      logger.debug("[SettingsService] get(twitch):", {
-        hasToken: !!value?.accessToken,
-        userId: value?.userId,
-      });
+      if (value) {
+        // logger.debug("[SettingsService] get(twitch):", {
+        //   hasToken: !!value.accessToken,
+        //   userId: value.userId,
+        //   login: value.login,
+        //   scope: value.scope || null,
+        // });
+      } else {
+        logger.debug("[SettingsService] get(twitch): no twitch data");
+      }
     } else {
-      logger.debug(`[SettingsService] get(${key}) =`, value);
+      // logger.debug(`[SettingsService] get(${key}) =`, value);
     }
     return value;
   }
@@ -106,10 +110,42 @@ class SettingsService {
   }
 
   // @ts-ignore
-  setTwitchTokens(accessToken, refreshToken, userId, login) {
-    this.set("twitch", { accessToken, refreshToken, userId, login });
+  /**
+   * @param {string} accessToken
+   * @param {any} refreshToken
+   * @param {any} userId
+   * @param {any} login
+   */
+  setTwitchTokens(
+    accessToken,
+    refreshToken,
+    userId,
+    login,
+    expiresIn = 0,
+    obtainmentTimestamp = Date.now(),
+    scope = "",
+  ) {
+    // Convert scope to string if it's an array
+    let scopeString = scope;
+    if (Array.isArray(scope)) {
+      scopeString = scope.join(" ");
+    }
+    this.set("twitch", {
+      accessToken,
+      refreshToken,
+      userId,
+      login,
+      expiresIn,
+      obtainmentTimestamp,
+      scope: scopeString,
+    });
     // @ts-ignore
-    logger.info("[SettingsService] Twitch tokens saved", { userId, login });
+    logger.info("[SettingsService] Twitch tokens saved", {
+      userId,
+      login,
+      hasToken: !!accessToken,
+      scope: scopeString,
+    });
   }
 
   clearTwitchTokens() {

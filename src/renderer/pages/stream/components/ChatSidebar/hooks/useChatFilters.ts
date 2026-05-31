@@ -1,25 +1,33 @@
-import { useState } from 'react';
+// src/renderer/pages/stream/components/ChatSidebar/hooks/useChatFilters.ts
+import { useState, useCallback } from 'react';
 
 export const useChatFilters = () => {
   const [filters, setFilters] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
 
-  const addFilter = (word: string) => {
-    if (word && !filters.includes(word)) {
-      setFilters([...filters, word]);
+  const addFilter = useCallback((word: string) => {
+    const trimmed = word.trim().toLowerCase();
+    if (trimmed && !filters.includes(trimmed)) {
+      setFilters(prev => [...prev, trimmed]);
     }
-  };
+  }, [filters]);
 
-  const removeFilter = (word: string) => {
-    setFilters(filters.filter(f => f !== word));
-  };
+  const removeFilter = useCallback((word: string) => {
+    setFilters(prev => prev.filter(f => f !== word));
+  }, []);
 
-  const toggleFilters = () => setShowFilters(prev => !prev);
+  const clearAllFilters = useCallback(() => {
+    setFilters([]);
+  }, []);
 
-  const filterMessage = (message: string) => {
+  const toggleFilters = useCallback(() => setShowFilters(prev => !prev), []);
+
+  const filterMessage = useCallback((message: string): boolean => {
     if (filters.length === 0) return true;
-    return !filters.some(f => message.toLowerCase().includes(f.toLowerCase()));
-  };
+    const lowerMessage = message.toLowerCase();
+    // If ANY filter word is found in the message, HIDE it (return false)
+    return !filters.some(filterWord => lowerMessage.includes(filterWord));
+  }, [filters]);
 
-  return { filters, showFilters, addFilter, removeFilter, toggleFilters, filterMessage };
+  return { filters, showFilters, addFilter, removeFilter, clearAllFilters, toggleFilters, filterMessage };
 };

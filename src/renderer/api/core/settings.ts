@@ -59,6 +59,14 @@ class SettingsAPI {
       params: { type },
     });
   }
+  async updateNotificationPreferences(
+    prefs: any,
+  ): Promise<BaseResponse<boolean>> {
+    return window.backendAPI.settings({
+      method: "updateNotificationPreferences",
+      params: { prefs },
+    });
+  }
 }
 
 export const settingsAPI = new SettingsAPI();

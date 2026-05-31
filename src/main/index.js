@@ -19,6 +19,7 @@ const url = require("url");
 // ===================== SERVICES =====================
 const { notificationService } = require("../services/notification.service");
 const { playerService } = require("../services/player.service");
+// @ts-ignore
 const { settingsService } = require("../services/settings.service");
 const { twitchAuthService } = require("../services/twitch-auth.service");
 const { twitchApiService } = require("../services/twitch-api.service");
@@ -27,6 +28,7 @@ const { twitchChatService } = require("../services/twitch-chat.service");
 const { followsService } = require("../services/follows.service");
 const { eventSubService } = require("../services/eventsub.service");
 const { pipService } = require("../services/picture-in-picture.service");
+const { obsWebSocketService } = require("../services/obs-websocket.service.js");
 
 // ===================== CONFIGURATION =====================
 const IS_DEV = process.env.NODE_ENV === "development" || !app.isPackaged;
@@ -113,6 +115,7 @@ const logFilePath = path.join(
   "logs",
   `twitch-${new Date().toISOString().split("T")[0]}.log`,
 );
+// @ts-ignore
 let logStream = null;
 
 async function ensureLogDir() {
@@ -120,6 +123,9 @@ async function ensureLogDir() {
   await fs.mkdir(logDir, { recursive: true });
 }
 
+/**
+ * @param {string} message
+ */
 async function writeToLogFile(message) {
   try {
     await ensureLogDir();
@@ -131,7 +137,8 @@ async function writeToLogFile(message) {
 
 // Override the existing log function to also write to file
 const originalLog = log;
-global.log = async (level, message, data = null, writeToFile = true) => {
+// @ts-ignore
+global.log = async (/** @type {string} */ level, /** @type {string} */ message, data = null, writeToFile = true) => {
   await originalLog(level, message, data, writeToFile);
   if (writeToFile) {
     const timestamp = new Date().toISOString();
@@ -141,7 +148,7 @@ global.log = async (level, message, data = null, writeToFile = true) => {
 };
 
 // ===================== ERROR HANDLING =====================
-function setupGlobalErrorHandlers() {
+async function setupGlobalErrorHandlers() {
   process.on("uncaughtException", (error) => {
     log(
       LogLevel.ERROR,
@@ -161,7 +168,8 @@ function setupGlobalErrorHandlers() {
     log(LogLevel.ERROR, "Unhandled Rejection:", reason, true);
   });
 
-  app.on("renderer-process-crashed", (event, webContents, killed) => {
+  // @ts-ignore
+  app.on("renderer-process-crashed", (/** @type {any} */ event, /** @type {{ id: any; }} */ webContents, /** @type {any} */ killed) => {
     log(
       LogLevel.ERROR,
       "Renderer process crashed:",
@@ -178,6 +186,7 @@ function setupGlobalErrorHandlers() {
 function getIconPath() {
   const platform = process.platform;
   const iconFile =
+    // @ts-ignore
     {
       win32: "icon.ico",
       darwin: "icon.icns",
@@ -307,6 +316,7 @@ async function createMainWindow() {
     frame: true,
     titleBarStyle: "default",
     backgroundColor: "#0e0e10",
+    // @ts-ignore
     icon: getIconPath(),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -314,6 +324,7 @@ async function createMainWindow() {
       contextIsolation: true,
       webSecurity: !APP_CONFIG.isDev,
       sandbox: !APP_CONFIG.isDev,
+      // @ts-ignore
       enableRemoteModule: false,
     },
   });
@@ -355,6 +366,7 @@ async function createMainWindow() {
 
   // 2. Preferred: renderer signals ready
   ipcMain.once("app:renderer-ready", (event) => {
+    // @ts-ignore
     if (event.sender === mainWindow.webContents) {
       log(
         LogLevel.INFO,
@@ -420,6 +432,7 @@ async function createMainWindow() {
 // ===================== SERVICE INITIALIZATION =====================
 async function initializeServices() {
   log(LogLevel.INFO, "Initializing services...", null, true);
+  // @ts-ignore
   notificationService.initialize(mainWindow);
   streamMonitorService.initStreamMonitor(mainWindow);
   twitchChatService.initChatService(mainWindow);
@@ -461,11 +474,12 @@ async function initializeServices() {
 }
 
 // ===================== IPC HANDLERS =====================
-function registerIpcHandlers() {
+async function registerIpcHandlers() {
   log(LogLevel.INFO, "Registering IPC handlers...", null, true);
 
   ipcMain.on("window:minimize", () => mainWindow?.minimize());
   ipcMain.on("window:maximize", () =>
+    // @ts-ignore
     mainWindow?.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize(),
   );
   ipcMain.on("window:close", () => mainWindow?.close());
@@ -473,21 +487,14 @@ function registerIpcHandlers() {
   ipcMain.on("window:toggle-devtools", () =>
     mainWindow?.webContents.toggleDevTools(),
   );
-
-  ipcMain.handle("app:get-info", () => ({
-    name: APP_NAME,
-    version: APP_VERSION,
-    isDev: APP_CONFIG.isDev,
-    platform: process.platform,
-    arch: process.arch,
-  }));
-
+  // @ts-ignore
   ipcMain.on("app:open-external", (event, url) => {
     if (typeof url === "string" && url.startsWith("http")) {
       shell.openExternal(url).catch(console.error);
     }
   });
 
+  // @ts-ignore
   ipcMain.handle("open-dashboard", async (event, dashboardUrl) => {
     if (!dashboardUrl || typeof dashboardUrl !== "string") {
       throw new Error("Invalid dashboard URL");
@@ -495,6 +502,7 @@ function registerIpcHandlers() {
     const dashboardWindow = new BrowserWindow({
       width: 1200,
       height: 800,
+      // @ts-ignore
       parent: mainWindow,
       modal: false,
       show: true,
@@ -541,6 +549,7 @@ function registerIpcHandlers() {
     "./ipc/core/whisper/index.ipc.js",
     "./ipc/core/notification-store/index.ipc.js",
     "./ipc/core/stream-settings/index.ipc.js",
+    "./ipc/core/stream-manager/index.ipc.js",
   ];
 
   for (const modulePath of ipcModules) {
@@ -560,6 +569,16 @@ function registerIpcHandlers() {
   log(LogLevel.SUCCESS, "IPC handlers registered", null, true);
 }
 
+async function registerImportantIpc() {
+  ipcMain.handle("app:get-info", () => ({
+    name: APP_NAME,
+    version: APP_VERSION,
+    isDev: APP_CONFIG.isDev,
+    platform: process.platform,
+    arch: process.arch,
+  }));
+}
+
 // ===================== APP LIFECYCLE =====================
 async function startup() {
   log(
@@ -568,9 +587,10 @@ async function startup() {
     null,
     true,
   );
-  setupGlobalErrorHandlers();
+  await setupGlobalErrorHandlers();
+  await registerImportantIpc();
   await createSplashWindow();
-  registerIpcHandlers();
+  await registerIpcHandlers();
   await createMainWindow();
   await initializeServices();
   log(LogLevel.SUCCESS, `${APP_NAME} started successfully`, null, true);
@@ -587,12 +607,14 @@ app.on("activate", async () => {
   if (BrowserWindow.getAllWindows().length === 0) await startup();
 });
 
+// @ts-ignore
 app.on("before-quit", (event) => {
   if (isQuitting) return;
   isQuitting = true;
   streamMonitorService.stopStreamMonitor();
   twitchChatService.disconnectChat().catch(console.error);
   twitchAuthService.logout().catch(console.error);
+  obsWebSocketService.disconnect().catch(console.error);
 });
 
 process.on("uncaughtException", (err) =>

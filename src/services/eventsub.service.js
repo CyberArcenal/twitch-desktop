@@ -1,19 +1,18 @@
 // src/main/services/eventsub.service.js
 //@ts-check
 // @ts-ignore
-// @ts-ignore
 const { twitchApiService } = require("./twitch-api.service");
 const { twitchAuthService } = require("./twitch-auth.service");
-// @ts-ignore
-// @ts-ignore
 const { settingsService } = require("./settings.service");
 const { BrowserWindow } = require("electron");
 const WebSocket = require("ws");
 const { notificationStore } = require("./notification-store.service");
 const { logger } = require("../utils/logger");
+const EventEmitter = require("events");
 
-class EventSubService {
+class EventSubService extends EventEmitter {
   constructor() {
+    super();
     this.ws = null;
     this.sessionId = null;
     this.connected = false;
@@ -23,6 +22,7 @@ class EventSubService {
     this.keepAliveInterval = null;
     this.subscriptions = new Map(); // subscriptionId -> { type, condition, userId }
     this.mainWindow = null;
+    this.autoSubscriptionsCreated = false;
     logger.debug("[EventSubService] Constructor - instance created");
   }
 
@@ -36,7 +36,7 @@ class EventSubService {
 
   /**
    * @param {string} channel
-   * @param {{ broadcasterId?: any; broadcasterName?: any; title?: any; gameId?: any; startedAt?: any; followerId?: any; followerName?: any; followedAt?: any; userId?: any; userName?: any; tier?: any; isGift?: any; sessionId?: any; code?: number; reason?: Buffer<ArrayBufferLike>; }} data
+   * @param {{ broadcasterId?: any; broadcasterName?: any; title?: any; gameId?: any; startedAt?: any; followerId?: any; followerName?: any; followedAt?: any; userId?: any; userName?: any; tier?: any; isGift?: any; fromBroadcasterId?: any; fromBroadcasterName?: any; viewers?: any; toBroadcasterId?: any; level?: any; total?: any; progress?: any; goal?: any; sessionId?: any; code?: number; reason?: Buffer<ArrayBufferLike>; }} data
    */
   _sendToRenderers(channel, data) {
     try {
@@ -63,9 +63,14 @@ class EventSubService {
   /**
    * @param {string} type
    * @param {string} version
-   * @param {{ broadcaster_user_id: any; moderator_user_id?: any; }} condition
+   * @param {{ broadcaster_user_id?: any; moderator_user_id?: any; to_broadcaster_user_id?: any; }} condition
    */
   async createSubscription(type, version, condition, transport = null) {
+    if (!this.sessionId) {
+      throw new Error(
+        "No active EventSub session – please wait for connection",
+      );
+    }
     logger.info(
       `[EventSubService] createSubscription - type=${type}, version=${version}, condition=${JSON.stringify(condition)}`,
     );
@@ -151,6 +156,24 @@ class EventSubService {
   /**
    * @param {any} userId
    */
+  async subscribeToStreamOffline(userId) {
+    logger.info(
+      `[EventSubService] subscribeToStreamOffline - userId=${userId}`,
+    );
+    const subscription = await this.createSubscription("stream.offline", "1", {
+      broadcaster_user_id: userId,
+    });
+    this.subscriptions.set(subscription.id, {
+      type: "stream.offline",
+      condition: { broadcaster_user_id: userId },
+      userId,
+    });
+    return subscription;
+  }
+
+  /**
+   * @param {any} userId
+   */
   async subscribeToFollowEvents(userId) {
     logger.info(`[EventSubService] subscribeToFollowEvents - userId=${userId}`);
     const subscription = await this.createSubscription("channel.follow", "2", {
@@ -193,6 +216,36 @@ class EventSubService {
     return subscription;
   }
 
+  async ensureEssentialSubscriptions() {
+    const userId = settingsService.get("twitch")?.userId;
+    if (!userId) {
+      logger.warn(
+        "[EventSubService] No user logged in, cannot create subscriptions",
+      );
+      return;
+    }
+    if (this.autoSubscriptionsCreated) {
+      logger.debug(
+        "[EventSubService] Subscriptions already created for this session",
+      );
+      return;
+    }
+    try {
+      await this.subscribeToFollowEvents(userId);
+      await this.subscribeToSubscriptionEvents(userId);
+      await this.subscribeToStreamOnline(userId);
+      await this.subscribeToStreamOffline(userId);
+      this.autoSubscriptionsCreated = true;
+      logger.success("[EventSubService] Essential subscriptions created");
+    } catch (err) {
+      logger.error(
+        "[EventSubService] Failed to create essential subscriptions:",
+        // @ts-ignore
+        err,
+      );
+    }
+  }
+
   /**
    * @param {{ metadata: any; payload: any; }} message
    */
@@ -212,6 +265,7 @@ class EventSubService {
           gameId: eventData.game_id,
           startedAt: eventData.started_at,
         });
+        this.emit("eventsub:stream-online", eventData);
         notificationStore.add({
           type: "stream_online",
           title: `${eventData.broadcaster_user_login} is live!`,
@@ -224,6 +278,13 @@ class EventSubService {
           },
         });
         break;
+      case "stream.offline":
+        this._sendToRenderers("eventsub:stream-offline", {
+          broadcasterId: eventData.broadcaster_user_id,
+          broadcasterName: eventData.broadcaster_user_login,
+        });
+        this.emit("eventsub:stream-offline", eventData);
+        break;
       case "channel.follow":
         this._sendToRenderers("eventsub:follow", {
           followerId: eventData.user_id,
@@ -231,6 +292,7 @@ class EventSubService {
           followedAt: eventData.followed_at,
           broadcasterId: eventData.broadcaster_user_id,
         });
+        this.emit("eventsub:follow", eventData);
         notificationStore.add({
           type: "follow",
           title: "New follower",
@@ -250,6 +312,7 @@ class EventSubService {
           isGift: eventData.is_gift,
           broadcasterId: eventData.broadcaster_user_id,
         });
+        this.emit("eventsub:subscription", eventData);
         notificationStore.add({
           type: "subscription",
           title: eventData.is_gift ? "Gift subscription" : "New subscription",
@@ -261,6 +324,24 @@ class EventSubService {
             isGift: eventData.is_gift,
           },
         });
+        break;
+      case "channel.raid":
+        this._sendToRenderers("eventsub:raid", {
+          fromBroadcasterId: eventData.from_broadcaster_user_id,
+          fromBroadcasterName: eventData.from_broadcaster_user_login,
+          viewers: eventData.viewers,
+          toBroadcasterId: eventData.to_broadcaster_user_id,
+        });
+        this.emit("eventsub:raid", eventData);
+        break;
+      case "channel.hype_train.begin":
+        this._sendToRenderers("eventsub:hype_train", {
+          level: eventData.level,
+          total: eventData.total,
+          progress: eventData.progress,
+          goal: eventData.goal,
+        });
+        this.emit("eventsub:hype_train", eventData);
         break;
       default:
         logger.warn(`[EventSubService] Unhandled event type: ${eventType}`);
@@ -284,12 +365,13 @@ class EventSubService {
         this._sendToRenderers("eventsub:connected", {
           sessionId: this.sessionId,
         });
-        await this.resubscribeAll();
+        await this.ensureEssentialSubscriptions();
         break;
       case "session_keepalive":
-        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-          this.ws.send(JSON.stringify({ type: "pong" }));
-        }
+        // Walang kailangang gawin – huwag magpadala ng pong
+        logger.debug(
+          "[EventSubService] Keepalive received, no response needed.",
+        );
         break;
       case "notification":
         this.handleEvent(message);
@@ -321,7 +403,6 @@ class EventSubService {
       logger.debug("[EventSubService] Already connected or connecting");
       return;
     }
-
     const wsUrl = "wss://eventsub.wss.twitch.tv/ws";
     logger.info(`[EventSubService] Connecting to WebSocket: ${wsUrl}`);
     this.ws = new WebSocket(wsUrl);
@@ -338,6 +419,7 @@ class EventSubService {
       logger.warn(`[EventSubService] WebSocket closed: ${code} - ${reason}`);
       this.connected = false;
       this.sessionId = null;
+      this.autoSubscriptionsCreated = false;
       this._sendToRenderers("eventsub:disconnected", { code, reason });
       this.reconnect();
     });
@@ -368,6 +450,9 @@ class EventSubService {
         switch (sub.type) {
           case "stream.online":
             newSub = await this.subscribeToStreamOnline(sub.userId);
+            break;
+          case "stream.offline":
+            newSub = await this.subscribeToStreamOffline(sub.userId);
             break;
           case "channel.follow":
             newSub = await this.subscribeToFollowEvents(sub.userId);
@@ -401,9 +486,21 @@ class EventSubService {
     }
     this.connected = false;
     this.sessionId = null;
+    this.autoSubscriptionsCreated = false;
   }
 
-  async start() {
+  start() {
+    // ✅ Huwag nang magsimula kung may active o nagko-connect na WebSocket
+    if (
+      this.ws &&
+      (this.ws.readyState === WebSocket.OPEN ||
+        this.ws.readyState === WebSocket.CONNECTING)
+    ) {
+      logger.info(
+        "[EventSubService] Already connected or connecting, skipping start",
+      );
+      return;
+    }
     logger.info("[EventSubService] Starting EventSub service");
     this.connect();
   }
@@ -435,6 +532,40 @@ class EventSubService {
   async subscribeToSubscriptions(userId) {
     if (!this.sessionId) throw new Error("EventSub not connected");
     return await this.subscribeToSubscriptionEvents(userId);
+  }
+
+  /**
+   * @param {any} userId
+   */
+  async subscribeToRaidEvents(userId) {
+    const subscription = await this.createSubscription("channel.raid", "1", {
+      to_broadcaster_user_id: userId,
+    });
+    this.subscriptions.set(subscription.id, {
+      type: "channel.raid",
+      condition: { to_broadcaster_user_id: userId },
+      userId,
+    });
+    return subscription;
+  }
+
+  /**
+   * @param {any} userId
+   */
+  async subscribeToHypeTrainEvents(userId) {
+    const subscription = await this.createSubscription(
+      "channel.hype_train.begin",
+      "1",
+      {
+        broadcaster_user_id: userId,
+      },
+    );
+    this.subscriptions.set(subscription.id, {
+      type: "channel.hype_train.begin",
+      condition: { broadcaster_user_id: userId },
+      userId,
+    });
+    return subscription;
   }
 }
 

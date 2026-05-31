@@ -43,6 +43,7 @@ declare global {
       whisper: (payload: any) => Promise<any>;
       notificationStore: (payload: any) => Promise<any>;
       streamSettings: (payload: any) => Promise<any>;
+      "stream-manager": (payload: any) => Promise<any>;
 
       notifyAppReady?: () => void;
       openExternal: (url: string) => Promise<void>;

@@ -173,7 +173,7 @@ class TwitchAuthService {
     });
     logger.debug("[Auth] Auth window created");
 
-    const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=${encodeURIComponent(SCOPES)}&code_challenge_method=S256&code_challenge=${codeChallenge}&force_verify=true&prompt=consent`;
+const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=${encodeURIComponent(SCOPES)}&code_challenge_method=S256&code_challenge=${codeChallenge}&force_verify=true&prompt=consent`;
 
     let resolved = false;
     // @ts-ignore
@@ -273,7 +273,7 @@ class TwitchAuthService {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     const data = await res.json();
-    const required = ["chat:read", "chat:edit"];
+    const required = ["user:write:chat", "user:write:chat"];
     const missing = required.filter((s) => !data.scopes.includes(s));
     if (missing.length) {
       logger.warn(`Token missing scopes: ${missing.join(", ")}`);

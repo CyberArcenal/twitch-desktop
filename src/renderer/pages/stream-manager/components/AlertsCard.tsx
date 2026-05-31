@@ -1,8 +1,7 @@
-// components/AlertsCard.tsx
 import React, { useState } from 'react';
-import { useStreamEvents } from '../hooks/useStreamEvents';
 import { UserPlus, Star, Rocket, Bell, BellOff } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useAlertsFeed } from '../hooks/useAlertsFeed';
 
 interface AlertsCardProps {
   isLive: boolean;
@@ -10,8 +9,9 @@ interface AlertsCardProps {
 }
 
 const AlertsCard: React.FC<AlertsCardProps> = ({ isLive, channelId }) => {
-  const { events } = useStreamEvents(channelId || '');
+  const { events, clearEvents } = useAlertsFeed(channelId || '');
   const [alertsActive, setAlertsActive] = useState(true);
+  const latestEvents = events.slice(0, 5);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -22,17 +22,11 @@ const AlertsCard: React.FC<AlertsCardProps> = ({ isLive, channelId }) => {
     }
   };
 
-  // Use only latest 5 events
-  const latestEvents = events.slice(0, 5);
-
   return (
     <div className="bg-[#1f1f23] rounded-xl shadow-lg border border-[#2a2a2e] flex flex-col overflow-hidden flex-1">
       <div className="p-3 border-b border-[#2a2a2e] flex justify-between items-center">
         <h3 className="text-sm font-semibold text-white">Alerts</h3>
-        <button
-          onClick={() => setAlertsActive(!alertsActive)}
-          className="px-2 py-0.5 rounded text-xs bg-[#2a2a2e] hover:bg-[#3a3a4a] transition"
-        >
+        <button onClick={() => setAlertsActive(!alertsActive)} className="px-2 py-0.5 rounded text-xs bg-[#2a2a2e] hover:bg-[#3a3a4a] transition">
           {alertsActive ? <Bell className="w-3 h-3" /> : <BellOff className="w-3 h-3" />}
         </button>
       </div>
@@ -56,8 +50,8 @@ const AlertsCard: React.FC<AlertsCardProps> = ({ isLive, channelId }) => {
         )}
       </div>
       <div className="p-3 border-t border-[#2a2a2e]">
-        <button className="w-full text-center text-sm bg-[#9147ff] py-1.5 rounded-lg hover:bg-[#772ce8] transition">
-          {alertsActive ? 'Stop' : 'Start'} Alerts
+        <button onClick={clearEvents} className="w-full text-center text-sm bg-[#9147ff] py-1.5 rounded-lg hover:bg-[#772ce8] transition">
+          Clear Alerts
         </button>
       </div>
     </div>

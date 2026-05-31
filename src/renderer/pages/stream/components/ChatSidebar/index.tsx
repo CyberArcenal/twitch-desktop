@@ -1,32 +1,44 @@
-import React, { useState, useRef } from 'react';
-import ChatHeader from './ChatHeader';
-import ChatFilterPanel from './ChatFilterPanel';
-import ChatMessageList from './ChatMessageList';
-import ChatInput, { type ChatInputRef } from './ChatInput';
-import { useChatMessages } from './hooks/useChatMessages';
-import { useChatFilters } from './hooks/useChatFilters';
-import type { ChatMessage } from '../../../../api/core/chat';
+import React, { useState, useRef } from "react";
+import ChatHeader from "./ChatHeader";
+import ChatFilterPanel from "./ChatFilterPanel";
+import ChatMessageList from "./ChatMessageList";
+import ChatInput, { type ChatInputRef } from "./ChatInput";
+import { useChatMessages } from "./hooks/useChatMessages";
+import { useChatFilters } from "./hooks/useChatFilters";
+import type { ChatMessage } from "../../../../api/core/chat";
 
 interface ChatSidebarProps {
   channelName: string;
   isConnected: boolean;
 }
 
-const ChatSidebar: React.FC<ChatSidebarProps> = ({ channelName, isConnected }) => {
-  const { messages, sendMessage } = useChatMessages(isConnected);
-  const { filters, showFilters, addFilter, removeFilter, toggleFilters, filterMessage } = useChatFilters();
+const ChatSidebar: React.FC<ChatSidebarProps> = ({
+  channelName,
+  isConnected,
+}) => {
+  const { messages, sendMessage, currentUser } = useChatMessages(isConnected);
+  const {
+    filters,
+    showFilters,
+    addFilter,
+    removeFilter,
+    toggleFilters,
+    filterMessage,
+    clearAllFilters
+  } = useChatFilters();
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [autoScrollPaused, setAutoScrollPaused] = useState(false);
   const chatInputRef = useRef<ChatInputRef>(null);
 
   const handleReplyClick = (messageId: string) => {
-    const messageToReply = messages.find(m => m.id === messageId);
+    const messageToReply = messages.find((m) => m.id === messageId);
     if (messageToReply) setReplyingTo(messageToReply);
   };
 
   const handleCancelReply = () => setReplyingTo(null);
-  const handleMentionClick = (username: string) => chatInputRef.current?.insertMention(username);
-  const toggleAutoScroll = () => setAutoScrollPaused(prev => !prev);
+  const handleMentionClick = (username: string) =>
+    chatInputRef.current?.insertMention(username);
+  const toggleAutoScroll = () => setAutoScrollPaused((prev) => !prev);
 
   return (
     <div className="flex flex-col h-full bg-[#1f1f23] overflow-hidden">
@@ -34,12 +46,14 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ channelName, isConnected }) =
         onToggleFilters={toggleFilters}
         autoScrollPaused={autoScrollPaused}
         onToggleAutoScroll={toggleAutoScroll}
+        filtersCount={filters.length}
       />
       {showFilters && (
         <ChatFilterPanel
           filters={filters}
           onAddFilter={addFilter}
           onRemoveFilter={removeFilter}
+          onClearAll={clearAllFilters}
         />
       )}
       {/* This div takes remaining space and provides a height context for Virtuoso */}
@@ -51,6 +65,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ channelName, isConnected }) =
           onReplyClick={handleReplyClick}
           onMentionClick={handleMentionClick}
           autoScrollPaused={autoScrollPaused}
+          currentUser={currentUser}
         />
       </div>
       <ChatInput

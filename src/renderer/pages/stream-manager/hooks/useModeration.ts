@@ -1,24 +1,21 @@
 import { useCallback } from 'react';
+import { streamManagerAPI } from '../../../api/core/streamManager';
 
-export const useModeration = (channelName: string) => {
+export const useModeration = (broadcasterId: string) => {
   const banUser = useCallback(async (username: string) => {
-    // TODO: implement actual IPC call
-    console.log('Ban user:', username);
-    // await window.backendAPI.moderation({ method: 'ban', params: { channelName, username } });
-    return true;
-  }, [channelName]);
+    const res = await streamManagerAPI.banUser(broadcasterId, username);
+    if (!res.status) throw new Error(res.message);
+  }, [broadcasterId]);
 
   const timeoutUser = useCallback(async (username: string, durationSeconds: number = 600) => {
-    console.log('Timeout user:', username, durationSeconds);
-    // await window.backendAPI.moderation({ method: 'timeout', params: { channelName, username, duration: durationSeconds } });
-    return true;
-  }, [channelName]);
+    const res = await streamManagerAPI.timeoutUser(broadcasterId, username, durationSeconds);
+    if (!res.status) throw new Error(res.message);
+  }, [broadcasterId]);
 
   const clearChat = useCallback(async () => {
-    console.log('Clear chat');
-    // await window.backendAPI.moderation({ method: 'clearChat', params: { channelName } });
-    return true;
-  }, [channelName]);
+    const res = await streamManagerAPI.clearChat(broadcasterId);
+    if (!res.status) throw new Error(res.message);
+  }, [broadcasterId]);
 
   return { banUser, timeoutUser, clearChat };
 };

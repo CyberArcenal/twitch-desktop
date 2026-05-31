@@ -1,17 +1,19 @@
 // src/renderer/pages/stream/components/ChatSidebar/ChatHeader.tsx
-import React from 'react';
-import { Filter, Pause, Play } from 'lucide-react';
+import React from "react";
+import { Filter, Pause, Play } from "lucide-react";
 
 interface ChatHeaderProps {
   onToggleFilters: () => void;
   autoScrollPaused: boolean;
   onToggleAutoScroll: () => void;
+  filtersCount: number;
 }
 
 const ChatHeader: React.FC<ChatHeaderProps> = ({
   onToggleFilters,
   autoScrollPaused,
   onToggleAutoScroll,
+  filtersCount = 0,
 }) => {
   return (
     <div className="flex justify-between items-center px-4 py-2 border-b border-[#2a2a2e] bg-[#1f1f23]">
@@ -20,21 +22,25 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
         <button
           onClick={onToggleAutoScroll}
           className="p-1 hover:bg-[#2a2a2e] rounded transition-colors"
-          aria-label={autoScrollPaused ? 'Resume auto-scroll' : 'Pause auto-scroll'}
-          title={autoScrollPaused ? 'Resume auto-scroll' : 'Pause auto-scroll'}
+          aria-label={
+            autoScrollPaused ? "Resume auto-scroll" : "Pause auto-scroll"
+          }
+          title={autoScrollPaused ? "Resume auto-scroll" : "Pause auto-scroll"}
         >
-     {autoScrollPaused ? (
-  <Play className="w-4 h-4 text-[#9147ff]" />
-) : (
-  <Pause className="w-4 h-4 text-[#adadb8]" />
-)}
+          {autoScrollPaused ? (
+            <Play className="w-4 h-4 text-[#9147ff]" />
+          ) : (
+            <Pause className="w-4 h-4 text-[#adadb8]" />
+          )}
         </button>
         <button
           onClick={onToggleFilters}
-          className="p-1 hover:bg-[#2a2a2e] rounded transition-colors"
-          aria-label="Toggle filters"
+          className="relative p-1 hover:bg-[#2a2a2e] rounded transition-colors"
         >
           <Filter className="w-4 h-4 text-[#adadb8]" />
+          {filtersCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#9147ff] rounded-full"></span>
+          )}
         </button>
       </div>
     </div>
