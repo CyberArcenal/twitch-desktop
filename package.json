@@ -46,7 +46,13 @@
       "owner": "CyberArcenal",
       "repo": "twitch-desktop",
       "releaseType": "release"
+    },
+     "extraResources": [
+    {
+      "from": ".env",
+      "to": ".env"
     }
+  ]
   },
   "scripts": {
     "dev": "cross-env NODE_ENV=development concurrently \"vite\" \"tsc -w -p tsconfig.main.json\" \"electron ./src/main/index.js\"",
