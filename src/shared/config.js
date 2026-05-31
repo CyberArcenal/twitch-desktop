@@ -1,20 +1,31 @@
 const path = require("path");
-require("dotenv").config({ path: path.resolve(process.cwd(), ".env") });
+const fs = require("fs");
+const { app } = require("electron");
 
-let isPackaged = false;
-try {
-  const electron = require("electron");
-  isPackaged = electron.app.isPackaged;
-} catch (e) {
-  isPackaged = false;
+// --- Determine .env file location ---
+let envPath;
+if (app.isPackaged) {
+  // In production (packaged app), the .env file is copied to the resources folder
+  envPath = path.join(process.resourcesPath, ".env");
+} else {
+  // In development, load from project root
+  envPath = path.resolve(process.cwd(), ".env");
 }
 
-const IS_DEV = process.env.NODE_ENV === "development" || !isPackaged;
+// Load .env file if it exists
+if (fs.existsSync(envPath)) {
+  require("dotenv").config({ path: envPath });
+} else if (!app.isPackaged) {
+  console.warn("[Config] .env file not found at:", envPath);
+}
+
+// --- Configuration constants ---
+const IS_DEV = process.env.NODE_ENV === "development" || !app.isPackaged;
 const API_BASE = "https://api.twitch.tv/helix";
 
 const CLIENT_ID =
   process.env.TWITCH_CLIENT_ID || process.env.VITE_TWITCH_CLIENT_ID;
-const CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET; // NEW
+const CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET;
 
 if (!CLIENT_ID && !IS_DEV) {
   console.error("[Config] Missing TWITCH_CLIENT_ID environment variable");
@@ -22,50 +33,28 @@ if (!CLIENT_ID && !IS_DEV) {
 
 const REDIRECT_URI = process.env.TWITCH_REDIRECT_URI || "http://localhost";
 
-// const SCOPES = [
-//   "user:read:email",
-//   "user:read:follows",
-//   "user:edit:follows",
-//   "chat:read",
-//   "chat:edit",
-//   "clips:edit",
-//   "whispers:read",
-//   "whispers:edit",
-//   "channel:read:subscriptions",
-//   "channel:manage:moderators",
-//   "channel:read:stream_key",
-//   "channel:manage:broadcast",
-//   "channel:manage:predictions",
-//   "channel:manage:raids",
-//   "channel:read:predictions",
-//   "moderator:read:followers",
-//   "moderation:read",
-//   "user:read:chat",
-//   "user:write:chat",
-// ].join(" ");
-
 const SCOPES = [
-  // Legacy chat (IRC) – panatilihin para sa backward compatibility
+  // Legacy chat (IRC)
   "chat:read",
   "chat:edit",
 
   // User Info
   "user:read:email",
   "user:read:follows",
-  "user:edit:follows", // Deprecated but still required for follow/unfollow
+  "user:edit:follows",
 
   // Modern Chat (Helix Chat API)
   "user:read:chat",
   "user:write:chat",
-  "channel:moderate", // For moderation actions
-  "user:bot",         // Para sa bot functionality sa chat
+  "channel:moderate",
+  "user:bot",
 
   // Whispers
-  "user:manage:whispers", // Basa at send ng whispers
+  "user:manage:whispers",
 
   // Clips
   "clips:edit",
-  "channel:manage:clips", // Pamahalaan ang mga clips
+  "channel:manage:clips",
 
   // Channel Management
   "channel:read:subscriptions",
@@ -75,40 +64,40 @@ const SCOPES = [
   "channel:manage:predictions",
   "channel:read:predictions",
   "channel:manage:raids",
-  "channel:edit:commercial",     // Magpatakbo ng ads
-  "channel:manage:schedule",     // Pamahalaan ang streaming schedule
-  "channel:manage:vips",         // Magdagdag/remove ng VIPs
-  "channel:manage:videos",       // Burahin ang VODs
+  "channel:edit:commercial",
+  "channel:manage:schedule",
+  "channel:manage:vips",
+  "channel:manage:videos",
 
   // Followers & Moderation
   "moderator:read:followers",
   "moderation:read",
-  "moderator:manage:banned_users",   // Ban/Unban users
-  "moderator:manage:automod",        // I-manage ang AutoMod
-  "moderator:manage:announcements",  // Mag-announce sa chat
+  "moderator:manage:banned_users",
+  "moderator:manage:automod",
+  "moderator:manage:announcements",
 
-  // Bits at Monetization
-  "bits:read",                       // Basahin ang Bits leaderboard
-  "channel:read:goals",              // Basahin ang Creator Goals
-  "channel:read:hype_train",         // Basahin ang Hype Train status
-  "channel:read:charity",            // Basahin ang charity campaigns
+  // Bits & Monetization
+  "bits:read",
+  "channel:read:goals",
+  "channel:read:hype_train",
+  "channel:read:charity",
 
-  // Channel Points (Redemptions & Polls)
-  "channel:read:redemptions",        // Basahin ang custom rewards
-  "channel:manage:redemptions",      // Pamahalaan ang rewards
-  "channel:read:polls",              // Basahin ang polls
-  "channel:manage:polls",            // Gumawa/end ng polls
+  // Channel Points
+  "channel:read:redemptions",
+  "channel:manage:redemptions",
+  "channel:read:polls",
+  "channel:manage:polls",
 
   // Editors
-  "channel:read:editors",            // Tingnan ang listahan ng editors
+  "channel:read:editors",
 
   // Blocked users
   "user:read:blocked_users",
   "user:manage:blocked_users",
 
-  // Analytics (kung kailangan)
+  // Analytics
   "analytics:read:extensions",
-  "analytics:read:games"
+  "analytics:read:games",
 ].join(" ");
 
 const TOKEN_URL = "https://id.twitch.tv/oauth2/token";
@@ -118,7 +107,7 @@ module.exports = {
   IS_DEV,
   API_BASE,
   CLIENT_ID,
-  CLIENT_SECRET, // NEW
+  CLIENT_SECRET,
   REDIRECT_URI,
   SCOPES,
   TOKEN_URL,
