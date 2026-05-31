@@ -98,25 +98,29 @@ export const useChat = (channelName?: string, broadcasterId?: string, isLive?: b
     };
   }, [connected, channelName]);
 
-  const sendMessage = async () => {
-    if (!input.trim() || !connected) return;
+ const sendMessage = async (text: string, replyToId?: string) => {
+    if (!text.trim() || !connected) return false;
     try {
-      await chatAPI.send(input);
+      await chatAPI.send(text, replyToId);
+      // local echo
       const localMsg: ChatMessage = {
         id: `local-${Date.now()}`,
         channel: channelName || '',
         user: currentUser,
-        message: input,
-        badges: null,
+        message: text,
+        badges: [],
         emotes: null,
         timestamp: new Date().toISOString(),
         isFromMe: true,
+        replyParentMsgId: replyToId,
       };
       setMessages(prev => [...prev, localMsg].slice(-200));
       setInput('');
+      return true;
     } catch (err) {
       console.error(err);
       alert('Failed to send message.');
+      return false;
     }
   };
 
@@ -182,5 +186,6 @@ export const useChat = (channelName?: string, broadcasterId?: string, isLive?: b
     pinMessage,
     unpinMessage,
     deleteMessage,
+    currentUser,
   };
 };
