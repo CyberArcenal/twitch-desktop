@@ -12,6 +12,7 @@ const { twitchApiService } = require("../../../../services/twitch-api.service");
 // @ts-ignore
 // @ts-ignore
 // @ts-ignore
+// @ts-ignore
 async function handleChatRequest(event, payload) {
   const { method, params = {} } = payload;
 
@@ -24,7 +25,9 @@ async function handleChatRequest(event, payload) {
     case "send":
       // @ts-ignore
       return await twitchChatService.sendChatMessage(
+        // @ts-ignore
         params.message,
+        // @ts-ignore
         params.replyParentMsgId,
       );
     case "connectWhispers":
@@ -61,6 +64,7 @@ async function handleChatRequest(event, payload) {
       );
     // Sa chat IPC handler
     case "getRecentMessages":
+      // @ts-ignore
       return await twitchChatService.getRecentMessages(params.channelName);
     default:
       throw new Error(`Unknown chat method: ${method}`);

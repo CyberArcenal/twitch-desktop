@@ -5,8 +5,10 @@ const { RefreshingAuthProvider } = require("@twurple/auth");
 const { settingsService } = require("./settings.service");
 // @ts-ignore
 // @ts-ignore
+// @ts-ignore
 const { twitchAuthService } = require("./twitch-auth.service");
 const { twitchApiService } = require("./twitch-api.service");
+// @ts-ignore
 // @ts-ignore
 const { CLIENT_ID, CLIENT_SECRET, SCOPES } = require("../shared/config");
 const { BrowserWindow } = require("electron");
@@ -25,8 +27,13 @@ class TwitchChatService {
     this.currentUserLogin = null;
     this.whisperListenersSetup = false;
     this.authProvider = null;
+    /**
+     * @type {{ messageId: string; channel: string; user: string; message: string; parsedMessage: import("@twurple/chat").ParsedMessagePart[]; badges: { name: string; version: any; }[]; emotes: Map<string, string[]>; timestamp: string; isFromMe: boolean; replyParentMsgId: string | null; }[]}
+     */
     this.messageBuffer = []; // store recent messages (max 200)
     this.maxBufferSize = 200;
+    this.globalBadges = null; // cache
+    this.channelBadges = null;
 
     logger.debug("[TwitchChatService] Constructor - instance created");
   }
@@ -282,6 +289,68 @@ class TwitchChatService {
     }
   }
 
+  // @ts-ignore
+  async fetchBadgeSets(broadcasterId) {
+    const twitchData = settingsService.get("twitch");
+    if (
+      !twitchData?.accessToken ||
+      !twitchData?.refreshToken ||
+      !twitchData?.userId
+    ) {
+      logger.error(
+        "[Chat] getAuthProvider - missing Twitch tokens in settings",
+      );
+      throw new Error("No Twitch tokens found");
+    }
+    try {
+      const token = twitchData.accessToken; // need a method to get app token
+      const { CLIENT_ID } = require("../shared/config");
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        "Client-Id": CLIENT_ID,
+      };
+
+      // Global badges
+      const globalRes = await fetch(
+        "https://api.twitch.tv/helix/chat/badges/global",
+        // @ts-ignore
+        { headers },
+      );
+      const globalData = await globalRes.json();
+      this.globalBadges = globalData.data || [];
+
+      // Channel badges (requires broadcaster_id)
+      const channelRes = await fetch(
+        `https://api.twitch.tv/helix/chat/badges?broadcaster_id=${broadcasterId}`,
+        // @ts-ignore
+        { headers },
+      );
+      const channelData = await channelRes.json();
+      this.channelBadges = channelData.data || [];
+
+      logger.debug("[Chat] Badge sets fetched");
+    } catch (err) {
+      // @ts-ignore
+      logger.warn("[Chat] Failed to fetch badge sets:", err);
+    }
+  }
+
+  // @ts-ignore
+  getBadgeImageUrl(badgeName, badgeVersion) {
+    // Hanapin sa channel badges, then global badges
+    const allSets = [
+      ...(this.channelBadges || []),
+      ...(this.globalBadges || []),
+    ];
+    const set = allSets.find((s) => s.set_id === badgeName);
+    if (set && set.versions) {
+      // @ts-ignore
+      const version = set.versions.find((v) => v.id === badgeVersion);
+      if (version) return version.image_url_1x || version.image_url_2x;
+    }
+    return null;
+  }
+
   /**
    * @param {any} channelName
    */
@@ -292,8 +361,16 @@ class TwitchChatService {
     );
 
     // @ts-ignore
-    this.chatClient.onConnect(() => {
+    this.chatClient.onConnect(async () => {
       logger.info(`[Chat] Connected and authenticated to ${channelName}`);
+      // Get numeric broadcaster ID from stored twitch data
+      const twitchData = settingsService.get("twitch");
+      const broadcasterId = twitchData?.userId; // numeric ID, e.g., "1500235096"
+      if (broadcasterId) {
+        await this.fetchBadgeSets(broadcasterId);
+      } else {
+        logger.warn("[Chat] No broadcaster ID found, cannot fetch badges");
+      }
       // @ts-ignore
       this._sendToRenderers("chat:connected", { channel: channelName });
     });
@@ -313,6 +390,63 @@ class TwitchChatService {
         return;
       }
 
+      // @ts-ignore
+      logger.debug("[Chat] Full msg object:", JSON.stringify(msg, null, 2));
+      // @ts-ignore
+      logger.debug("[Chat] msg.tags:", JSON.stringify(msg.tags, null, 2));
+
+      // ✅ Kunin ang badges mula sa msg._raw (dahil walang laman ang msg.tags)
+      // @ts-ignore
+      let badgesArray = [];
+      try {
+        // @ts-ignore
+        const raw = msg._raw;
+        if (raw && typeof raw === "string") {
+          // Hanapin ang "badges=..." sa raw string
+          const badgesMatch = raw.match(/badges=([^;]+)/);
+          if (badgesMatch && badgesMatch[1]) {
+            const badgesStr = badgesMatch[1];
+            // Halimbawa: "subscriber/0,premium/1"
+            const parts = badgesStr.split(",");
+            for (const part of parts) {
+              const [name, version] = part.split("/");
+              if (name && version) {
+                badgesArray.push({ name, version });
+              }
+            }
+          }
+        }
+        // Fallback: kung sakaling may userInfo.badges (hindi sa kasalukuyan)
+        if (badgesArray.length === 0 && msg.userInfo?.badges) {
+          const userBadges = msg.userInfo.badges;
+          if (typeof userBadges === "object") {
+            badgesArray = Object.entries(userBadges).map(([name, version]) => ({
+              name,
+              version,
+            }));
+          }
+        }
+      } catch (err) {
+        // @ts-ignore
+        logger.warn("[Chat] Failed to parse badges:", err);
+      }
+      logger.debug(
+        // @ts-ignore
+        `[Chat] Final badges for ${user}: ${JSON.stringify(badgesArray)}`,
+      );
+
+      logger.debug(
+        // @ts-ignore
+        `[Chat] Final badges for ${user}: ${JSON.stringify(badgesArray)}`,
+      );
+
+      // @ts-ignore
+      const badgesWithUrl = badgesArray.map((b) => ({
+        name: b.name,
+        version: b.version,
+        imageUrl: this.getBadgeImageUrl(b.name, b.version),
+      }));
+
       const isFromMe = user === this.currentUserLogin;
 
       const chatMessage = {
@@ -321,7 +455,7 @@ class TwitchChatService {
         user: user,
         message: message,
         parsedMessage: parseChatMessage(message, msg.emoteOffsets),
-        badges: msg.userInfo.badges,
+        badges: badgesWithUrl,
         emotes: msg.emoteOffsets,
         timestamp: new Date().toISOString(),
         isFromMe: isFromMe,

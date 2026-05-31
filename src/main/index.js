@@ -175,6 +175,7 @@ async function setupGlobalErrorHandlers() {
 
   // @ts-ignore
   app.on(
+    // @ts-ignore
     "renderer-process-crashed",
     (
       /** @type {any} */ event,
@@ -548,6 +549,7 @@ async function registerIpcHandlers() {
     const togetherWindow = new BrowserWindow({
       width: 1200,
       height: 800,
+      // @ts-ignore
       parent: mainWindow,
       modal: false,
       show: true,

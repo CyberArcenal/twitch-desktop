@@ -1,5 +1,7 @@
+// src/renderer/pages/stream/components/ChatSidebar/components/ChatMessageItem.tsx
 import React, { memo } from "react";
 import type { ChatMessage } from "../../../../api/core/chat";
+import Badge from "./Badge";
 
 interface ChatMessageItemProps {
   message: ChatMessage;
@@ -7,6 +9,33 @@ interface ChatMessageItemProps {
   onMentionClick: (username: string) => void;
   currentUser: string;
 }
+
+// Helper: get badge image URL based on name and version
+const getBadgeImageUrl = (name: string, version: string): string | null => {
+  // Para sa subscriber, gamitin ang dynamic URL (gumagana)
+  if (name === "subscriber") {
+    return `https://badges.twitch.tv/v1/badges/subscriber/${version}`;
+  }
+  // Iba pang karaniwang badge
+  const badgeMap: Record<string, string> = {
+    broadcaster:
+      "https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309dcb85cc1/1",
+    moderator:
+      "https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/1",
+    vip: "https://static-cdn.jtvnw.net/badges/v1/b817aba4-fad8-49e2-b88a-7cc744dfa6ec/1",
+    turbo:
+      "https://static-cdn.jtvnw.net/badges/v1/5d9f2208-5568-4b5a-bbd5-1d95c52c4fef/1",
+    premium:
+      "https://static-cdn.jtvnw.net/badges/v1/bbbe0db0-5982-4b1f-80dc-d24eb2efffdb/1",
+    no_audio:
+      "https://static-cdn.jtvnw.net/badges/v1/bbbe0db0-5982-4b1f-80dc-d24eb2efffdb/1",
+    "glhf-pledge":
+      "https://static-cdn.jtvnw.net/badges/v1/7fcbda14-3db2-49af-ae2b-2a82a5ea3a67/1",
+    "twitch-recap-2023":
+      "https://static-cdn.jtvnw.net/badges/v1/d562d8b4-5790-4a55-9fe9-9ed781fd0c4f/1",
+  };
+  return badgeMap[name] || null;
+};
 
 const highlightMentions = (text: string): React.ReactNode => {
   const parts = text.split(/(@\w+)/g);
@@ -50,6 +79,7 @@ const formatTime = (timestamp: string) => {
 
 const ChatMessageItem: React.FC<ChatMessageItemProps> = memo(
   ({ message, onReplyClick, onMentionClick, currentUser }) => {
+    console.log("Badges for", message.user, message.badges);
     const handleReplyClick = (e: React.MouseEvent) => {
       e.stopPropagation();
       onReplyClick(message.id);
@@ -59,8 +89,13 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = memo(
       e.stopPropagation();
       onMentionClick(message.user);
     };
+
     const isOwnMessage =
       currentUser && message.user.toLowerCase() === currentUser.toLowerCase();
+
+    // Render badges if present
+    const badges = message.badges || [];
+
     return (
       <div
         className={`group relative flex flex-col text-sm leading-relaxed px-2 py-1.5 rounded-lg transition-all duration-150
@@ -72,6 +107,20 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = memo(
       >
         {/* Main message row */}
         <div className="flex items-start gap-1">
+          {/* Badges container */}
+          {/* Badges container */}
+          {message.badges && message.badges.length > 0 && (
+            <div className="flex flex-shrink-0 gap-0.5 mr-0.5">
+              {message.badges.map((badge: any, idx: number) => (
+                <Badge
+                  key={idx}
+                  name={badge.name}
+                  version={badge.version}
+                  imageUrl={badge.imageUrl} // ✅ Pass the imageUrl
+                />
+              ))}
+            </div>
+          )}
           <span
             className={`font-semibold flex-shrink-0 ${isOwnMessage ? "text-[#9147ff]" : "text-white"}`}
           >
