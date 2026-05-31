@@ -88,7 +88,7 @@ const ChatCard: React.FC<ChatCardProps> = ({
 
   // Auto-scroll on new messages
   React.useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
   }, [messages, pinnedMessages]);
 
   return (

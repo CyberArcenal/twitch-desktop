@@ -73,7 +73,7 @@ export const useChatMessages = (isConnected: boolean) => {
   const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
       requestAnimationFrame(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
       });
     }
   }, []);
