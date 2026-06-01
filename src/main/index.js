@@ -335,10 +335,8 @@ async function createMainWindow() {
       preload: path.join(__dirname, "preload.js"),
       nodeIntegration: false,
       contextIsolation: true,
-      webSecurity: !APP_CONFIG.isDev,
-      sandbox: !APP_CONFIG.isDev,
-      // @ts-ignore
-      enableRemoteModule: false,
+      webviewTag: true, // <-- idagdag
+      webSecurity: !APP_CONFIG.isDev, // pwedeng true pa rin
     },
   });
 
@@ -446,6 +444,7 @@ async function createMainWindow() {
 async function initializeServices() {
   log(LogLevel.INFO, "Initializing services...", null, true);
   updaterModule.setMainWindow(mainWindow);
+  // @ts-ignore
   notificationService.initialize(mainWindow);
   streamMonitorService.initStreamMonitor(mainWindow);
   twitchChatService.initChatService(mainWindow);
@@ -453,8 +452,6 @@ async function initializeServices() {
   playerService.initialize(mainWindow);
   eventSubService.initialize(mainWindow);
   pipService.initialize(mainWindow);
-
-
 
   if (twitchAuthService.isLoggedIn()) {
     try {
