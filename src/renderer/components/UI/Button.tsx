@@ -1,31 +1,31 @@
 // components/UI/Button.tsx
-import type { LucideIcon } from 'lucide-react';
-import React from 'react';
+import type { LucideIcon } from "lucide-react";
+import React from "react";
 
 export type ButtonVariant =
-  | 'primary'
-  | 'secondary'
-  | 'success'
-  | 'warning'
-  | 'danger'
-  | 'purple'
-  | 'emerald'
-  | 'outline'
-  | 'ghost';
+  | "primary"
+  | "secondary"
+  | "success"
+  | "warning"
+  | "danger"
+  | "purple"
+  | "emerald"
+  | "outline"
+  | "ghost";
 
-export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
+export type ButtonSize = "xs" | "sm" | "md" | "lg";
 
 interface ButtonProps {
   variant?: ButtonVariant;
   size?: ButtonSize;
   children: React.ReactNode;
-  onClick?: () => void;
+  onClick?: (e: any | undefined) => void;
   disabled?: boolean;
-  type?: 'button' | 'submit' | 'reset';
+  type?: "button" | "submit" | "reset";
   href?: string;
   target?: string;
   icon?: LucideIcon;
-  iconPosition?: 'left' | 'right';
+  iconPosition?: "left" | "right";
   iconOnly?: boolean;
   className?: string;
   title?: string;
@@ -33,22 +33,22 @@ interface ButtonProps {
 }
 
 const Button: React.FC<ButtonProps> = ({
-  variant = 'primary',
-  size = 'sm',
+  variant = "primary",
+  size = "sm",
   children,
   onClick,
   disabled = false,
-  type = 'button',
+  type = "button",
   href,
   target,
   icon: Icon,
-  iconPosition = 'left',
+  iconPosition = "left",
   iconOnly = false,
-  className = '',
+  className = "",
   title,
-  loading = false
+  loading = false,
 }) => {
-  const baseClasses = 'btn';
+  const baseClasses = "btn";
   const variantClass = `btn-${variant}`;
   const sizeClass = `btn-${size}`;
 
@@ -56,24 +56,27 @@ const Button: React.FC<ButtonProps> = ({
     baseClasses,
     variantClass,
     sizeClass,
-    iconOnly && 'btn-icon-only',
-    loading && 'opacity-70 cursor-wait',
-    className
-  ].filter(Boolean).join(' ');
+    iconOnly && "btn-icon-only",
+    loading && "opacity-70 cursor-wait",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   const content = (
     <>
       {loading ? (
         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
       ) : (
-        Icon && iconPosition === 'left' && (
+        Icon &&
+        iconPosition === "left" && (
           <Icon className="btn-icon btn-icon-left" size={getIconSize(size)} />
         )
       )}
 
       {!iconOnly && children}
 
-      {Icon && iconPosition === 'right' && !loading && (
+      {Icon && iconPosition === "right" && !loading && (
         <Icon className="btn-icon btn-icon-right" size={getIconSize(size)} />
       )}
     </>
@@ -85,7 +88,7 @@ const Button: React.FC<ButtonProps> = ({
       xs: 12,
       sm: 14,
       md: 16,
-      lg: 18
+      lg: 18,
     };
     return sizeMap[btnSize];
   }
@@ -97,8 +100,10 @@ const Button: React.FC<ButtonProps> = ({
         target={target}
         className={classes}
         title={title}
-        onClick={onClick as any}
-        rel={target === '_blank' ? 'noopener noreferrer' : undefined}
+        onClick={(e) => {
+          onClick?.(e) as any;
+        }}
+        rel={target === "_blank" ? "noopener noreferrer" : undefined}
       >
         {content}
       </a>
@@ -109,7 +114,9 @@ const Button: React.FC<ButtonProps> = ({
     <button
       type={type}
       className={classes}
-      onClick={onClick}
+      onClick={(e) => {
+        onClick?.(e);
+      }}
       disabled={disabled || loading}
       title={title}
     >
@@ -119,8 +126,6 @@ const Button: React.FC<ButtonProps> = ({
 };
 
 export default Button;
-
-
 
 // // Example usage in your components
 // import Button from '@/components/UI/Button';

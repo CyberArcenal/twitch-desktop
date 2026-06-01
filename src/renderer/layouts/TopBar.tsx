@@ -256,7 +256,7 @@ const TopBar: React.FC<TopBarProps> = ({ toggleSidebar }) => {
 
       {/* Right – Actions & User */}
       <div className="flex items-center gap-2">
-        <UpdateNotifier />
+        
 
         {/* Notifications Dropdown */}
         <div className="relative" ref={notificationRef}>
