@@ -47,12 +47,12 @@
       "repo": "twitch-desktop",
       "releaseType": "release"
     },
-     "extraResources": [
-    {
-      "from": ".env",
-      "to": ".env"
-    }
-  ]
+    "extraResources": [
+      {
+        "from": ".env",
+        "to": ".env"
+      }
+    ]
   },
   "scripts": {
     "dev": "cross-env NODE_ENV=development concurrently \"vite\" \"tsc -w -p tsconfig.main.json\" \"electron ./src/main/index.js\"",
@@ -73,7 +73,7 @@
     "@dnd-kit/modifiers": "^9.0.0",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
-    "@twurple/api": "^7.0.0",
+    "@twurple/api": "^7.4.0",
     "@twurple/auth": "^7.0.0",
     "@twurple/chat": "^7.0.0",
     "@twurple/common": "^8.1.4",
@@ -83,6 +83,7 @@
     "dotenv": "^17.4.2",
     "electron-store": "^8.2.0",
     "electron-updater": "^6.3.0",
+    "hls.js": "^1.6.16",
     "lucide-react": "^0.562.0",
     "obs-websocket-js": "^5.0.8",
     "react": "^19.2.0",
@@ -92,7 +93,8 @@
     "react-window": "^2.2.7",
     "reflect-metadata": "^0.2.2",
     "swiper": "^12.2.0",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "video.js": "^8.23.7"
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.3",
