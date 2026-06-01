@@ -1,7 +1,7 @@
 {
   "name": "twitch-desktop",
   "private": true,
-  "version": "v0.0.0-beta.5",
+  "version": "v0.0.0-beta.6",
   "description": "A modern Twitch desktop client built with Electron, React, TypeScript, and Vite",
   "main": "src/main/index.js",
   "author": {
