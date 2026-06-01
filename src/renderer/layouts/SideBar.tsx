@@ -27,6 +27,7 @@ import {
   Compass,
 } from "lucide-react";
 import { version, name } from "../../../package.json";
+import UpdateNotifier from "../components/Shared/UpdateNotifier";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -363,20 +364,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onGoLive }) => {
         })}
       </nav>
 
-      {/* Go Live Button (optional) */}
-      {/* {onGoLive && (
-        <div className="p-4">
-          <button
-            onClick={onGoLive}
-            className="w-full bg-gradient-to-r from-[#9146ff] to-[#772ce8] hover:opacity-90 text-white font-semibold py-2 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-md"
-          >
-            <Radio className="w-4 h-4" />
-            {isOpen && <span>Go Live</span>}
-          </button>
-        </div>
-      )} */}
-
       {/* Footer */}
+      <div className="px-4 py-2 border-t border-[var(--sidebar-border)] text-center flex-shrink-0">
+      <UpdateNotifier />
+      </div>
       <div className="p-4 border-t border-[var(--sidebar-border)] text-center flex-shrink-0 rounded-br-3xl">
         {isOpen ? (
           <p className="text-xs text-[var(--sidebar-text)] opacity-70">

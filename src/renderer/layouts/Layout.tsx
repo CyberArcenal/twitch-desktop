@@ -12,6 +12,7 @@ const Layout: React.FC = () => {
 
   useEffect(() => {
     setMounted(true);
+    
   }, []);
 
   const toggleSidebar = () => {

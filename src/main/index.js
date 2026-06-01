@@ -29,7 +29,7 @@ const { followsService } = require("../services/follows.service");
 const { eventSubService } = require("../services/eventsub.service");
 const { pipService } = require("../services/picture-in-picture.service");
 const { obsWebSocketService } = require("../services/obs-websocket.service.js");
-const updaterModule = require("./ipc/utils/updater/index.ipc.js");
+
 // ===================== CONFIGURATION =====================
 const IS_DEV = process.env.NODE_ENV === "development" || !app.isPackaged;
 const APP_NAME = "Twitch Desktop";
@@ -436,6 +436,14 @@ async function createMainWindow() {
     return { action: "deny" };
   });
 
+    try {
+      const updaterModule = require("./ipc/utils/updater/index.ipc.js");
+      updaterModule.setMainWindow(mainWindow);
+      log(LogLevel.INFO, "Updater handler attached to main window");
+    } catch (e) {
+      log(LogLevel.WARN, "Failed to set updater main window", e);
+    }
+
   log(LogLevel.SUCCESS, "Main window created", null, true);
   return mainWindow;
 }
@@ -443,7 +451,6 @@ async function createMainWindow() {
 // ===================== SERVICE INITIALIZATION =====================
 async function initializeServices() {
   log(LogLevel.INFO, "Initializing services...", null, true);
-  updaterModule.setMainWindow(mainWindow);
   // @ts-ignore
   notificationService.initialize(mainWindow);
   streamMonitorService.initStreamMonitor(mainWindow);
