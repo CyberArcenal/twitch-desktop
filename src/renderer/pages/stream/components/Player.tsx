@@ -66,7 +66,7 @@ const Player = forwardRef<PlayerRef, PlayerProps>(
         src={src}
         className="w-full h-full"
         style={{ border: "none", backgroundColor: "#000" }}
-        allowfullscreen
+        allowFullScreen
         title={`${channelName} live stream`}
       />
     );

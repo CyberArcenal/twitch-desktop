@@ -794,3 +794,53 @@ button:disabled {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Custom Swiper Pagination for Discovery Banner */
+.swiper-pagination-custom {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  bottom: 16px !important;
+}
+
+.swiper-pagination-custom .swiper-pagination-bullet {
+  width: 32px;
+  height: 4px;
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.5);
+  opacity: 1;
+  transition: all 0.2s ease;
+  margin: 0 !important;
+}
+
+.swiper-pagination-custom .swiper-pagination-bullet-active {
+  background-color: #9146ff;
+  width: 48px;
+  box-shadow: 0 0 8px rgba(145, 70, 255, 0.6);
+}
+
+/* Custom navigation button hover effects */
+.swiper-button-prev-custom,
+.swiper-button-next-custom {
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.swiper-button-prev-custom:hover,
+.swiper-button-next-custom:hover {
+  background-color: #9146ff !important;
+  border-color: #9146ff;
+}

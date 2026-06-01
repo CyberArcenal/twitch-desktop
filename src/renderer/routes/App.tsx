@@ -24,6 +24,7 @@ import StreamPlayerPage from "../pages/stream";
 import GamePage from "../pages/browse/game";
 import StreamManagerPage from "../pages/stream-manager";
 import SettingsPage from "../pages/settings";
+import DiscoveryPage from "../pages/discovery";
 
 // ─── Generic Placeholder (for pages not yet built) ─────────────
 const PlaceholderPage = ({
@@ -109,8 +110,9 @@ function App() {
         }
       >
         {/* Dashboard */}
-        <Route index element={<DashboardPage />} />
+        <Route index element={<DiscoveryPage/>} />
         <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="/discovery" element={<DiscoveryPage />} />
         <Route path="/stream/:login" element={<StreamPlayerPage />} />
 
         {/* Following */}
