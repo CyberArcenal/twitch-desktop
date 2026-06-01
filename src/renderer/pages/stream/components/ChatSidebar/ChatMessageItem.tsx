@@ -79,7 +79,7 @@ const formatTime = (timestamp: string) => {
 
 const ChatMessageItem: React.FC<ChatMessageItemProps> = memo(
   ({ message, onReplyClick, onMentionClick, currentUser }) => {
-    console.log("Badges for", message.user, message.badges);
+    // console.log("Badges for", message.user, message.badges);
     const handleReplyClick = (e: React.MouseEvent) => {
       e.stopPropagation();
       onReplyClick(message.id);

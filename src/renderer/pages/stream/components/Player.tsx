@@ -28,7 +28,7 @@ const Player = forwardRef<PlayerRef, PlayerProps>(
       if (!webview) return;
 
       const handleLoad = () => {
-        console.log("[Player] webview did-finish-load");
+        // console.log("[Player] webview did-finish-load");
         onLoad?.();
       };
 
@@ -66,7 +66,7 @@ const Player = forwardRef<PlayerRef, PlayerProps>(
         src={src}
         className="w-full h-full"
         style={{ border: "none", backgroundColor: "#000" }}
-        allowfullscreen
+        allowFullScreen
         title={`${channelName} live stream`}
       />
     );

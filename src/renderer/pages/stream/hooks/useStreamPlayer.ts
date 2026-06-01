@@ -54,7 +54,7 @@ export const useStreamPlayer = () => {
     const timer = setTimeout(async () => {
       if (!historyAddedRef.current) {
         try {
-          console.log('[WatchHistory] Adding stream:', stream.user_name);
+          // console.log('[WatchHistory] Adding stream:', stream.user_name);
           await historyAPI.add({
             type: 'stream',
             channelName: stream.user_name,
@@ -65,7 +65,7 @@ export const useStreamPlayer = () => {
             duration: null,
           });
           historyAddedRef.current = true;
-          console.log('[WatchHistory] Added successfully');
+          // console.log('[WatchHistory] Added successfully');
         } catch (err) {
           console.error('[WatchHistory] Error:', err);
         }

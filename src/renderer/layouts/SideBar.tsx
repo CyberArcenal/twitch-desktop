@@ -24,6 +24,7 @@ import {
   MonitorPlay,
   Bookmark,
   Heart,
+  Compass,
 } from "lucide-react";
 import { version, name } from "../../../package.json";
 
@@ -41,19 +42,24 @@ interface MenuItem {
 }
 
 export function toTitleCase(str: string) {
-  return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+  return str.replace(
+    /\w\S*/g,
+    (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(),
+  );
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onGoLive }) => {
   const location = useLocation();
   const title = toTitleCase(name);
-  const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
+  const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>(
+    {},
+  );
 
   const menuItems: MenuItem[] = [
     {
-      path: "/dashboard",
-      name: "Dashboard",
-      icon: LayoutDashboard,
+      path: "/discovery",
+      name: "Discovery",
+      icon: Compass,
       category: "core",
     },
     {
@@ -103,20 +109,29 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onGoLive }) => {
       icon: Settings,
       category: "system",
     },
+    {
+      path: "/dashboard",
+      name: "Dashboard",
+      icon: LayoutDashboard,
+      category: "system",
+    },
   ];
 
   // Filter out empty children & remove unwanted paths
   const filteredMenu = menuItems
     .map((item) => {
       if (item.children) {
-        const children = item.children.filter((child) => child.path !== "/users");
+        const children = item.children.filter(
+          (child) => child.path !== "/users",
+        );
         return { ...item, children };
       }
       return item;
     })
     .filter(
       (item) =>
-        item.path !== "/users" && (item.children ? item.children.length > 0 : true)
+        item.path !== "/users" &&
+        (item.children ? item.children.length > 0 : true),
     );
 
   const toggleDropdown = (name: string) => {
@@ -331,7 +346,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onGoLive }) => {
       <nav className="flex-1 overflow-y-auto sidebar-scrollbar p-4">
         {categories.map((category) => {
           const categoryItems = filteredMenu.filter(
-            (item) => item.category === category.id
+            (item) => item.category === category.id,
           );
           if (categoryItems.length === 0) return null;
 
@@ -349,7 +364,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onGoLive }) => {
       </nav>
 
       {/* Go Live Button (optional) */}
-      {onGoLive && (
+      {/* {onGoLive && (
         <div className="p-4">
           <button
             onClick={onGoLive}
@@ -359,7 +374,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onGoLive }) => {
             {isOpen && <span>Go Live</span>}
           </button>
         </div>
-      )}
+      )} */}
 
       {/* Footer */}
       <div className="p-4 border-t border-[var(--sidebar-border)] text-center flex-shrink-0 rounded-br-3xl">

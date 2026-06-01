@@ -1,7 +1,7 @@
 {
   "name": "twitch-desktop",
   "private": true,
-  "version": "v0.0.0-beta.8",
+  "version": "v0.0.0-beta.10",
   "description": "A modern Twitch desktop client built with Electron, React, TypeScript, and Vite",
   "main": "src/main/index.js",
   "author": {
@@ -83,6 +83,7 @@
     "dotenv": "^17.4.2",
     "electron-store": "^8.2.0",
     "electron-updater": "^6.3.0",
+    "emoji-picker-react": "^4.19.1",
     "hls.js": "^1.6.16",
     "lucide-react": "^0.562.0",
     "obs-websocket-js": "^5.0.8",

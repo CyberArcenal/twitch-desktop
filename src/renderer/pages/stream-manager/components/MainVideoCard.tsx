@@ -129,7 +129,7 @@ const MainVideoCard: React.FC<MainVideoCardProps> = ({
           iframeUrl &&
           (iframeUrl.includes("id.twitch.tv") || iframeUrl.includes("login"))
         ) {
-          console.log("Detected login redirect, reloading iframe...");
+          // console.log("Detected login redirect, reloading iframe...");
           setTimeout(() => {
             if (iframe.src) iframe.src = iframeSrc;
           }, 1000);
