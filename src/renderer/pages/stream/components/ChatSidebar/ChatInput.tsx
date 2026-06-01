@@ -1,5 +1,8 @@
-import React, { useState, forwardRef, useImperativeHandle, useRef } from 'react';
-import { Send, X } from 'lucide-react';
+// src/renderer/pages/stream/components/ChatSidebar/ChatInput.tsx
+import React, { useState, forwardRef, useImperativeHandle, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { Send, X, Smile } from 'lucide-react';
+import EmojiPicker, { Theme, type EmojiClickData } from 'emoji-picker-react';
 import type { ChatMessage } from '../../../../api/core/chat';
 
 export interface ChatInputRef {
@@ -21,7 +24,12 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
 }, ref) => {
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [pickerPosition, setPickerPosition] = useState({ top: 0, right: 0 });
   const inputRef = useRef<HTMLInputElement>(null);
+  const pickerButtonRef = useRef<HTMLButtonElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const pickerPortalRef = useRef<HTMLDivElement>(null);
 
   useImperativeHandle(ref, () => ({
     insertMention: (username: string) => {
@@ -31,7 +39,6 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
       const mention = `@${username} `;
       const newValue = input.slice(0, start) + mention + input.slice(end);
       setInput(newValue);
-      // Set cursor position after the inserted mention
       setTimeout(() => {
         inputRef.current?.focus();
         const newCursorPos = start + mention.length;
@@ -58,8 +65,48 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
     }
   };
 
+  const onEmojiClick = (emojiData: EmojiClickData) => {
+    const emoji = emojiData.emoji;
+    const start = inputRef.current?.selectionStart || 0;
+    const end = inputRef.current?.selectionEnd || 0;
+    const newValue = input.slice(0, start) + emoji + input.slice(end);
+    setInput(newValue);
+    // Do NOT close the picker – keep it open for multiple emojis
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const togglePicker = () => {
+    if (!showEmojiPicker && pickerButtonRef.current) {
+      const rect = pickerButtonRef.current.getBoundingClientRect();
+      setPickerPosition({
+        top: rect.top - 10,
+        right: window.innerWidth - rect.right,
+      });
+    }
+    setShowEmojiPicker(!showEmojiPicker);
+  };
+
+  // Close picker when clicking outside (but NOT when clicking inside the picker or the button)
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!showEmojiPicker) return;
+
+      const target = event.target as Node;
+      const isInsidePicker = pickerPortalRef.current?.contains(target);
+      const isInsideButton = pickerButtonRef.current?.contains(target);
+      const isInsideContainer = containerRef.current?.contains(target);
+
+      if (!isInsidePicker && !isInsideButton && !isInsideContainer) {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showEmojiPicker]);
+
   return (
-    <div className="p-3 border-t border-[#2a2a2e] bg-[#18181b]">
+    <div className="p-3 border-t border-[#2a2a2e] bg-[#18181b] relative" ref={containerRef}>
       {replyingTo && (
         <div className="flex items-center justify-between text-xs bg-[#2a2a2e] rounded-md px-2 py-1 mb-2">
           <span className="text-[#adadb8]">
@@ -75,16 +122,27 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
         </div>
       )}
       <div className="flex gap-2">
-        <input
-          ref={inputRef}
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder={replyingTo ? `Reply to @${replyingTo.user}...` : "Send a message..."}
-          className="flex-1 bg-[#0e0e10] border border-[#2a2a2e] rounded-lg px-3 py-2 text-sm text-white placeholder-[#adadb8] focus:outline-none focus:border-[#9147ff] transition-colors disabled:opacity-50"
-          disabled={!isConnected || isSending}
-        />
+        <div className="relative flex-1">
+          <input
+            ref={inputRef}
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder={replyingTo ? `Reply to @${replyingTo.user}...` : "Send a message..."}
+            className="w-full bg-[#0e0e10] border border-[#2a2a2e] rounded-lg px-3 py-2 text-sm text-white placeholder-[#adadb8] focus:outline-none focus:border-[#9147ff] transition-colors disabled:opacity-50 pr-8"
+            disabled={!isConnected || isSending}
+          />
+          <button
+            ref={pickerButtonRef}
+            type="button"
+            onClick={togglePicker}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-[#adadb8] hover:text-white transition-colors"
+            aria-label="Insert emoji"
+          >
+            <Smile className="w-4 h-4" />
+          </button>
+        </div>
         <button
           onClick={handleSend}
           disabled={!isConnected || isSending || !input.trim()}
@@ -94,6 +152,28 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
           <Send className="w-4 h-4 text-white" />
         </button>
       </div>
+
+      {/* Emoji Picker Portal - stays open after selection */}
+      {showEmojiPicker && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={pickerPortalRef}
+          className="fixed z-[100]"
+          style={{
+            bottom: `calc(100vh - ${pickerPosition.top}px)`,
+            right: `${pickerPosition.right}px`,
+          }}
+        >
+          <EmojiPicker
+            onEmojiClick={onEmojiClick}
+            autoFocusSearch={false}
+            width={350}
+            height={450}
+            theme={Theme.DARK}
+            lazyLoadEmojis={true}
+          />
+        </div>,
+        document.body
+      )}
     </div>
   );
 });

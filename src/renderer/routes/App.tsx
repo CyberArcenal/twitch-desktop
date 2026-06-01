@@ -111,26 +111,28 @@ function App() {
       >
         {/* Dashboard */}
         <Route index element={<DiscoveryPage/>} />
-        <Route path="dashboard" element={<DashboardPage />} />
         <Route path="/discovery" element={<DiscoveryPage />} />
+        <Route path="/" element={<DiscoveryPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+        
         <Route path="/stream/:login" element={<StreamPlayerPage />} />
 
         {/* Following */}
-        <Route path="following" element={<FollowingPage />} />
+        <Route path="/following" element={<FollowingPage />} />
 
         {/* Browse section */}
-        <Route path="browse/categories" element={<BrowseCategoriesPage />} />
-        <Route path="browse/top-games" element={<BrowseTopGamesPage />} />
-        <Route path="browse/live" element={<BrowseLivePage />} />
-        <Route path="browse/clips" element={<BrowseClipsPage />} />
+        <Route path="/browse/categories" element={<BrowseCategoriesPage />} />
+        <Route path="/browse/top-games" element={<BrowseTopGamesPage />} />
+        <Route path="/browse/live" element={<BrowseLivePage />} />
+        <Route path="/browse/clips" element={<BrowseClipsPage />} />
 
         {/* Library section */}
-        <Route path="history" element={<WatchHistoryPage />} />
-        <Route path="watch-later" element={<WatchLaterPage />} />
-        <Route path="subscriptions" element={<SubscriptionsPage />} />
+        <Route path="/history" element={<WatchHistoryPage />} />
+        <Route path="/watch-later" element={<WatchLaterPage />} />
+        <Route path="/subscriptions" element={<SubscriptionsPage />} />
         {/* My Clips – not yet built */}
         <Route
-          path="clips"
+          path="/clips"
           element={
             <PlaceholderPage
               title="My Clips"
@@ -140,11 +142,11 @@ function App() {
         />
 
         {/* Community section */}
-        <Route path="friends" element={<FriendsPage />} />
-        <Route path="whispers" element={<WhispersPage />} />
+        <Route path="/friends" element={<FriendsPage />} />
+        <Route path="/whispers" element={<WhispersPage />} />
         {/* Community Notifications – not yet built */}
         <Route
-          path="notifications"
+          path="/notifications"
           element={
             <PlaceholderPage
               title="Notifications"
@@ -158,7 +160,7 @@ function App() {
 
         {/* Channel page */}
         <Route path="/channel/:login" element={<ChannelPage />} />
-        <Route path="browse/game/:gameId" element={<GamePage />} />
+        <Route path="/browse/game/:gameId" element={<GamePage />} />
         <Route path="/stream-manager" element={<StreamManagerPage />} />
 
         {/* 404 – must be last */}

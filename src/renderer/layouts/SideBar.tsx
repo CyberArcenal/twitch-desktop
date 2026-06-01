@@ -364,7 +364,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onGoLive }) => {
       </nav>
 
       {/* Go Live Button (optional) */}
-      {onGoLive && (
+      {/* {onGoLive && (
         <div className="p-4">
           <button
             onClick={onGoLive}
@@ -374,7 +374,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onGoLive }) => {
             {isOpen && <span>Go Live</span>}
           </button>
         </div>
-      )}
+      )} */}
 
       {/* Footer */}
       <div className="p-4 border-t border-[var(--sidebar-border)] text-center flex-shrink-0 rounded-br-3xl">
