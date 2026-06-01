@@ -60,7 +60,7 @@ export const NotificationToastListener = () => {
 
   useEffect(() => {
     const handleNotificationCreated = (_event: any, data: any) => {
-      console.log("Received notification from main process:", data);
+      // console.log("Received notification from main process:", data);
       addToQueue({
         title: data.title,
         message: data.message,

@@ -28,7 +28,7 @@ const Player = forwardRef<PlayerRef, PlayerProps>(
       if (!webview) return;
 
       const handleLoad = () => {
-        console.log("[Player] webview did-finish-load");
+        // console.log("[Player] webview did-finish-load");
         onLoad?.();
       };
 

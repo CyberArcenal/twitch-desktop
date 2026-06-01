@@ -90,7 +90,7 @@ function App() {
   useEffect(() => {
     if (typeof window.backendAPI?.notifyAppReady === "function") {
       window.backendAPI.notifyAppReady();
-      console.log("Notified main process: renderer is ready");
+      // console.log("Notified main process: renderer is ready");
     }
   }, []);
 
