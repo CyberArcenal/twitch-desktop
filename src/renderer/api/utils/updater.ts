@@ -67,6 +67,7 @@ class UpdaterAPI {
    */
   async checkForUpdates(): Promise<UpdateCheckResponse> {
     try {
+      console.log('Checking for updates...');
       if (!window.backendAPI?.updater) {
         throw new Error('Updater API not available');
       }

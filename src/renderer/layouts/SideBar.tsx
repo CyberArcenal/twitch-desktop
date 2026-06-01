@@ -57,12 +57,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onGoLive }) => {
       category: "core",
     },
     {
-      path: "/stream-manager",
-      name: "Stream Manager",
-      icon: Tv,
-      category: "core",
-    },
-    {
       path: "/following",
       name: "Following",
       icon: Users,

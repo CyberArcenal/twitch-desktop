@@ -41,6 +41,7 @@ contextBridge.exposeInMainWorld("backendAPI", {
   openExternal: (url) => ipcRenderer.invoke("app: open-external", url),
   openDashboard: (url) => ipcRenderer.invoke("open-dashboard", url),
   appInfo: () => ipcRenderer.invoke("app:get-info"),
+  updater: (payload) => ipcRenderer.invoke("updater", payload),
   // Event listeners
   on: (channel, callback) => {
     const newCallback = (_, data) => callback(data);

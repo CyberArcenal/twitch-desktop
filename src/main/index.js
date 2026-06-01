@@ -29,7 +29,7 @@ const { followsService } = require("../services/follows.service");
 const { eventSubService } = require("../services/eventsub.service");
 const { pipService } = require("../services/picture-in-picture.service");
 const { obsWebSocketService } = require("../services/obs-websocket.service.js");
-
+const updaterModule = require("./ipc/utils/updater/index.ipc.js");
 // ===================== CONFIGURATION =====================
 const IS_DEV = process.env.NODE_ENV === "development" || !app.isPackaged;
 const APP_NAME = "Twitch Desktop";
@@ -445,7 +445,7 @@ async function createMainWindow() {
 // ===================== SERVICE INITIALIZATION =====================
 async function initializeServices() {
   log(LogLevel.INFO, "Initializing services...", null, true);
-  // @ts-ignore
+  updaterModule.setMainWindow(mainWindow);
   notificationService.initialize(mainWindow);
   streamMonitorService.initStreamMonitor(mainWindow);
   twitchChatService.initChatService(mainWindow);
@@ -454,12 +454,7 @@ async function initializeServices() {
   eventSubService.initialize(mainWindow);
   pipService.initialize(mainWindow);
 
-  try {
-    const updaterModule = require("./ipc/utils/updater/index.ipc.js");
-    updaterModule.setMainWindow(mainWindow);
-  } catch (err) {
-    log(LogLevel.WARN, "Updater module not loaded", err);
-  }
+
 
   if (twitchAuthService.isLoggedIn()) {
     try {
