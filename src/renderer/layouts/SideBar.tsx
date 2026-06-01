@@ -365,7 +365,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onGoLive }) => {
       </nav>
 
       {/* Footer */}
-      <div className="px-4 py-2 border-t border-[var(--sidebar-border)] text-center flex-shrink-0">
+      <div className="px-4 py-2 border-[var(--sidebar-border)] text-center flex-shrink-0">
       <UpdateNotifier />
       </div>
       <div className="p-4 border-t border-[var(--sidebar-border)] text-center flex-shrink-0 rounded-br-3xl">
