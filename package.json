@@ -1,7 +1,7 @@
 {
   "name": "twitch-desktop",
   "private": true,
-  "version": "v1.0.0",
+  "version": "v1.1.0",
   "description": "A modern Twitch desktop client built with Electron, React, TypeScript, and Vite",
   "main": "src/main/index.js",
   "author": {
@@ -21,12 +21,12 @@
     "win": {
       "icon": "build/icon.ico",
       "target": "nsis",
-      "artifactName": "${productName}-Setup-${version}.${ext}"
+      "artifactName": "Twitch-Desktop-Setup-${version}.${ext}"
     },
     "mac": {
       "icon": "build/icon.icns",
       "target": "dmg",
-      "artifactName": "${productName}-${version}.${ext}"
+      "artifactName": "Twitch-Desktop-${version}.${ext}"
     },
     "linux": {
       "icon": "build/icon.png",
@@ -34,7 +34,7 @@
         "AppImage",
         "deb"
       ],
-      "artifactName": "${productName}-${version}.${ext}"
+      "artifactName": "Twitch-Desktop-${version}.${ext}"
     },
     "publish": {
       "provider": "github",

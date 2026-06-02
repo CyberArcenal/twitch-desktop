@@ -6,8 +6,15 @@ import { useUpdater } from "../../hooks/useUpdater";
 import Button from "../UI/Button";
 
 const UpdateNotifier: React.FC = () => {
-  const { state, updateInfo, progress, error, downloadUpdate, installUpdate } =
-    useUpdater();
+  const {
+    state,
+    updateInfo,
+    progress,
+    error,
+    downloadUpdate,
+    installUpdate,
+    setState,
+  } = useUpdater();
   const [showModal, setShowModal] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
@@ -24,12 +31,15 @@ const UpdateNotifier: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     if (isDownloading) return;
+
     setIsDownloading(true);
     setDownloadError(null);
+
     try {
       await downloadUpdate();
     } catch (err: any) {
-      setDownloadError(err.message || "Failed to download update");
+      setDownloadError(err.message || "Failed to start download");
+      console.error("Download failed:", err);
     } finally {
       setIsDownloading(false);
     }
@@ -46,11 +56,7 @@ const UpdateNotifier: React.FC = () => {
     }
   };
 
-  if (
-    state !== "available" &&
-    state !== "downloading" &&
-    state !== "downloaded"
-  ) {
+  if (!["available", "downloading", "downloaded", "error"].includes(state)) {
     return null;
   }
 
@@ -84,7 +90,10 @@ const UpdateNotifier: React.FC = () => {
   const getStatusInfo = () => {
     switch (state) {
       case "available":
-        return { message: "New version ready to download", color: "text-blue-400" };
+        return {
+          message: "New version ready to download",
+          color: "text-blue-400",
+        };
       case "downloading":
         return { message: "Downloading update...", color: "text-blue-400" };
       case "downloaded":
@@ -192,7 +201,9 @@ const UpdateNotifier: React.FC = () => {
         {progress && (state === "downloading" || isDownloading) && (
           <div className="mb-4">
             <div className="flex justify-between text-sm mb-2">
-              <span className="text-[var(--text-secondary)]">Downloading...</span>
+              <span className="text-[var(--text-secondary)]">
+                Downloading...
+              </span>
               <span className="text-[var(--sidebar-text)] font-medium">
                 {Math.round(progress.percent)}%
               </span>
@@ -266,7 +277,8 @@ const UpdateNotifier: React.FC = () => {
         {getIcon()}
         {getBadge()}
       </button>
-      {typeof document !== "undefined" && createPortal(modalContent, document.body)}
+      {typeof document !== "undefined" &&
+        createPortal(modalContent, document.body)}
     </>
   );
 };

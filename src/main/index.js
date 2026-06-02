@@ -436,13 +436,13 @@ async function createMainWindow() {
     return { action: "deny" };
   });
 
-    try {
-      const updaterModule = require("./ipc/utils/updater/index.ipc.js");
-      updaterModule.setMainWindow(mainWindow);
-      log(LogLevel.INFO, "Updater handler attached to main window");
-    } catch (e) {
-      log(LogLevel.WARN, "Failed to set updater main window", e);
-    }
+  try {
+    const updaterModule = require("./ipc/utils/updater/index.ipc.js");
+    updaterModule.setMainWindow(mainWindow);
+    log(LogLevel.INFO, "Updater handler attached to main window");
+  } catch (e) {
+    log(LogLevel.WARN, "Failed to set updater main window", e);
+  }
 
   log(LogLevel.SUCCESS, "Main window created", null, true);
   return mainWindow;

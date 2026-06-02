@@ -54,21 +54,27 @@ export const useUpdater = () => {
 
   const checkForUpdates = async () => {
     try {
-      await updaterAPI.checkForUpdates();
+      const response = await updaterAPI.checkForUpdates();
+      if (response.status && response.data) {
+        setUpdateInfo(response.data);
+      }
     } catch (err: any) {
       setState('error');
       setError(err.message);
     }
   };
 
-  const downloadUpdate = async () => {
-    try {
-      await updaterAPI.downloadUpdate();
-    } catch (err: any) {
-      setState('error');
-      setError(err.message);
-    }
-  };
+const downloadUpdate = async () => {
+  try {
+    setState('downloading');        // ← Important: optimistic update
+    await updaterAPI.downloadUpdate();
+    // Do NOT set state back to 'available' here
+  } catch (err: any) {
+    setState('error');
+    setError(err.message);
+    throw err; // rethrow so component can catch
+  }
+};
 
   const installUpdate = async () => {
     try {
@@ -84,6 +90,7 @@ export const useUpdater = () => {
     updateInfo,
     progress,
     error,
+    setState, // Expose setState if you want to allow manual state overrides (e.g., for UI feedback)
     checkForUpdates,
     downloadUpdate,
     installUpdate,

@@ -89,8 +89,13 @@ class UpdaterHandler {
   }
 
   async downloadUpdate() {
-    this.autoUpdater.downloadUpdate();
-    return { status: true, message: 'Download started', data: null };
+    try {
+      await this.autoUpdater.downloadUpdate();
+      return { status: true, message: 'Download started', data: null };
+    } catch (error) {
+      // @ts-ignore
+      throw error;
+    }
   }
 
   async quitAndInstall() {
