@@ -33,8 +33,8 @@ Watch streams, chat, manage your follows, and get desktop notifications – all 
 
 ## 🖼️ Screenshots
 
-![Dashboard](https://github.com/CyberArcenal/twitch-desktop/blob/main/screenshots/ss4.png?raw=true)
-![Stream-Manager](https://github.com/CyberArcenal/twitch-desktop/blob/main/screenshots/ss3.png?raw=true)
+![Discovery](https://github.com/CyberArcenal/twitch-desktop/blob/main/screenshots/ss4.png?raw=true)
+![Stream](https://github.com/CyberArcenal/twitch-desktop/blob/main/screenshots/ss2.png?raw=true)
 ![Live Channels](https://github.com/CyberArcenal/twitch-desktop/blob/main/screenshots/ss1.png?raw=true)
 
 ---
