@@ -234,7 +234,7 @@
         window.backendAPI.appInfo().then(info => {
           const versionEl = document.getElementById('version-text');
           if (versionEl && info.version) {
-            versionEl.textContent = `v${info.version}`;
+            versionEl.textContent = `${info.version}`;
           }
         }).catch(() => {});
       }
