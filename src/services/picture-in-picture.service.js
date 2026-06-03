@@ -2,6 +2,7 @@
 //@ts-check
 const { BrowserWindow } = require('electron');
 const path = require('path');
+const { logger } = require('../utils/logger');
 
 class PictureInPictureService {
   constructor() {
@@ -9,17 +10,32 @@ class PictureInPictureService {
     this.mainWindow = null;
   }
 
+  /**
+   * @param {any} mainWindow
+   */
   initialize(mainWindow) {
     this.mainWindow = mainWindow;
   }
 
-  _sendToRenderers(channel, data) {
+ /**
+   * @param {string} channel
+   * @param {{}} data
+   */
+ _sendToRenderers(channel, data) {
     try {
-      BrowserWindow.getAllWindows().forEach(win => {
-        if (!win.isDestroyed()) win.webContents.send(channel, data);
+      const windows = BrowserWindow.getAllWindows();
+      windows.forEach((win) => {
+        if (!win.isDestroyed()) {
+          win.webContents.send(channel, data);
+        }
       });
-    } catch (err) {
-      console.warn('[PiPService] send error:', err);
+    } catch (error) {
+      // If running outside Electron (e.g., tests), ignore
+      logger.warn(
+        "Failed to send IPC event (maybe not in Electron):",
+        // @ts-ignore
+        error.message,
+      );
     }
   }
 
@@ -58,6 +74,9 @@ class PictureInPictureService {
     return this.pipWindow;
   }
 
+  /**
+   * @param {string} streamUrl
+   */
   async setVideoSource(streamUrl) {
     const win = this.createPipWindow();
     await win.webContents.executeJavaScript(`

@@ -32,7 +32,7 @@ class SettingsService {
    * @param {string} channel
    * @param {any} data
    */
-  _sendToRenderers(channel, data) {
+ _sendToRenderers(channel, data) {
     try {
       const windows = BrowserWindow.getAllWindows();
       windows.forEach((win) => {
@@ -40,8 +40,13 @@ class SettingsService {
           win.webContents.send(channel, data);
         }
       });
-    } catch (err) {
-      console.warn("[NotificationService] Failed to send event:", err);
+    } catch (error) {
+      // If running outside Electron (e.g., tests), ignore
+      logger.warn(
+        "Failed to send IPC event (maybe not in Electron):",
+        // @ts-ignore
+        error.message,
+      );
     }
   }
 

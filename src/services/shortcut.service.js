@@ -1,6 +1,7 @@
 // src/main/services/shortcut.service.js
 //@ts-check
 const { globalShortcut, BrowserWindow } = require('electron');
+const { logger } = require('../utils/logger');
 
 class ShortcutService {
   constructor() {
@@ -8,21 +9,39 @@ class ShortcutService {
     this.mainWindow = null;
   }
 
+  /**
+   * @param {any} mainWindow
+   */
   initialize(mainWindow) {
     this.mainWindow = mainWindow;
     console.log('[ShortcutService] Initialized');
   }
 
+  /**
+   * @param {string} channel
+   * @param {undefined} [data]
+   */
   _sendToRenderers(channel, data) {
     try {
-      BrowserWindow.getAllWindows().forEach(win => {
-        if (!win.isDestroyed()) win.webContents.send(channel, data);
+      const windows = BrowserWindow.getAllWindows();
+      windows.forEach((win) => {
+        if (!win.isDestroyed()) {
+          win.webContents.send(channel, data);
+        }
       });
-    } catch (err) {
-      console.warn('[ShortcutService] send error:', err);
+    } catch (error) {
+      // If running outside Electron (e.g., tests), ignore
+      logger.warn(
+        "Failed to send IPC event (maybe not in Electron):",
+        // @ts-ignore
+        error.message,
+      );
     }
   }
 
+  /**
+   * @param {any} action
+   */
   _executeAction(action) {
     switch (action) {
       case 'playpause':
@@ -87,6 +106,9 @@ class ShortcutService {
     console.log('[ShortcutService] Unregistered all shortcuts');
   }
 
+  /**
+   * @param {any} accelerators
+   */
   unregister(accelerators) {
     const accList = Array.isArray(accelerators) ? accelerators : [accelerators];
     for (const acc of accList) {
@@ -97,6 +119,9 @@ class ShortcutService {
     }
   }
 
+  /**
+   * @param {string} accelerator
+   */
   isRegistered(accelerator) {
     return globalShortcut.isRegistered(accelerator);
   }

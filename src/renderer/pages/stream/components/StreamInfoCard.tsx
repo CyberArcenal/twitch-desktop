@@ -131,7 +131,6 @@ const StreamInfoCard: React.FC<StreamInfoCardProps> = ({ stream, onShare }) => {
     }, 100);
   };
 
-  // Format viewer count with K/M abbreviation
   const formatViewers = (count: number) => {
     if (count >= 1_000_000) return (count / 1_000_000).toFixed(1) + 'M';
     if (count >= 1_000) return (count / 1_000).toFixed(1) + 'K';
@@ -139,8 +138,8 @@ const StreamInfoCard: React.FC<StreamInfoCardProps> = ({ stream, onShare }) => {
   };
 
   return (
-    <div className="bg-[#1f1f23] rounded-xl p-4 shadow-lg border border-[#2a2a2e] relative">
-      {/* Hover Tooltip / Popup */}
+    <div className="bg-[#1f1f23] rounded-xl p-4 shadow-lg border border-[#2a2a2e] relative max-h-[165px] h-full overflow-visible">
+      {/* Hover Tooltip - hindi nagbago */}
       {showTooltip && (
         <div className="absolute bottom-full left-0 mb-2 z-50 w-80 bg-[#18181b] border border-[#3a3a4a] rounded-xl shadow-2xl p-3 animate-fadeInUp pointer-events-none">
           <p className="text-white text-sm font-semibold break-words">{stream.title}</p>
@@ -158,76 +157,88 @@ const StreamInfoCard: React.FC<StreamInfoCardProps> = ({ stream, onShare }) => {
         </div>
       )}
 
-      <div className="flex items-start gap-3">
-        {/* Clickable avatar */}
+      {/* Adaptive content – nag-iiba ang layout depende sa available width */}
+      <div className="flex items-start gap-2 sm:gap-3">
+        {/* Avatar – lumiliit kapag sobrang sikip */}
         <button
           onClick={handleNavigateToChannel}
           className="flex-shrink-0 transition-transform hover:scale-105 focus:outline-none"
         >
           <img
             src={avatarUrl}
-            className="w-12 h-12 rounded-full ring-2 ring-[#9147ff]/30 hover:ring-[#9147ff] transition-all"
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full ring-2 ring-[#9147ff]/30 hover:ring-[#9147ff] transition-all"
             alt={stream.user_name}
           />
         </button>
 
         <div className="flex-1 min-w-0">
-          {/* Clickable name */}
+          {/* Channel name – may truncation at responsive text size */}
           <button
             onClick={handleNavigateToChannel}
-            className="font-bold text-white hover:text-[#9147ff] transition-colors text-left truncate block w-full focus:outline-none"
+            className="font-bold text-white hover:text-[#9147ff] transition-colors text-left truncate block w-full focus:outline-none text-sm sm:text-base"
           >
             {stream.user_name}
           </button>
 
-          {/* Title with hover trigger */}
+          {/* Title – pinaikli ang font sa sobrang sikip */}
           <div
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
             className="cursor-help"
           >
-            <p className="text-sm text-[#adadb8] truncate">{stream.title}</p>
+            <p className="text-xs sm:text-sm text-[#adadb8] truncate">{stream.title}</p>
           </div>
 
-          <div className="flex flex-wrap gap-3 mt-2 text-xs text-[#adadb8]">
-            <span className="flex items-center gap-1">
-              <Users className="w-3 h-3" /> {formatViewers(stream.viewer_count)}
+          {/* Stats – nagsisiksikan o nagwo-wrap kung kinakailangan */}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-[10px] sm:text-xs text-[#adadb8]">
+            <span className="flex items-center gap-0.5 sm:gap-1">
+              <Users className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+              <span className="hidden xs:inline">{formatViewers(stream.viewer_count)}</span>
+              <span className="xs:hidden">{formatViewers(stream.viewer_count)}</span>
             </span>
-            <span className="flex items-center gap-1">
-              <Gamepad2 className="w-3 h-3" /> {stream.game_name}
+            <span className="flex items-center gap-0.5 sm:gap-1 whitespace-nowrap overflow-hidden">
+              <Gamepad2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+              <span className="hidden sm:inline">{stream.game_name}</span>
+              <span className="sm:hidden truncate max-w-[60px]">{stream.game_name}</span>
             </span>
-            <span className="flex items-center gap-1">
-              <Calendar className="w-3 h-3" /> {new Date(stream.started_at).toLocaleTimeString()}
+            <span className="flex items-center gap-0.5 sm:gap-1">
+              <Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+              <span className="hidden md:inline">{new Date(stream.started_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              <span className="md:hidden">{new Date(stream.started_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).slice(0,5)}</span>
             </span>
           </div>
         </div>
       </div>
 
-      <div className="flex gap-2 mt-3">
+      {/* Action buttons – adaptive spacing at laki */}
+      <div className="flex gap-1 sm:gap-2 mt-2 sm:mt-3">
         <button
           onClick={handleFollowToggle}
           disabled={isFollowLoading}
-          className={`flex-1 py-1.5 rounded-full text-sm font-medium transition ${
-            isFollowing ? 'bg-[#3a3a4a] text-white' : 'bg-[#9147ff] text-white'
-          }`}
+          className={`flex-1 py-1 px-1 sm:px-2 rounded-full text-[11px] sm:text-sm font-medium transition ${
+            isFollowing ? 'bg-[#3a3a4a] text-white hover:bg-[#4a4a5a]' : 'bg-[#9147ff] text-white hover:bg-[#772ce8]'
+          } disabled:opacity-50 flex items-center justify-center gap-0.5 sm:gap-1`}
         >
-          {isFollowing ? <Check className="inline w-4 h-4 mr-1" /> : <Heart className="inline w-4 h-4 mr-1" />}
-          {isFollowing ? 'Following' : 'Follow'}
+          {isFollowing ? <Check className="w-3 h-3 sm:w-4 sm:h-4" /> : <Heart className="w-3 h-3 sm:w-4 sm:h-4" />}
+          <span className="hidden xs:inline">{isFollowing ? 'Following' : 'Follow'}</span>
+          <span className="xs:hidden">{isFollowing ? '✓' : '+'}</span>
         </button>
         <button
           onClick={handleWatchLater}
           disabled={isWatchLaterLoading}
-          className={`p-1.5 rounded-full ${
-            isWatchLater ? 'bg-[#9147ff] text-white' : 'bg-[#2a2a2e] text-[#adadb8]'
-          }`}
+          className={`p-1 sm:p-1.5 rounded-full transition ${
+            isWatchLater ? 'bg-[#9147ff] text-white' : 'bg-[#2a2a2e] text-[#adadb8] hover:bg-[#3a3a4a]'
+          } disabled:opacity-50`}
+          title={isWatchLater ? 'Remove from Watch Later' : 'Save to Watch Later'}
         >
-          {isWatchLater ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
+          {isWatchLater ? <BookmarkCheck className="w-4 h-4 sm:w-5 sm:h-5" /> : <Bookmark className="w-4 h-4 sm:w-5 sm:h-5" />}
         </button>
         <button
           onClick={handleShare}
-          className="p-1.5 rounded-full bg-[#2a2a2e] text-[#adadb8] hover:bg-[#3a3a4a] transition"
+          className="p-1 sm:p-1.5 rounded-full bg-[#2a2a2e] text-[#adadb8] hover:bg-[#3a3a4a] transition"
+          title="Share"
         >
-          <Share2 className="w-5 h-5" />
+          <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
       </div>
     </div>

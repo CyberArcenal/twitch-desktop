@@ -671,17 +671,20 @@ class TwitchChatService {
    * @param {string} channel
    * @param {any[]} data
    */
-  _sendToRenderers(channel, data) {
+ _sendToRenderers(channel, data) {
     try {
-      BrowserWindow.getAllWindows().forEach((win) => {
-        if (!win.isDestroyed()) win.webContents.send(channel, data);
+      const windows = BrowserWindow.getAllWindows();
+      windows.forEach((win) => {
+        if (!win.isDestroyed()) {
+          win.webContents.send(channel, data);
+        }
       });
-      // logger.debug(`[Chat] Sent event "${channel}" to renderers`);
-    } catch (err) {
+    } catch (error) {
+      // If running outside Electron (e.g., tests), ignore
       logger.warn(
-        `[Chat] Failed to send event "${channel}" to renderers:`,
+        "Failed to send IPC event (maybe not in Electron):",
         // @ts-ignore
-        err,
+        error.message,
       );
     }
   }

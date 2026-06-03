@@ -28,18 +28,25 @@ class FollowsService {
    */
   _sendToRenderers(channel, data) {
     try {
-      BrowserWindow.getAllWindows().forEach((win) => {
-        if (!win.isDestroyed()) win.webContents.send(channel, data);
+      const windows = BrowserWindow.getAllWindows();
+      windows.forEach((win) => {
+        if (!win.isDestroyed()) {
+          win.webContents.send(channel, data);
+        }
       });
-      logger.debug(`[FollowsService] Sent event "${channel}" to renderers`);
-    } catch (err) {
-      // @ts-ignore
-      logger.warn(`[FollowsService] Failed to send event "${channel}":`, err);
+    } catch (error) {
+      // If running outside Electron (e.g., tests), ignore
+      logger.warn(
+        "Failed to send IPC event (maybe not in Electron):",
+        // @ts-ignore
+        error.message,
+      );
     }
   }
 
   isCacheValid() {
-    const valid = this.followsCache && Date.now() - this.cacheTimestamp < this.CACHE_TTL;
+    const valid =
+      this.followsCache && Date.now() - this.cacheTimestamp < this.CACHE_TTL;
     logger.debug(`[FollowsService] isCacheValid: ${valid}`);
     return valid;
   }
@@ -49,7 +56,9 @@ class FollowsService {
    */
   async getFollowedChannels(userId, after = null, forceRefresh = false) {
     if (!userId) throw new Error("User ID is required");
-    logger.info(`[FollowsService] getFollowedChannels called userId=${userId}, after=${after}, forceRefresh=${forceRefresh}`);
+    logger.info(
+      `[FollowsService] getFollowedChannels called userId=${userId}, after=${after}, forceRefresh=${forceRefresh}`,
+    );
     if (!forceRefresh && this.isCacheValid()) {
       logger.debug("[FollowsService] Returning cached follows");
       return this.followsCache;
@@ -60,7 +69,10 @@ class FollowsService {
     let cursor = response.pagination?.cursor;
     while (cursor) {
       logger.debug(`[FollowsService] Fetching next page with cursor ${cursor}`);
-      const nextPage = await twitchApiService.getFollowedChannels(userId, cursor);
+      const nextPage = await twitchApiService.getFollowedChannels(
+        userId,
+        cursor,
+      );
       allFollows = allFollows.concat(nextPage.data || []);
       cursor = nextPage.pagination?.cursor;
     }
@@ -72,7 +84,9 @@ class FollowsService {
     };
     this.followsCache = result;
     this.cacheTimestamp = Date.now();
-    logger.info(`[FollowsService] getFollowedChannels - fetched ${allFollows.length} followed channels`);
+    logger.info(
+      `[FollowsService] getFollowedChannels - fetched ${allFollows.length} followed channels`,
+    );
     return result;
   }
 
@@ -83,7 +97,9 @@ class FollowsService {
    * @returns {Promise<{ data: Array, pagination: object }>}
    */
   async getFollowers(broadcasterId, after = null) {
-    logger.info(`[FollowsService] getFollowers called broadcasterId=${broadcasterId}, after=${after}`);
+    logger.info(
+      `[FollowsService] getFollowers called broadcasterId=${broadcasterId}, after=${after}`,
+    );
     const token = settingsService.get("twitch").accessToken;
     if (!token) throw new Error("Not authenticated");
     const { API_BASE, CLIENT_ID } = require("../shared/config");
@@ -105,12 +121,16 @@ class FollowsService {
 
     if (!response.ok) {
       const errorText = await response.text();
-      logger.error(`[FollowsService] getFollowers error: ${response.status} - ${errorText}`);
+      logger.error(
+        `[FollowsService] getFollowers error: ${response.status} - ${errorText}`,
+      );
       throw new Error(`Failed to fetch followers: ${response.status}`);
     }
 
     const data = await response.json();
-    logger.debug(`[FollowsService] getFollowers - found ${data.data?.length || 0} followers`);
+    logger.debug(
+      `[FollowsService] getFollowers - found ${data.data?.length || 0} followers`,
+    );
     return data;
   }
 
@@ -119,7 +139,9 @@ class FollowsService {
    */
   async followChannel(broadcasterId) {
     if (!broadcasterId) throw new Error("Broadcaster ID is required");
-    logger.info(`[FollowsService] followChannel called for broadcasterId=${broadcasterId}`);
+    logger.info(
+      `[FollowsService] followChannel called for broadcasterId=${broadcasterId}`,
+    );
     const token = settingsService.get("twitch").accessToken;
     if (!token) throw new Error("Not authenticated");
     const userId = settingsService.get("twitch").userId;
@@ -138,15 +160,22 @@ class FollowsService {
       body: JSON.stringify({ from_id: userId, to_id: broadcasterId }),
     });
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: response.statusText }));
+      const error = await response
+        .json()
+        .catch(() => ({ message: response.statusText }));
       logger.error(`[FollowsService] followChannel failed: ${error.message}`);
       throw new Error(error.message || "Failed to follow channel");
     }
     // Invalidate cache
     this.followsCache = null;
     this.cacheTimestamp = 0;
-    this._sendToRenderers("follows:changed", { action: "follow", broadcasterId });
-    logger.info(`[FollowsService] Successfully followed channel ${broadcasterId}`);
+    this._sendToRenderers("follows:changed", {
+      action: "follow",
+      broadcasterId,
+    });
+    logger.info(
+      `[FollowsService] Successfully followed channel ${broadcasterId}`,
+    );
     return true;
   }
 
@@ -155,7 +184,9 @@ class FollowsService {
    */
   async unfollowChannel(broadcasterId) {
     if (!broadcasterId) throw new Error("Broadcaster ID is required");
-    logger.info(`[FollowsService] unfollowChannel called for broadcasterId=${broadcasterId}`);
+    logger.info(
+      `[FollowsService] unfollowChannel called for broadcasterId=${broadcasterId}`,
+    );
     const token = settingsService.get("twitch").accessToken;
     if (!token) throw new Error("Not authenticated");
     const userId = settingsService.get("twitch").userId;
@@ -172,14 +203,21 @@ class FollowsService {
       },
     });
     if (!response.ok && response.status !== 404) {
-      const error = await response.json().catch(() => ({ message: response.statusText }));
+      const error = await response
+        .json()
+        .catch(() => ({ message: response.statusText }));
       logger.error(`[FollowsService] unfollowChannel failed: ${error.message}`);
       throw new Error(error.message || "Failed to unfollow channel");
     }
     this.followsCache = null;
     this.cacheTimestamp = 0;
-    this._sendToRenderers("follows:changed", { action: "unfollow", broadcasterId });
-    logger.info(`[FollowsService] Successfully unfollowed channel ${broadcasterId}`);
+    this._sendToRenderers("follows:changed", {
+      action: "unfollow",
+      broadcasterId,
+    });
+    logger.info(
+      `[FollowsService] Successfully unfollowed channel ${broadcasterId}`,
+    );
     return true;
   }
 
@@ -205,7 +243,9 @@ class FollowsService {
     if (!response.ok) return false;
     const data = await response.json();
     const following = data.data && data.data.length > 0;
-    logger.debug(`[FollowsService] isFollowing for ${broadcasterId}: ${following}`);
+    logger.debug(
+      `[FollowsService] isFollowing for ${broadcasterId}: ${following}`,
+    );
     return following;
   }
 
@@ -228,7 +268,9 @@ class FollowsService {
         timestamp: cached.timestamp,
       };
       this.cacheTimestamp = cached.timestamp;
-      logger.debug(`[FollowsService] Loaded ${cached.data.length} follows from localStorage`);
+      logger.debug(
+        `[FollowsService] Loaded ${cached.data.length} follows from localStorage`,
+      );
       return true;
     }
     logger.debug("[FollowsService] No cached follows found");

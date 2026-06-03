@@ -15,7 +15,7 @@ const QuickActionsCard: React.FC<QuickActionsCardProps> = ({ stream, onShare }) 
   const handleGoToChannel = () => navigate(`/channel/${stream.user_login}`);
 
   return (
-    <div className="bg-[#1f1f23] rounded-xl p-4 shadow-lg border border-[#2a2a2e]">
+    <div className="bg-[#1f1f23] rounded-xl p-4 shadow-lg border border-[#2a2a2e] max-h-[165px] h-full">
       <h3 className="text-sm font-semibold text-white mb-2">Quick Actions</h3>
       <div className="space-y-2">
         <button onClick={handleGoToChannel} className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#2a2a2e] text-white text-sm hover:bg-[#3a3a4a] transition">

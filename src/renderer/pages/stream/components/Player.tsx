@@ -64,7 +64,7 @@ const Player = forwardRef<PlayerRef, PlayerProps>(
       <webview
         ref={webviewRef}
         src={src}
-        className="w-full h-full"
+        className="w-full h-full min-w-[400px]"
         style={{ border: "none", backgroundColor: "#000" }}
         allowFullScreen
         title={`${channelName} live stream`}

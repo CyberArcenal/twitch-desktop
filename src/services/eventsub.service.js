@@ -38,15 +38,21 @@ class EventSubService extends EventEmitter {
    * @param {string} channel
    * @param {{ broadcasterId?: any; broadcasterName?: any; title?: any; gameId?: any; startedAt?: any; followerId?: any; followerName?: any; followedAt?: any; userId?: any; userName?: any; tier?: any; isGift?: any; fromBroadcasterId?: any; fromBroadcasterName?: any; viewers?: any; toBroadcasterId?: any; level?: any; total?: any; progress?: any; goal?: any; sessionId?: any; code?: number; reason?: Buffer<ArrayBufferLike>; }} data
    */
-  _sendToRenderers(channel, data) {
+ _sendToRenderers(channel, data) {
     try {
-      BrowserWindow.getAllWindows().forEach((win) => {
-        if (!win.isDestroyed()) win.webContents.send(channel, data);
+      const windows = BrowserWindow.getAllWindows();
+      windows.forEach((win) => {
+        if (!win.isDestroyed()) {
+          win.webContents.send(channel, data);
+        }
       });
-      logger.debug(`[EventSubService] Sent event "${channel}" to renderers`);
-    } catch (err) {
-      // @ts-ignore
-      logger.warn(`[EventSubService] Failed to send event "${channel}":`, err);
+    } catch (error) {
+      // If running outside Electron (e.g., tests), ignore
+      logger.warn(
+        "Failed to send IPC event (maybe not in Electron):",
+        // @ts-ignore
+        error.message,
+      );
     }
   }
 

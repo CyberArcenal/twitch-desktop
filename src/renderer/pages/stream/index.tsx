@@ -6,9 +6,9 @@ import { useStreamPlayer } from "./hooks/useStreamPlayer";
 import Player from "./components/Player";
 import ChatSidebar from "./components/ChatSidebar";
 import StreamInfoCard from "./components/StreamInfoCard";
-import ActivityFeedCard from "./components/ActivityFeedCard";
 import QuickActionsCard from "./components/QuickActionsCard";
 import LoadingSpinner from "../../components/Shared/LoadingSpinner";
+import LiveChannelsSwiper from "./components/LiveChannelsSwiper";
 
 const StreamPlayerPage: React.FC = () => {
   const navigate = useNavigate();
@@ -52,10 +52,10 @@ const StreamPlayerPage: React.FC = () => {
   return (
     <div className="flex h-full w-full bg-[#0e0e10] gap-4 p-4 overflow-hidden">
       {/* LEFT COLUMN */}
-      <div className="flex-1 flex flex-col justify-between min-w-0 overflow-y-auto">
+      <div className="flex-1 flex flex-col justify-between min-w-0 overflow-hidden">
         {/* Player container */}
-        <div className="rounded-xl w-full shadow-2xl bg-black overflow-hidden">
-          <div className="relative w-full" style={{ aspectRatio: "16/8" }}>
+        <div className="rounded-xl w-full mb-2 h-full shadow-2xl bg-black overflow-hidden flex items-center justify-center">
+          <div className="relative w-full h-full" style={{ aspectRatio: "16/8" }}>
             <Player
               ref={playerRef}
               channelName={stream.user_login}
@@ -68,10 +68,14 @@ const StreamPlayerPage: React.FC = () => {
         </div>
 
         {/* 3‑column grid for cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-h-[165px]">
           <StreamInfoCard stream={stream} />
-          <ActivityFeedCard channelId={stream.user_id} />
+          {/* <ActivityFeedCard channelId={stream.user_id} /> */}
           <QuickActionsCard stream={stream} onShare={() => {}} />
+          <LiveChannelsSwiper
+            currentStreamLogin={stream.user_login}
+            gameId={stream.game_id}
+          />
         </div>
       </div>
 
