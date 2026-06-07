@@ -8,22 +8,22 @@ interface BadgeProps {
 }
 
 const Badge: React.FC<BadgeProps> = ({ name, version, imageUrl }) => {
-  if (imageUrl) {
-    return (
-      <img
-        src={imageUrl}
-        alt={name}
-        title={`${name} ${version}`}
-        className="inline-block h-4 w-auto align-middle mr-0.5"
-        onError={(e) => (e.target as HTMLImageElement).style.display = 'none'}
-      />
-    );
+  // Only render if we have a valid image URL
+  if (!imageUrl) {
+    return null;
   }
-  // Fallback text
+
   return (
-    <span className="text-[10px] text-[#adadb8] bg-[#2a2a2e] px-1 rounded mr-0.5">
-      {name}
-    </span>
+    <img
+      src={imageUrl}
+      alt={name}
+      title={`${name} ${version}`}
+      className="inline-block h-4 w-auto align-middle mr-0.5"
+      onError={(e) => {
+        // Hide broken badges
+        (e.target as HTMLImageElement).style.display = 'none';
+      }}
+    />
   );
 };
 

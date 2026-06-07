@@ -1,19 +1,35 @@
+// src/renderer/api/chat/handlers/chat-message.handler.js
 const { parseChatMessage } = require('@twurple/chat');
 const { settingsService } = require('../../settings');
 const { sendToRenderers } = require('../../../utils/ipc-sender');
 const { parseBadgesFromRaw } = require('../utils/message-parser');
 const { getBadgeImageUrl } = require('./badge.handler');
+const thirdPartyEmoteService = require('../../../services/third-party-emotes/ThirdPartyEmoteService');
 const { logger } = require('../../../utils/logger');
 
-function handleChatMessage(state, channel, user, message, msg) {
+// Cache for channel emotes (per channel)
+const channelEmoteCache = new Map();
+
+async function getThirdPartyEmotesForChannel(channelName) {
+  if (channelEmoteCache.has(channelName)) {
+    return channelEmoteCache.get(channelName);
+  }
+  const emotes = await thirdPartyEmoteService.getChannelEmotes(channelName);
+  channelEmoteCache.set(channelName, emotes);
+  return emotes;
+}
+
+async function handleChatMessage(state, channel, user, message, msg) {
   logger.debug(`[Chat] RAW MESSAGE: channel=${channel}, user=${user}, msg=${message}`);
 
+  // Filtering logic (existing)
   const filters = settingsService.get('chatFilters') || [];
   if (filters.some(f => message.toLowerCase().includes(f))) {
     logger.debug(`[Chat] Message filtered (${user}): "${message}"`);
     return;
   }
 
+  // 1. Badge parsing (existing)
   let badgesArray = [];
   try {
     const raw = msg._raw;
@@ -29,21 +45,66 @@ function handleChatMessage(state, channel, user, message, msg) {
   } catch (err) {
     logger.warn('[Chat] Failed to parse badges:', err);
   }
-
   const badgesWithUrl = badgesArray.map(b => ({
     name: b.name,
     version: b.version,
     imageUrl: getBadgeImageUrl(state, b.name, b.version),
   }));
 
-  const isFromMe = user === state.getCurrentUserLogin();
+  // 2. Get third‑party emotes for this channel
+  const cleanChannel = channel.slice(1);
+  const thirdPartyEmotes = await getThirdPartyEmotesForChannel(cleanChannel);
+  
+  // 3. Parse Twitch emotes (built‑in)
+  let parsed = parseChatMessage(message, msg.emoteOffsets);
+  
+  // 4. Add third‑party emotes to parsed array (by scanning plain text parts)
+  const newParsed = [];
+  for (const part of parsed) {
+    if (part.type === 'text') {
+      let remainingText = part.text;
+      const regex = /(\S+)/g;
+      let match;
+      let lastIndex = 0;
+      const tokens = [];
+      while ((match = regex.exec(remainingText)) !== null) {
+        const word = match[0];
+        const start = match.index;
+        const end = start + word.length;
+        // Check if word is an emote code
+        const foundEmote = [...thirdPartyEmotes.bttv, ...thirdPartyEmotes.ffz].find(e => e.code === word);
+        if (foundEmote) {
+          // Push previous plain text if any
+          if (start > lastIndex) {
+            tokens.push({ type: 'text', text: remainingText.substring(lastIndex, start) });
+          }
+          // Push emote
+          tokens.push({
+            type: 'emote',
+            id: foundEmote.id,
+            name: foundEmote.code,
+            isThirdParty: true,
+            thirdPartyType: foundEmote.type,
+          });
+          lastIndex = end;
+        }
+      }
+      if (lastIndex < remainingText.length) {
+        tokens.push({ type: 'text', text: remainingText.substring(lastIndex) });
+      }
+      newParsed.push(...tokens);
+    } else {
+      newParsed.push(part);
+    }
+  }
 
+  const isFromMe = user === state.getCurrentUserLogin();
   const chatMessage = {
     messageId: msg.id,
-    channel: channel.slice(1),
+    channel: cleanChannel,
     user: user,
     message: message,
-    parsedMessage: parseChatMessage(message, msg.emoteOffsets),
+    parsedMessage: newParsed,
     badges: badgesWithUrl,
     emotes: msg.emoteOffsets,
     timestamp: new Date().toISOString(),

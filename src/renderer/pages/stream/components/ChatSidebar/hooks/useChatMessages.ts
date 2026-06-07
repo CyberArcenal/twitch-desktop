@@ -1,15 +1,26 @@
 // src/renderer/pages/stream/components/ChatSidebar/hooks/useChatMessages.ts
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { chatAPI, type ChatMessage } from '../../../../../api/core/chat';
 import { userAPI } from '../../../../../api/core/user';
 
 const MAX_MESSAGES = 500;
+const DEDUP_WINDOW_MS = 2000;
 
 export const useChatMessages = (isConnected: boolean) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentUser, setCurrentUser] = useState<string>('');
   const [chatDisabled, setChatDisabled] = useState(false);
   const [timeoutRemaining, setTimeoutRemaining] = useState<number | null>(null);
+
+  const recentMessageIds = useRef<Set<string>>(new Set());
+  const cleanupTimeoutRef = useRef<number | null>(null);
+
+  const scheduleCleanup = useCallback(() => {
+    if (cleanupTimeoutRef.current) clearTimeout(cleanupTimeoutRef.current);
+    cleanupTimeoutRef.current = window.setTimeout(() => {
+      recentMessageIds.current.clear();
+    }, DEDUP_WINDOW_MS);
+  }, []);
 
   // Fetch current user
   useEffect(() => {
@@ -26,7 +37,6 @@ export const useChatMessages = (isConnected: boolean) => {
     fetchCurrentUser();
   }, []);
 
-  // Helper: add system message
   const addSystemMessage = useCallback((text: string) => {
     const sysMsg: ChatMessage = {
       id: `sys-${Date.now()}`,
@@ -45,20 +55,38 @@ export const useChatMessages = (isConnected: boolean) => {
     });
   }, []);
 
+  const addChatMessage = useCallback((msg: ChatMessage) => {
+    // Ensure message has an ID; if not, generate a fallback (should not happen)
+    const messageId = msg.id || `fallback-${Date.now()}-${Math.random()}`;
+    
+    // Deduplicate only if we have a valid ID
+    if (recentMessageIds.current.has(messageId)) {
+      console.log('[Dedup] Blocked duplicate message:', messageId);
+      return;
+    }
+    recentMessageIds.current.add(messageId);
+    scheduleCleanup();
+
+    setMessages(prev => {
+      // Also check for duplicate in current list (just in case)
+      if (prev.some(m => m.id === messageId)) return prev;
+      const newMessages = [...prev, msg];
+      if (newMessages.length > MAX_MESSAGES) return newMessages.slice(-MAX_MESSAGES);
+      return newMessages;
+    });
+  }, [scheduleCleanup]);
+
   // Listen for chat events
   useEffect(() => {
     if (!isConnected) return;
 
     const handleMessage = (msg: ChatMessage) => {
-      setMessages(prev => {
-        const newMessages = [...prev, msg];
-        if (newMessages.length > MAX_MESSAGES) return newMessages.slice(-MAX_MESSAGES);
-        return newMessages;
-      });
+      console.log('[Chat] Received message:', msg);
+      addChatMessage(msg);
     };
 
     const handleConnected = () => {
-      addSystemMessage('Connected to chat');
+      console.log('[Chat] Connected');
     };
 
     const handleUserJoined = (data: { channel: string; user: string }) => {
@@ -81,7 +109,6 @@ export const useChatMessages = (isConnected: boolean) => {
       } else {
         addSystemMessage(`${userName} was timed out for ${duration} seconds`);
       }
-      // Optionally remove all messages from that user
       setMessages(prev => prev.filter(m => m.user !== userName));
     };
 
@@ -120,7 +147,7 @@ export const useChatMessages = (isConnected: boolean) => {
       window.backendAPI?.off?.('chat:user-timed-out', handleUserTimedOut);
       window.backendAPI?.off?.('chat:self-mod-action', handleSelfModAction);
     };
-  }, [isConnected, addSystemMessage]);
+  }, [isConnected, addSystemMessage, addChatMessage]);
 
   const sendMessage = useCallback(async (text: string, replyToId?: string): Promise<boolean> => {
     if (chatDisabled) {
@@ -130,6 +157,7 @@ export const useChatMessages = (isConnected: boolean) => {
     if (!text.trim()) return false;
     try {
       await chatAPI.send(text, replyToId);
+      // Don't add local message – rely on backend echo (dedup will handle duplicates)
       return true;
     } catch (err) {
       console.error(err);

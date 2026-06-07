@@ -56,7 +56,7 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
   }
 
   return (
-    <div className="h-full overflow-hidden">
+    <div className="h-full w-full overflow-x-hidden">
       <Virtuoso
         ref={virtuosoRef}
         data={filteredMessages}
@@ -68,7 +68,7 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
             currentUser={currentUser}
           />
         )}
-        style={{ height: "100%" }}
+        style={{ height: "100%", width: "100%" }}
       />
     </div>
   );

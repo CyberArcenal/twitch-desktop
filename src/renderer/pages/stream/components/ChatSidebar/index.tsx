@@ -38,7 +38,54 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ channelName, isConnected }) =
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#1f1f23] overflow-hidden">
+    <div className="flex flex-col h-full bg-[#1f1f23] overflow-hidden chat-sidebar-container">
+      <style>{`
+        .chat-sidebar-container {
+          overflow-x: hidden !important;
+        }
+        .chat-sidebar-container * {
+          max-width: 100%;
+          word-break: break-word;
+        }
+        /* Force all images to be small and inline */
+        .chat-sidebar-container img {
+          max-height: 20px !important;
+          width: auto !important;
+          display: inline-block !important;
+          vertical-align: middle !important;
+        }
+        /* Hide broken images */
+        .chat-sidebar-container img:not([src]),
+        .chat-sidebar-container img[src=""],
+        .chat-sidebar-container img[src^="http"]:not([src*="static-cdn.jtvnw.net"]) {
+          display: none !important;
+        }
+        /* Remove extra line spacing */
+        .chat-sidebar-container .message-row {
+          line-height: 1.3;
+        }
+        /* Ensure text wraps */
+        .chat-sidebar-container .message-text {
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          white-space: normal;
+        }
+        /* Custom scrollbar */
+        .chat-sidebar-container ::-webkit-scrollbar {
+          width: 6px;
+        }
+        .chat-sidebar-container ::-webkit-scrollbar-track {
+          background: #1f1f23;
+        }
+        .chat-sidebar-container ::-webkit-scrollbar-thumb {
+          background: #3a3a4a;
+          border-radius: 3px;
+        }
+        .chat-sidebar-container ::-webkit-scrollbar-thumb:hover {
+          background: #5a5a6e;
+        }
+      `}</style>
+      
       <ChatHeader
         onToggleFilters={toggleFilters}
         autoScrollPaused={autoScrollPaused}
