@@ -1,6 +1,6 @@
 const { ipcMain } = require('electron');
 const { twitchApiService } = require('../../../../services/twitch-api');
-
+const { logger } = require('../../../../utils/logger');
 async function handleStreamSettingsRequest(event, payload) {
   const { method, params = {} } = payload;
 
@@ -18,7 +18,7 @@ async function handleStreamSettingsRequest(event, payload) {
 
 ipcMain.handle('stream-settings', async (event, payload) => {
   try {
-    const result = await handleStreamSettingsRequest(event, payload);
+    const result = await handleStreamSettingsRequest(event, payload);logger.debug(`[IPC] request: ${JSON.stringify(payload)}`);
     return { status: true, message: 'OK', data: result };
   } catch (err) {
     console.error('[IPC:stream-settings]', err);

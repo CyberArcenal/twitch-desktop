@@ -23,6 +23,7 @@ import GamePage from "../pages/browse/game";
 import StreamManagerPage from "../pages/stream-manager";
 import SettingsPage from "../pages/settings";
 import DiscoveryPage from "../pages/discovery";
+import MyClipsPage from "../pages/my-clips";
 
 // ─── Generic Placeholder (for pages not yet built) ─────────────
 const PlaceholderPage = ({
@@ -108,11 +109,11 @@ function App() {
         }
       >
         {/* Dashboard */}
-        <Route index element={<DiscoveryPage/>} />
+        <Route index element={<DiscoveryPage />} />
         <Route path="/discovery" element={<DiscoveryPage />} />
         <Route path="/" element={<DiscoveryPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
-        
+
         <Route path="/stream/:login" element={<StreamPlayerPage />} />
 
         {/* Following */}
@@ -129,15 +130,7 @@ function App() {
         <Route path="/watch-later" element={<WatchLaterPage />} />
         <Route path="/subscriptions" element={<SubscriptionsPage />} />
         {/* My Clips – not yet built */}
-        <Route
-          path="/clips"
-          element={
-            <PlaceholderPage
-              title="My Clips"
-              message="Clips you created or liked."
-            />
-          }
-        />
+        <Route path="/clips" element={<MyClipsPage />} />
 
         {/* Community section */}
         <Route path="/friends" element={<FriendsPage />} />

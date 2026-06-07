@@ -1,6 +1,6 @@
 const { ipcMain } = require('electron');
 const { userService } = require('../../../../services/user');
-
+const { logger } = require('../../../../utils/logger');
 async function handleUserRequest(event, payload) {
   const { method, params = {} } = payload;
 
@@ -22,7 +22,7 @@ async function handleUserRequest(event, payload) {
 
 ipcMain.handle('user', async (event, payload) => {
   try {
-    const result = await handleUserRequest(event, payload);
+    const result = await handleUserRequest(event, payload);logger.debug(`[IPC] request: ${JSON.stringify(payload)}`);
     return { status: true, message: 'OK', data: result };
   } catch (err) {
     console.error('[IPC:user]', err);

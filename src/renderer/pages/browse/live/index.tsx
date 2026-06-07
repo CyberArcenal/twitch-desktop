@@ -25,9 +25,11 @@ const BrowseLivePage: React.FC = () => {
     resetFilters,
   } = useBrowseLive();
 
+   // Call loadInitial only once when the component mounts
   useEffect(() => {
     loadInitial();
-  }, [loadInitial]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array – runs only on mount
 
   if (loading && streams.length === 0) {
     return (

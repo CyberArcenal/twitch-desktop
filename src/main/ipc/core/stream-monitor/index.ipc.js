@@ -44,7 +44,7 @@ async function handleStreamMonitorRequest(event, payload) {
 
 ipcMain.handle("stream-monitor", async (event, payload) => {
   try {
-    const result = await handleStreamMonitorRequest(event, payload);
+    const result = await handleStreamMonitorRequest(event, payload);logger.debug(`[IPC] request: ${JSON.stringify(payload)}`);
     return { status: true, message: "OK", data: result };
   } catch (err) {
     console.error("[IPC:stream-monitor]", err);

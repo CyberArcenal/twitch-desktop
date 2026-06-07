@@ -2,7 +2,7 @@
 
 const { ipcMain } = require('electron');
 const { notificationStore } = require('../../../../services/notification-store');
-
+const { logger } = require('../../../../utils/logger');
 
 async function handleNotificationRequest(event, payload) {
   const { method, params = {} } = payload;
@@ -25,7 +25,7 @@ async function handleNotificationRequest(event, payload) {
 
 ipcMain.handle('notification-store', async (event, payload) => {
   try {
-    const result = await handleNotificationRequest(event, payload);
+    const result = await handleNotificationRequest(event, payload);logger.debug(`[IPC] request: ${JSON.stringify(payload)}`);
     return { status: true, message: 'OK', data: result };
   } catch (err) {
     console.error('[IPC:notification-store]', err);

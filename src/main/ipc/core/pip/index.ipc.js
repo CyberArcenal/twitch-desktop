@@ -1,6 +1,6 @@
 const { ipcMain } = require('electron');
 const { pipService } = require('../../../../services/picture-in-picture');
-
+const { logger } = require('../../../../utils/logger');
 async function handlePipRequest(event, payload) {
   const { method, params = {} } = payload;
 
@@ -20,7 +20,7 @@ async function handlePipRequest(event, payload) {
 
 ipcMain.handle('pip', async (event, payload) => {
   try {
-    const result = await handlePipRequest(event, payload);
+    const result = await handlePipRequest(event, payload);logger.debug(`[IPC] request: ${JSON.stringify(payload)}`);
     return { status: true, message: 'OK', data: result };
   } catch (err) {
     console.error('[IPC:pip]', err);

@@ -2,7 +2,7 @@
 //@ts-check
 const { ipcMain } = require("electron");
 const { playerService } = require("../../../../services/player");
-
+const { logger } = require('../../../../utils/logger');
 /**
  * @param {Electron.IpcMainInvokeEvent} event
  * @param {{ method: any; params?: {} | undefined; }} payload
@@ -48,7 +48,7 @@ async function handlePlayerRequest(event, payload) {
 
 ipcMain.handle("player", async (event, payload) => {
   try {
-    const result = await handlePlayerRequest(event, payload);
+    const result = await handlePlayerRequest(event, payload);logger.debug(`[IPC] request: ${JSON.stringify(payload)}`);
     return { status: true, message: "OK", data: result };
   } catch (err) {
     console.error("[IPC:player]", err);

@@ -1,6 +1,6 @@
 const { ipcMain } = require('electron');
 const { historyService } = require('../../../../services/history');
-
+const { logger } = require('../../../../utils/logger');
 async function handleHistoryRequest(event, payload) {
   const { method, params = {} } = payload;
 
@@ -25,7 +25,7 @@ async function handleHistoryRequest(event, payload) {
 
 ipcMain.handle('history', async (event, payload) => {
   try {
-    const result = await handleHistoryRequest(event, payload);
+    const result = await handleHistoryRequest(event, payload);logger.debug(`[IPC] request: ${JSON.stringify(payload)}`);
     return { status: true, message: 'OK', data: result };
   } catch (err) {
     console.error('[IPC:history]', err);

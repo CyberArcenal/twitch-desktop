@@ -1,6 +1,6 @@
 const { ipcMain } = require('electron');
 const { shortcutService } = require('../../../../services/shortcut');
-
+const { logger } = require('../../../../utils/logger');
 async function handleShortcutRequest(event, payload) {
   const { method, params = {} } = payload;
 
@@ -23,7 +23,7 @@ async function handleShortcutRequest(event, payload) {
 
 ipcMain.handle('shortcut', async (event, payload) => {
   try {
-    const result = await handleShortcutRequest(event, payload);
+    const result = await handleShortcutRequest(event, payload);logger.debug(`[IPC] request: ${JSON.stringify(payload)}`);
     return { status: true, message: 'OK', data: result };
   } catch (err) {
     console.error('[IPC:shortcut]', err);

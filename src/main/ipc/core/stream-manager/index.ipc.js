@@ -5,7 +5,6 @@ const { settingsService } = require("../../../../services/settings");
 const {
   streamManagerService,
 } = require("../../../../services/stream-manager");
-const { logger } = require("../../../../utils/logger");
 const {
   obsDetectionService,
 } = require("../../../../services/obs-detection");
@@ -15,7 +14,7 @@ const {
 const {
   obsWebSocketService,
 } = require("../../../../services/obs-websocket");
-
+const { logger } = require('../../../../utils/logger');
 /**
  * @param {Electron.IpcMainInvokeEvent} event
  */
@@ -191,7 +190,7 @@ async function handleStreamManagerRequest(event, { method, params = {} }) {
 
 ipcMain.handle("stream-manager", async (event, payload) => {
   try {
-    const result = await handleStreamManagerRequest(event, payload);
+    const result = await handleStreamManagerRequest(event, payload);logger.debug(`[IPC] request: ${JSON.stringify(payload)}`);
     return { status: true, message: "OK", data: result };
   } catch (err) {
     // @ts-ignore

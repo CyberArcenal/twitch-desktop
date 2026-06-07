@@ -3,7 +3,7 @@
 const { ipcMain } = require("electron");
 const { settingsService } = require("../../../../services/settings");
 const { twitchApiService } = require("../../../../services/twitch-api");
-
+const { logger } = require('../../../../utils/logger');
 /**
  * Handle stream-related IPC requests
  * @param {Electron.IpcMainInvokeEvent} event
@@ -75,7 +75,7 @@ async function handleStreamsRequest(event, payload) {
 // Register IPC handler
 ipcMain.handle("streams", async (event, payload) => {
   try {
-    const result = await handleStreamsRequest(event, payload);
+    const result = await handleStreamsRequest(event, payload);logger.debug(`[IPC] request: ${JSON.stringify(payload)}`);
     return { status: true, message: "OK", data: result };
   } catch (err) {
     console.error("[IPC:streams]", err);
