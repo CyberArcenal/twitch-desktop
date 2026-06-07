@@ -20,7 +20,6 @@ import BrowseCategoriesPage from "../pages/categories";
 import HelpPage from "../pages/help";
 import StreamPlayerPage from "../pages/stream";
 import GamePage from "../pages/browse/game";
-import StreamManagerPage from "../pages/stream-manager";
 import SettingsPage from "../pages/settings";
 import DiscoveryPage from "../pages/discovery";
 import MyClipsPage from "../pages/my-clips";
@@ -152,7 +151,6 @@ function App() {
         {/* Channel page */}
         <Route path="/channel/:login" element={<ChannelPage />} />
         <Route path="/browse/game/:gameId" element={<GamePage />} />
-        <Route path="/stream-manager" element={<StreamManagerPage />} />
 
         {/* 404 – must be last */}
         <Route

@@ -1,6 +1,7 @@
 // src/renderer/api/core/chat.ts
 import type { BaseResponse } from "./common";
 
+// src/renderer/api/core/chat.ts
 export interface ChatMessage {
   id: string;
   channel: string;
@@ -18,6 +19,9 @@ export interface ChatMessage {
   }>;
   isFromMe?: boolean;
   isPinned?: boolean;
+  // new fields:
+  isAction?: boolean;       // true for /me messages
+  isAnnouncement?: boolean; // true for /announce messages
 }
 
 export interface ChatConnected {

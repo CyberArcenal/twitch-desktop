@@ -12,11 +12,9 @@ interface ChatMessageItemProps {
 
 // Helper: get badge image URL based on name and version
 const getBadgeImageUrl = (name: string, version: string): string | null => {
-  // Para sa subscriber, gamitin ang dynamic URL (gumagana)
   if (name === "subscriber") {
     return `https://badges.twitch.tv/v1/badges/subscriber/${version}`;
   }
-  // Iba pang karaniwang badge
   const badgeMap: Record<string, string> = {
     broadcaster:
       "https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309dcb85cc1/1",
@@ -25,14 +23,6 @@ const getBadgeImageUrl = (name: string, version: string): string | null => {
     vip: "https://static-cdn.jtvnw.net/badges/v1/b817aba4-fad8-49e2-b88a-7cc744dfa6ec/1",
     turbo:
       "https://static-cdn.jtvnw.net/badges/v1/5d9f2208-5568-4b5a-bbd5-1d95c52c4fef/1",
-    premium:
-      "https://static-cdn.jtvnw.net/badges/v1/bbbe0db0-5982-4b1f-80dc-d24eb2efffdb/1",
-    no_audio:
-      "https://static-cdn.jtvnw.net/badges/v1/bbbe0db0-5982-4b1f-80dc-d24eb2efffdb/1",
-    "glhf-pledge":
-      "https://static-cdn.jtvnw.net/badges/v1/7fcbda14-3db2-49af-ae2b-2a82a5ea3a67/1",
-    "twitch-recap-2023":
-      "https://static-cdn.jtvnw.net/badges/v1/d562d8b4-5790-4a55-9fe9-9ed781fd0c4f/1",
   };
   return badgeMap[name] || null;
 };
@@ -79,7 +69,6 @@ const formatTime = (timestamp: string) => {
 
 const ChatMessageItem: React.FC<ChatMessageItemProps> = memo(
   ({ message, onReplyClick, onMentionClick, currentUser }) => {
-    // console.log("Badges for", message.user, message.badges);
     const handleReplyClick = (e: React.MouseEvent) => {
       e.stopPropagation();
       onReplyClick(message.id);
@@ -92,22 +81,43 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = memo(
 
     const isOwnMessage =
       currentUser && message.user.toLowerCase() === currentUser.toLowerCase();
+    const isSystemMessage = message.user === "system";
+    const isAction = message.isAction === true;
+    const isAnnouncement = message.isAnnouncement === true;
 
-    // Render badges if present
-    const badges = message.badges || [];
+    // System message rendering
+    if (isSystemMessage) {
+      return (
+        <div className="px-2 py-1 text-xs text-[#adadb8] italic border-t border-[#2a2a2e] mt-1 pt-1">
+          {message.message}
+        </div>
+      );
+    }
 
+    // Announcement styling
+    if (isAnnouncement) {
+      return (
+        <div className="my-2 mx-2 p-2 bg-[#9147ff]/20 rounded-lg border-l-4 border-[#9147ff]">
+          <div className="text-xs text-[#9147ff] font-bold uppercase tracking-wide">
+            Announcement
+          </div>
+          <div className="text-white text-sm">
+            <span className="font-semibold">{message.user}</span>: {message.message}
+          </div>
+        </div>
+      );
+    }
+
+    // Regular or action message
     return (
       <div
-        className={`group relative flex flex-col text-sm leading-relaxed px-2 py-1.5 rounded-lg transition-all duration-150
-        ${
+        className={`group relative flex flex-col text-sm leading-relaxed px-2 py-1.5 rounded-lg transition-all duration-150 ${
           isOwnMessage
             ? "bg-[#9147ff]/10 border-l-2 border-l-[#9147ff] hover:bg-[#9147ff]/15"
             : "hover:bg-[#2a2a2e]/30"
-        }`}
+        } ${isAction ? "italic text-[#adadb8]" : ""}`}
       >
-        {/* Main message row */}
         <div className="flex items-start gap-1">
-          {/* Badges container */}
           {/* Badges container */}
           {message.badges && message.badges.length > 0 && (
             <div className="flex flex-shrink-0 gap-0.5 mr-0.5">
@@ -116,13 +126,15 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = memo(
                   key={idx}
                   name={badge.name}
                   version={badge.version}
-                  imageUrl={badge.imageUrl} // ✅ Pass the imageUrl
+                  imageUrl={badge.imageUrl}
                 />
               ))}
             </div>
           )}
           <span
-            className={`font-semibold flex-shrink-0 ${isOwnMessage ? "text-[#9147ff]" : "text-white"}`}
+            className={`font-semibold flex-shrink-0 ${
+              isOwnMessage ? "text-[#9147ff]" : "text-white"
+            } ${isAction ? "opacity-80" : ""}`}
           >
             {message.user}
             {isOwnMessage && (
@@ -135,33 +147,35 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = memo(
                 ↳ Replying to previous message
               </span>
             )}
-            <span className="text-[#efeff1]">
+            <span className={isAction ? "text-[#adadb8]" : "text-[#efeff1]"}>
               {renderMessageContent(message)}
             </span>
           </div>
         </div>
 
-        {/* Hover actions row */}
-        <div className="mt-1 flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={handleMentionClick}
-            className="text-xs text-[#adadb8] hover:text-[#9147ff] transition-colors"
-          >
-            Mention
-          </button>
-          <button
-            onClick={handleReplyClick}
-            className="text-xs text-[#adadb8] hover:text-[#9147ff] transition-colors"
-          >
-            Reply
-          </button>
-          <span className="text-xs text-[#adadb8]/60">
-            {formatTime(message.timestamp)}
-          </span>
-        </div>
+        {/* Hover actions row (only for non-system, non-announcement messages) */}
+        {!isAnnouncement && (
+          <div className="mt-1 flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={handleMentionClick}
+              className="text-xs text-[#adadb8] hover:text-[#9147ff] transition-colors"
+            >
+              Mention
+            </button>
+            <button
+              onClick={handleReplyClick}
+              className="text-xs text-[#adadb8] hover:text-[#9147ff] transition-colors"
+            >
+              Reply
+            </button>
+            <span className="text-xs text-[#adadb8]/60">
+              {formatTime(message.timestamp)}
+            </span>
+          </div>
+        )}
       </div>
     );
-  },
+  }
 );
 
 ChatMessageItem.displayName = "ChatMessageItem";

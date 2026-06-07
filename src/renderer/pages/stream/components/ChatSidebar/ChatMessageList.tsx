@@ -28,13 +28,8 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
   const filteredMessages = messages.filter((msg) => filterMessage(msg.message));
   const prevLengthRef = useRef(filteredMessages.length);
 
-  // Auto-scroll logic
   useEffect(() => {
-    if (
-      !autoScrollPaused &&
-      filteredMessages.length > prevLengthRef.current &&
-      virtuosoRef.current
-    ) {
+    if (!autoScrollPaused && filteredMessages.length > prevLengthRef.current && virtuosoRef.current) {
       virtuosoRef.current.scrollToIndex({
         index: filteredMessages.length - 1,
         behavior: "auto",
@@ -43,10 +38,9 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
     prevLengthRef.current = filteredMessages.length;
   }, [filteredMessages.length, autoScrollPaused]);
 
-  // Loading state
   if (!isConnected) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-[#adadb8] overflow-x-hidden">
+      <div className="flex flex-col items-center justify-center h-full text-[#adadb8]">
         <Loader2 className="w-6 h-6 animate-spin text-[#9147ff] mb-2" />
         <span className="text-sm">Connecting to chat...</span>
       </div>
@@ -55,14 +49,14 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
 
   if (filteredMessages.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-[#adadb8] text-sm overflow-x-hidden">
+      <div className="flex items-center justify-center h-full text-[#adadb8] text-sm">
         No messages yet
       </div>
     );
   }
 
   return (
-    <div className="h-full overflow-x-hidden">
+    <div className="h-full overflow-hidden">
       <Virtuoso
         ref={virtuosoRef}
         data={filteredMessages}
@@ -74,7 +68,7 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
             currentUser={currentUser}
           />
         )}
-        style={{ height: "100%", overflowX: "hidden" }}
+        style={{ height: "100%" }}
       />
     </div>
   );

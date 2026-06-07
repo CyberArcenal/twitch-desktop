@@ -1,3 +1,4 @@
+// src/renderer/pages/stream/components/ChatSidebar/index.tsx
 import React, { useState, useRef } from "react";
 import ChatHeader from "./ChatHeader";
 import ChatFilterPanel from "./ChatFilterPanel";
@@ -12,33 +13,29 @@ interface ChatSidebarProps {
   isConnected: boolean;
 }
 
-const ChatSidebar: React.FC<ChatSidebarProps> = ({
-  channelName,
-  isConnected,
-}) => {
-  const { messages, sendMessage, currentUser } = useChatMessages(isConnected);
-  const {
-    filters,
-    showFilters,
-    addFilter,
-    removeFilter,
-    toggleFilters,
-    filterMessage,
-    clearAllFilters
-  } = useChatFilters();
+const ChatSidebar: React.FC<ChatSidebarProps> = ({ channelName, isConnected }) => {
+  const { messages, sendMessage, currentUser, chatDisabled, timeoutRemaining } = useChatMessages(isConnected);
+  const { filters, showFilters, addFilter, removeFilter, toggleFilters, filterMessage, clearAllFilters } = useChatFilters();
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [autoScrollPaused, setAutoScrollPaused] = useState(false);
   const chatInputRef = useRef<ChatInputRef>(null);
 
   const handleReplyClick = (messageId: string) => {
-    const messageToReply = messages.find((m) => m.id === messageId);
-    if (messageToReply) setReplyingTo(messageToReply);
+    const msg = messages.find((m) => m.id === messageId);
+    if (msg) setReplyingTo(msg);
   };
-
   const handleCancelReply = () => setReplyingTo(null);
-  const handleMentionClick = (username: string) =>
-    chatInputRef.current?.insertMention(username);
+  const handleMentionClick = (username: string) => chatInputRef.current?.insertMention(username);
   const toggleAutoScroll = () => setAutoScrollPaused((prev) => !prev);
+
+  let disabledReason = null;
+  if (chatDisabled) {
+    if (timeoutRemaining) {
+      disabledReason = `You are timed out for ${timeoutRemaining} seconds`;
+    } else {
+      disabledReason = `You are banned from this channel`;
+    }
+  }
 
   return (
     <div className="flex flex-col h-full bg-[#1f1f23] overflow-hidden">
@@ -56,7 +53,6 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
           onClearAll={clearAllFilters}
         />
       )}
-      {/* This div takes remaining space and provides a height context for Virtuoso */}
       <div className="flex-1 min-h-0 overflow-hidden">
         <ChatMessageList
           messages={messages}
@@ -74,6 +70,8 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
         isConnected={isConnected}
         replyingTo={replyingTo}
         onCancelReply={handleCancelReply}
+        disabled={chatDisabled}
+        disabledReason={disabledReason}
       />
     </div>
   );
