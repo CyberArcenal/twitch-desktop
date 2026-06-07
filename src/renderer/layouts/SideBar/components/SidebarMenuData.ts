@@ -71,7 +71,7 @@ export const menuItems: MenuItem[] = [
     children: [
       { path: "/friends", name: "Friends", icon: Users },
       { path: "/whispers", name: "Whispers", icon: Bell },
-      { path: "/notifications", name: "Notifications", icon: Bell },
+      // { path: "/notifications", name: "Notifications", icon: Bell },
     ],
   },
   {
