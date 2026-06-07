@@ -1,8 +1,8 @@
 // src/main/ipc/core/streams/index.ipc.js
 //@ts-check
 const { ipcMain } = require("electron");
-const { settingsService } = require("../../../../services/settings.service");
-const { twitchApiService } = require("../../../../services/twitch-api.service");
+const { settingsService } = require("../../../../services/settings");
+const { twitchApiService } = require("../../../../services/twitch-api");
 
 /**
  * Handle stream-related IPC requests

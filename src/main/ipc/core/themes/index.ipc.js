@@ -1,5 +1,5 @@
 const { ipcMain } = require('electron');
-const { themesService } = require('../../../../services/themes.service');
+const { themesService } = require('../../../../services/themes');
 
 async function handleThemesRequest(event, payload) {
   const { method, params = {} } = payload;

@@ -1,5 +1,5 @@
 const { ipcMain } = require('electron');
-const { historyService } = require('../../../../services/history.service');
+const { historyService } = require('../../../../services/history');
 
 async function handleHistoryRequest(event, payload) {
   const { method, params = {} } = payload;

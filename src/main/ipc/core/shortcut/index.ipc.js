@@ -1,5 +1,5 @@
 const { ipcMain } = require('electron');
-const { shortcutService } = require('../../../../services/shortcut.service');
+const { shortcutService } = require('../../../../services/shortcut');
 
 async function handleShortcutRequest(event, payload) {
   const { method, params = {} } = payload;

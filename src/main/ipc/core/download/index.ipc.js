@@ -1,6 +1,6 @@
 //@ts-check
 const { ipcMain } = require('electron');
-const { downloadService } = require('../../../../services/livestream-download.service');
+const { downloadService } = require('../../../../services/livestream-download');
 
 
 async function handleDownloadRequest(event, payload) {

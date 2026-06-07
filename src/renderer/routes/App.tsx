@@ -13,8 +13,6 @@ import WatchLaterPage from "../pages/watch-later";
 import SubscriptionsPage from "../pages/subscriptions";
 import FriendsPage from "../pages/friends";
 import WhispersPage from "../pages/whispers";
-import StreamSettingsPage from "../pages/settings/stream";
-import ChatSettingsPage from "../pages/settings/chat";
 import NotificationSettingsPage from "../pages/settings/notifications";
 import SecuritySettingsPage from "../pages/settings/security";
 import ChannelPage from "../pages/channel";

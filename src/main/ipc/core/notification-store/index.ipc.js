@@ -1,7 +1,7 @@
 // src/main/ipc/core/notification-store/index.ipc.js
 
 const { ipcMain } = require('electron');
-const { notificationStore } = require('../../../../services/notification-store.service');
+const { notificationStore } = require('../../../../services/notification-store');
 
 
 async function handleNotificationRequest(event, payload) {

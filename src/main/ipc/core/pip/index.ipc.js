@@ -1,5 +1,5 @@
 const { ipcMain } = require('electron');
-const { pipService } = require('../../../../services/picture-in-picture.service');
+const { pipService } = require('../../../../services/picture-in-picture');
 
 async function handlePipRequest(event, payload) {
   const { method, params = {} } = payload;

@@ -2,8 +2,8 @@
 const { ipcMain } = require("electron");
 const {
   twitchChatService,
-} = require("../../../../services/twitch-chat.service");
-const { twitchApiService } = require("../../../../services/twitch-api.service");
+} = require("../../../../services/twitch-chat");
+const { twitchApiService } = require("../../../../services/twitch-api");
 
 /**
  * @param {Electron.IpcMainInvokeEvent} event

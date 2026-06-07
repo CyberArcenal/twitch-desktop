@@ -1,6 +1,6 @@
 //@ts-check
 const { ipcMain } = require('electron');
-const { eventSubService } = require('../../../../services/eventsub.service');
+const { eventSubService } = require('../../../../services/eventsub');
 
 async function handleEventSubRequest(event, payload) {
   const { method, params = {} } = payload;

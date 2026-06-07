@@ -2,7 +2,7 @@
 const { ipcMain } = require("electron");
 const {
   twitchAuthService,
-} = require("../../../../services/twitch-auth.service");
+} = require("../../../../services/twitch-auth");
 
 /**
  * @param {Electron.IpcMainInvokeEvent} event

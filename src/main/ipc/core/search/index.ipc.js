@@ -1,5 +1,5 @@
 const { ipcMain } = require('electron');
-const { searchService } = require('../../../../services/search.service');
+const { searchService } = require('../../../../services/search');
 
 async function handleSearchRequest(event, payload) {
   const { method, params = {} } = payload;

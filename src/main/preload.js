@@ -38,7 +38,7 @@ contextBridge.exposeInMainWorld("backendAPI", {
   "stream-manager": (payload) => ipcRenderer.invoke("stream-manager", payload),
    openStreamTogether: (channelName) => ipcRenderer.invoke('open-stream-together', channelName),
 
-  openExternal: (url) => ipcRenderer.invoke("app: open-external", url),
+  openExternal: (url) => ipcRenderer.invoke("app:open-external", url),
   openDashboard: (url) => ipcRenderer.invoke("open-dashboard", url),
   appInfo: () => ipcRenderer.invoke("app:get-info"),
   updater: (payload) => ipcRenderer.invoke("updater", payload),

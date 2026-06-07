@@ -1,7 +1,7 @@
 // src/main/ipc/core/watch-later/index.ipc.js
 //@ts-check
 const { ipcMain } = require('electron');
-const { watchLaterService } = require('../../../../services/watch-later.service');
+const { watchLaterService } = require('../../../../services/watch-later');
 
 /**
  * @param {Electron.IpcMainInvokeEvent} event

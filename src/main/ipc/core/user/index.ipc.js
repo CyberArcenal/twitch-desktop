@@ -1,5 +1,5 @@
 const { ipcMain } = require('electron');
-const { userService } = require('../../../../services/user.service');
+const { userService } = require('../../../../services/user');
 
 async function handleUserRequest(event, payload) {
   const { method, params = {} } = payload;

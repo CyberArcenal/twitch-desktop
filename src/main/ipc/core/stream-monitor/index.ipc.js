@@ -2,11 +2,11 @@
 const { ipcMain } = require("electron");
 const {
   streamMonitorService,
-} = require("../../../../services/stream-monitor.service");
-const { twitchApiService } = require("../../../../services/twitch-api.service");
+} = require("../../../../services/stream-monitor");
+const { twitchApiService } = require("../../../../services/twitch-api");
 const {
   streamManagerService,
-} = require("../../../../services/stream-manager.service");
+} = require("../../../../services/stream-manager");
 
 /**
  * @param {Electron.IpcMainInvokeEvent} event

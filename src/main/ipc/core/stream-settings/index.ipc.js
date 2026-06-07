@@ -1,5 +1,5 @@
 const { ipcMain } = require('electron');
-const { twitchApiService } = require('../../../../services/twitch-api.service');
+const { twitchApiService } = require('../../../../services/twitch-api');
 
 async function handleStreamSettingsRequest(event, payload) {
   const { method, params = {} } = payload;

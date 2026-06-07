@@ -1,6 +1,6 @@
 //@ts-check
 const { ipcMain } = require('electron');
-const { clipsService } = require('../../../../services/clips.service');
+const { clipsService } = require('../../../../services/clips');
 
 /**
  * @param {Electron.IpcMainInvokeEvent} event

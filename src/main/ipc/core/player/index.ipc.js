@@ -1,7 +1,7 @@
 // src/main/ipc/core/player/index.ipc.js
 //@ts-check
 const { ipcMain } = require("electron");
-const { playerService } = require("../../../../services/player.service");
+const { playerService } = require("../../../../services/player");
 
 /**
  * @param {Electron.IpcMainInvokeEvent} event
