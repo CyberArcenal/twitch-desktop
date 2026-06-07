@@ -1,7 +1,7 @@
 //@ts-check
 const { ipcMain } = require('electron');
-const { downloadService } = require('../../../../services/livestream-download.service');
-
+const { downloadService } = require('../../../../services/livestream-download');
+const { logger } = require('../../../../utils/logger');
 
 async function handleDownloadRequest(event, payload) {
   const { method, params = {} } = payload;
@@ -19,7 +19,7 @@ async function handleDownloadRequest(event, payload) {
 
 ipcMain.handle('download', async (event, payload) => {
   try {
-    const result = await handleDownloadRequest(event, payload);
+    const result = await handleDownloadRequest(event, payload);logger.debug(`[IPC] request: ${JSON.stringify(payload)}`);
     return { status: true, message: 'OK', data: result };
   } catch (err) {
     console.error('[IPC:download]', err);

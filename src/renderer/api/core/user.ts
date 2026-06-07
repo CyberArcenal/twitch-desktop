@@ -46,7 +46,7 @@ export interface TwitchPaginatedResult<T> {
 }
 
 /**
- * Badges result – matches what user.service.js returns:
+ * Badges result – matches what user.js returns:
  * { global: [], channel: [] }
  */
 export interface BadgesResult {

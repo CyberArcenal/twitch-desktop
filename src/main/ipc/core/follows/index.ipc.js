@@ -1,7 +1,7 @@
 //@ts-check
 const { ipcMain } = require('electron');
-const { followsService } = require('../../../../services/follows.service');
-
+const { followsService } = require('../../../../services/follows');
+const { logger } = require('../../../../utils/logger');
 /**
  * @param {Electron.IpcMainInvokeEvent} event
  * @param {{ method: any; params?: {} | undefined; }} payload
@@ -37,7 +37,7 @@ async function handleFollowsRequest(event, payload) {
 
 ipcMain.handle('follows', async (event, payload) => {
   try {
-    const result = await handleFollowsRequest(event, payload);
+    const result = await handleFollowsRequest(event, payload);logger.debug(`[IPC] request: ${JSON.stringify(payload)}`);
     return { status: true, message: 'OK', data: result };
   } catch (err) {
     console.error('[IPC:follows]', err);

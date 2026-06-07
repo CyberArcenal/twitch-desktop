@@ -1,6 +1,6 @@
 const { ipcMain } = require('electron');
-const { predictionsService } = require('../../../../services/twitch-predictions.service');
-
+const { predictionsService } = require('../../../../services/twitch-predictions');
+const { logger } = require('../../../../utils/logger');
 async function handlePredictionsRequest(event, payload) {
   const { method, params = {} } = payload;
 
@@ -18,7 +18,7 @@ async function handlePredictionsRequest(event, payload) {
 
 ipcMain.handle('predictions', async (event, payload) => {
   try {
-    const result = await handlePredictionsRequest(event, payload);
+    const result = await handlePredictionsRequest(event, payload);logger.debug(`[IPC] request: ${JSON.stringify(payload)}`);
     return { status: true, message: 'OK', data: result };
   } catch (err) {
     console.error('[IPC:predictions]', err);

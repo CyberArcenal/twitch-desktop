@@ -124,10 +124,10 @@ Kailangan ng mga bagong IPC channel sa main process:
 ┌─────────────────────────────────────────────────────────────┐
 │                      Main (Electron)                        │
 ├─────────────────────────────────────────────────────────────┤
-│  – twitch-api.service (additional methods)                  │
-│  – twitch-chat.service (moderation helpers)                 │
-│  – eventsub.service (new subscriptions)                     │
-│  – obs-websocket.service (optional)                         │
+│  – twitch-api (additional methods)                  │
+│  – twitch-chat (moderation helpers)                 │
+│  – eventsub (new subscriptions)                     │
+│  – obs-websocket (optional)                         │
 │  – ipc handlers (new channels: moderation, stream-info, etc)│
 └─────────────────────────────────────────────────────────────┘
 ```

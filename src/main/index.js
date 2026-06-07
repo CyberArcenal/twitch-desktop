@@ -17,18 +17,18 @@ const fsSync = require("fs");
 const url = require("url");
 
 // ===================== SERVICES =====================
-const { notificationService } = require("../services/notification.service");
-const { playerService } = require("../services/player.service");
+const { notificationService } = require("../services/notification");
+const { playerService } = require("../services/player");
 // @ts-ignore
-const { settingsService } = require("../services/settings.service");
-const { twitchAuthService } = require("../services/twitch-auth.service");
-const { twitchApiService } = require("../services/twitch-api.service");
-const { streamMonitorService } = require("../services/stream-monitor.service");
-const { twitchChatService } = require("../services/twitch-chat.service");
-const { followsService } = require("../services/follows.service");
-const { eventSubService } = require("../services/eventsub.service");
-const { pipService } = require("../services/picture-in-picture.service");
-const { obsWebSocketService } = require("../services/obs-websocket.service.js");
+const { settingsService } = require("../services/settings");
+const { twitchAuthService } = require("../services/twitch-auth");
+const { twitchApiService } = require("../services/twitch-api");
+const { streamMonitorService } = require("../services/stream-monitor");
+const { twitchChatService } = require("../services/twitch-chat");
+const { followsService } = require("../services/follows");
+const { eventSubService } = require("../services/eventsub");
+const { pipService } = require("../services/picture-in-picture");
+const { obsWebSocketService } = require("../services/obs-websocket");
 
 // ===================== CONFIGURATION =====================
 const IS_DEV = process.env.NODE_ENV === "development" || !app.isPackaged;
@@ -504,6 +504,20 @@ async function registerIpcHandlers() {
     if (typeof url === "string" && url.startsWith("http")) {
       shell.openExternal(url).catch(console.error);
     }
+  });
+
+
+  ipcMain.handle("app:open-external", async (_event, url) => {
+    if (typeof url === "string" && url.startsWith("http")) {
+      try {
+        await shell.openExternal(url);
+        return { success: true };
+      } catch (err) {
+        console.error("Failed to open external URL:", err);
+        return { success: false, error: String(err) };
+      }
+    }
+    return { success: false, error: "Invalid URL" };
   });
 
   // @ts-ignore

@@ -6,7 +6,6 @@ import { showError } from '../../../../utils/notification';
 import type { FilterState, LanguageOption } from '../types';
 
 const STREAMS_PER_PAGE = 50;
-const MAX_STREAMS = 200;
 
 export const useBrowseLive = () => {
   const [streams, setStreams] = useState<Stream[]>([]);
@@ -17,12 +16,19 @@ export const useBrowseLive = () => {
   const [total, setTotal] = useState(0);
   const [games, setGames] = useState<Game[]>([]);
   const [gamesLoading, setGamesLoading] = useState(false);
-  
-  const cursorRef = useRef<string | null>(null);
-  const loadingRef = useRef(false);
   const [filters, setFilters] = useState<FilterState>({ gameId: '', language: '' });
 
-  // Fetch available games for filter dropdown
+  // Refs to avoid dependency loops
+  const cursorRef = useRef<string | null>(null);
+  const loadingRef = useRef(false);
+  const hasMoreRef = useRef(true);
+
+  // Sync ref with state
+  useEffect(() => {
+    hasMoreRef.current = hasMore;
+  }, [hasMore]);
+
+  // Load games for filter dropdown
   const loadGames = useCallback(async () => {
     setGamesLoading(true);
     try {
@@ -30,8 +36,8 @@ export const useBrowseLive = () => {
       if (res.status && res.data?.data) {
         setGames(res.data.data);
       }
-    } catch (err: any) {
-      console.error('Failed to load games for filter', err);
+    } catch (err) {
+      console.error('Failed to load games', err);
     } finally {
       setGamesLoading(false);
     }
@@ -41,92 +47,99 @@ export const useBrowseLive = () => {
     loadGames();
   }, [loadGames]);
 
-  // Main fetch function
-  const fetchStreams = useCallback(async (isLoadMore = false, resetFilters = false) => {
-    if (loadingRef.current) return;
-    if (isLoadMore && (!hasMore || loadingMore)) return;
+  // Core fetch function – stable, depends only on filters
+  const fetchStreams = useCallback(
+    async (isLoadMore = false, resetFilters = false) => {
+      if (loadingRef.current) return;
+      if (isLoadMore && (!hasMoreRef.current || loadingMore)) return;
 
-    loadingRef.current = true;
-    if (isLoadMore) {
-      setLoadingMore(true);
-    } else {
-      setLoading(true);
-    }
-    setError(null);
-
-    try {
-      const response = await streamsAPI.getTopStreamsWithFilters(
-        STREAMS_PER_PAGE,
-        isLoadMore ? cursorRef.current as string | undefined : undefined,
-        filters.gameId || undefined,
-        filters.language || undefined
-      );
-
-      if (!response.status || !response.data?.data) {
-        throw new Error(response.message || 'Failed to fetch streams');
-      }
-
-      const newStreams = response.data.data;
-      const newCursor = response.data.pagination?.cursor;
-
-      if (resetFilters || !isLoadMore) {
-        setStreams(newStreams);
-        cursorRef.current = newCursor || null;
-        setHasMore(!!newCursor && newStreams.length === STREAMS_PER_PAGE);
-        setTotal(newStreams.length);
-      } else {
-        setStreams(prev => [...prev, ...newStreams]);
-        cursorRef.current = newCursor || null;
-        setHasMore(!!newCursor && newStreams.length === STREAMS_PER_PAGE);
-        setTotal(prev => prev + newStreams.length);
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to load live streams');
-      showError(err.message);
-    } finally {
-      loadingRef.current = false;
+      loadingRef.current = true;
       if (isLoadMore) {
-        setLoadingMore(false);
+        setLoadingMore(true);
       } else {
-        setLoading(false);
+        setLoading(true);
       }
-    }
-  }, [filters.gameId, filters.language, hasMore, loadingMore]);
+      setError(null);
 
-  // Initial load (reset)
+      try {
+        const response = await streamsAPI.getTopStreamsWithFilters(
+          STREAMS_PER_PAGE,
+          isLoadMore ? cursorRef.current || undefined : undefined,
+          filters.gameId || undefined,
+          filters.language || undefined
+        );
+
+        if (!response.status || !response.data?.data) {
+          throw new Error(response.message || 'Failed to fetch streams');
+        }
+
+        const newStreams = response.data.data;
+        const newCursor = response.data.pagination?.cursor;
+
+        if (resetFilters || !isLoadMore) {
+          setStreams(newStreams);
+          cursorRef.current = newCursor || null;
+          setHasMore(!!newCursor && newStreams.length === STREAMS_PER_PAGE);
+          setTotal(newStreams.length);
+        } else {
+          setStreams((prev) => [...prev, ...newStreams]);
+          cursorRef.current = newCursor || null;
+          setHasMore(!!newCursor && newStreams.length === STREAMS_PER_PAGE);
+          setTotal((prev) => prev + newStreams.length);
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to load live streams');
+        showError(err.message);
+      } finally {
+        loadingRef.current = false;
+        if (isLoadMore) {
+          setLoadingMore(false);
+        } else {
+          setLoading(false);
+        }
+      }
+    },
+    [filters.gameId, filters.language, loadingMore] // loadingMore is safe; it doesn't change on every load
+  );
+
+  // Initial load
   const loadInitial = useCallback(() => {
     cursorRef.current = null;
     setHasMore(true);
+    hasMoreRef.current = true;
     setStreams([]);
     fetchStreams(false, true);
   }, [fetchStreams]);
 
   // Load more
   const loadMore = useCallback(() => {
-    if (!hasMore || loadingMore || loading) return;
+    if (!hasMoreRef.current || loadingMore || loading) return;
     fetchStreams(true, false);
-  }, [hasMore, loadingMore, loading, fetchStreams]);
+  }, [loadingMore, loading, fetchStreams]);
 
-  // Update filters (resets pagination)
-  const updateFilter = useCallback((key: keyof FilterState, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-    // Reset cursor and load new data
-    cursorRef.current = null;
-    setHasMore(true);
-    setStreams([]);
-    fetchStreams(false, true);
-  }, [fetchStreams]);
+  // Update filter
+  const updateFilter = useCallback(
+    (key: keyof FilterState, value: string) => {
+      setFilters((prev) => ({ ...prev, [key]: value }));
+      cursorRef.current = null;
+      setHasMore(true);
+      hasMoreRef.current = true;
+      setStreams([]);
+      fetchStreams(false, true);
+    },
+    [fetchStreams]
+  );
 
-  // Reset all filters
+  // Reset filters
   const resetFilters = useCallback(() => {
     setFilters({ gameId: '', language: '' });
     cursorRef.current = null;
     setHasMore(true);
+    hasMoreRef.current = true;
     setStreams([]);
     fetchStreams(false, true);
   }, [fetchStreams]);
 
-  // Language options (common Twitch languages)
   const languageOptions: LanguageOption[] = [
     { code: '', name: 'All Languages' },
     { code: 'en', name: 'English' },

@@ -2,7 +2,8 @@
 const { ipcMain } = require("electron");
 const {
   twitchAuthService,
-} = require("../../../../services/twitch-auth.service");
+} = require("../../../../services/twitch-auth");
+const { logger } = require("../../../../utils/logger");
 
 /**
  * @param {Electron.IpcMainInvokeEvent} event
@@ -32,7 +33,7 @@ async function handleAuthRequest(event, payload) {
 
 ipcMain.handle("twitch-auth", async (event, payload) => {
   try {
-    const result = await handleAuthRequest(event, payload);
+    const result = await handleAuthRequest(event, payload);logger.debug(`[IPC] request: ${JSON.stringify(payload)}`);
     return { status: true, message: "OK", data: result };
   } catch (err) {
     console.error("[IPC:twitch-auth]", err);

@@ -1,7 +1,7 @@
-// src/components/Shared/UpdateNotifier.tsx
+// src/components/Shared/UpdateNotifier.tsx – Enhanced for Sidebar
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Download, RefreshCw, X, AlertCircle, CheckCircle } from "lucide-react";
+import { Download, RefreshCw, X, AlertCircle, CheckCircle, Sparkles } from "lucide-react";
 import { useUpdater } from "../../hooks/useUpdater";
 import Button from "../UI/Button";
 
@@ -13,7 +13,6 @@ const UpdateNotifier: React.FC = () => {
     error,
     downloadUpdate,
     installUpdate,
-    setState,
   } = useUpdater();
   const [showModal, setShowModal] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -63,180 +62,154 @@ const UpdateNotifier: React.FC = () => {
   const getIcon = () => {
     switch (state) {
       case "downloading":
-        return <RefreshCw className="icon-sm animate-spin" />;
+        return <RefreshCw className="w-4 h-4 animate-spin" />;
+      case "downloaded":
+        return <CheckCircle className="w-4 h-4 text-green-400" />;
       default:
-        return <Download className="icon-sm" />;
+        return <Download className="w-4 h-4" />;
     }
   };
 
   const getBadge = () => {
     if (state === "available") {
       return (
-        <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center animate-pulse">
-          !
-        </span>
+        <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-md" />
       );
     }
     if (state === "downloaded") {
       return (
-        <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full text-[10px] text-white flex items-center justify-center">
-          ✓
-        </span>
+        <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full shadow-md" />
       );
     }
     return null;
   };
 
-  const getStatusInfo = () => {
+  const getStatusText = () => {
     switch (state) {
-      case "available":
-        return {
-          message: "New version ready to download",
-          color: "text-blue-400",
-        };
-      case "downloading":
-        return { message: "Downloading update...", color: "text-blue-400" };
-      case "downloaded":
-        return { message: "Update ready to install", color: "text-green-400" };
-      default:
-        return { message: "", color: "" };
+      case "available": return "Update available";
+      case "downloading": return "Downloading update...";
+      case "downloaded": return "Ready to install!";
+      default: return "";
     }
   };
 
-  const statusInfo = getStatusInfo();
-
-  const renderReleaseNotes = () => {
-    if (!updateInfo?.releaseNotes) return null;
-    const notes = updateInfo.releaseNotes;
-    const isHtml = /<[a-z][\s\S]*>/i.test(notes);
-    if (isHtml) {
-      return (
-        <div
-          className="release-notes-content text-sm text-[var(--text-secondary)] space-y-2"
-          dangerouslySetInnerHTML={{ __html: notes }}
-        />
-      );
+  const getStatusColor = () => {
+    switch (state) {
+      case "available": return "text-[#9146ff]";
+      case "downloading": return "text-blue-400";
+      case "downloaded": return "text-green-400";
+      default: return "text-[var(--text-secondary)]";
     }
-    return (
-      <pre className="text-xs whitespace-pre-wrap font-sans text-[var(--text-secondary)]">
-        {notes}
-      </pre>
-    );
   };
 
   const modalContent = showModal ? (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) setShowModal(false);
       }}
     >
       <div
-        className="bg-[var(--card-bg)] rounded-xl shadow-2xl max-w-md w-full p-6 relative"
+        className="bg-[var(--card-bg)] rounded-2xl shadow-2xl max-w-md w-full border border-[var(--border-color)] overflow-hidden animate-fadeInUp"
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          onClick={() => setShowModal(false)}
-          className="absolute top-4 right-4 p-1 rounded-lg hover:bg-[var(--card-secondary-bg)] transition-colors"
-          aria-label="Close"
-        >
-          <X className="icon-sm" />
-        </button>
-
-        <div className="flex items-center gap-3 mb-4">
-          <div
-            className={`w-10 h-10 rounded-full flex items-center justify-center ${
-              state === "downloaded" ? "bg-green-500/20" : "bg-blue-500/20"
-            }`}
+        {/* Header with gradient accent */}
+        <div className="relative px-6 pt-6 pb-3 border-b border-[var(--border-color)] bg-gradient-to-r from-[#18181b] to-[#1f1f23]">
+          <button
+            onClick={() => setShowModal(false)}
+            className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-[var(--card-hover-bg)] text-[var(--text-secondary)] transition-all"
+            aria-label="Close"
           >
-            {state === "downloaded" ? (
-              <CheckCircle className="w-5 h-5 text-green-400" />
-            ) : (
-              <Download className="w-5 h-5 text-blue-400" />
-            )}
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-[var(--sidebar-text)]">
-              Update Available
-            </h2>
-            <p className={`text-xs ${statusInfo.color}`}>
-              {statusInfo.message}
-            </p>
+            <X className="w-4 h-4" />
+          </button>
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+              state === "downloaded" ? "bg-green-500/20" : "bg-[#9146ff]/20"
+            }`}>
+              {state === "downloaded" ? (
+                <CheckCircle className="w-5 h-5 text-green-400" />
+              ) : (
+                <Sparkles className="w-5 h-5 text-[#9146ff]" />
+              )}
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-[var(--sidebar-text)]">Update Available</h2>
+              <p className={`text-xs ${getStatusColor()}`}>{getStatusText()}</p>
+            </div>
           </div>
         </div>
 
-        {(error || downloadError || installError) && (
-          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-start gap-2">
-            <AlertCircle className="icon-sm text-red-400 flex-shrink-0 mt-0.5" />
-            <span className="text-sm text-red-400">
-              {error || downloadError || installError}
-            </span>
-          </div>
-        )}
-
-        {updateInfo && (
-          <div className="mb-4">
-            <div className="flex items-baseline gap-2 mb-1">
-              <p className="text-lg font-semibold text-[var(--sidebar-text)]">
-                v{updateInfo.version}
-              </p>
-              <p className="text-xs text-[var(--text-tertiary)]">
-                Released:{" "}
-                {new Date(updateInfo.releaseDate).toLocaleDateString()}
-              </p>
+        {/* Body */}
+        <div className="p-6">
+          {(error || downloadError || installError) && (
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+              <span className="text-sm text-red-400">{error || downloadError || installError}</span>
             </div>
-            {updateInfo.releaseNotes && (
-              <div className="mt-3">
-                <p className="text-sm font-medium text-[var(--sidebar-text)] mb-2">
-                  What's New:
+          )}
+
+          {updateInfo && (
+            <div className="mb-4">
+              <div className="flex items-baseline gap-2 mb-2">
+                <p className="text-lg font-bold text-[var(--sidebar-text)]">v{updateInfo.version}</p>
+                <p className="text-xs text-[var(--text-tertiary)]">
+                  {new Date(updateInfo.releaseDate).toLocaleDateString()}
                 </p>
-                <div className="p-3 bg-[var(--card-secondary-bg)] rounded-lg max-h-64 overflow-y-auto custom-scrollbar">
-                  {renderReleaseNotes()}
-                </div>
               </div>
-            )}
-          </div>
-        )}
-
-        {progress && (state === "downloading" || isDownloading) && (
-          <div className="mb-4">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-[var(--text-secondary)]">
-                Downloading...
-              </span>
-              <span className="text-[var(--sidebar-text)] font-medium">
-                {Math.round(progress.percent)}%
-              </span>
+              {updateInfo.releaseNotes && (
+                <div className="mt-3">
+                  <p className="text-sm font-medium text-[var(--sidebar-text)] mb-2">What's New:</p>
+                  <div className="p-3 bg-[var(--card-secondary-bg)] rounded-xl max-h-64 overflow-y-auto custom-scrollbar text-sm text-[var(--text-secondary)]">
+                    {updateInfo.releaseNotes.includes('<') ? (
+                      <div dangerouslySetInnerHTML={{ __html: updateInfo.releaseNotes }} />
+                    ) : (
+                      <pre className="whitespace-pre-wrap font-sans">{updateInfo.releaseNotes}</pre>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="w-full h-2 bg-[var(--border-color)] rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-[var(--primary-color)] to-[var(--accent-blue)] transition-all duration-300 ease-out rounded-full"
-                style={{ width: `${progress.percent}%` }}
-              />
-            </div>
-            {progress.bytesPerSecond && (
-              <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                {Math.round(progress.bytesPerSecond / 1024)} KB/s
-              </p>
-            )}
-          </div>
-        )}
+          )}
 
-        <div className="flex gap-3 justify-end mt-6">
+          {progress && (state === "downloading" || isDownloading) && (
+            <div className="mb-4">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-[var(--text-secondary)]">Downloading...</span>
+                <span className="text-[var(--sidebar-text)] font-medium">{Math.round(progress.percent)}%</span>
+              </div>
+              <div className="w-full h-2 bg-[var(--border-color)] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-[#9146ff] to-[#a970ff] transition-all duration-300 ease-out rounded-full"
+                  style={{ width: `${progress.percent}%` }}
+                />
+              </div>
+              {progress.bytesPerSecond && (
+                <p className="text-xs text-[var(--text-tertiary)] mt-1">
+                  {Math.round(progress.bytesPerSecond / 1024)} KB/s
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer buttons */}
+        <div className="px-6 py-4 bg-[#18181b] border-t border-[var(--border-color)] flex flex-col sm:flex-row gap-3 justify-end">
           {(state === "available" || state === "downloading") && (
             <Button
               onClick={handleDownload}
               disabled={isDownloading}
-              className="btn-primary btn-sm px-5 py-2.5 flex items-center gap-2 font-medium transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              variant="primary"
+              size="sm"
+              className="flex items-center gap-2"
             >
               {state === "downloading" ? (
                 <>
-                  <RefreshCw className="icon-sm animate-spin" />
+                  <RefreshCw className="w-4 h-4 animate-spin" />
                   Downloading...
                 </>
               ) : (
                 <>
-                  <Download className="icon-sm" />
+                  <Download className="w-4 h-4" />
                   Download Update
                 </>
               )}
@@ -245,23 +218,29 @@ const UpdateNotifier: React.FC = () => {
           {state === "downloaded" && (
             <Button
               onClick={handleInstall}
-              className="btn-success btn-sm px-5 py-2.5 flex items-center gap-2 font-medium transition-all duration-200 hover:scale-105 active:scale-95 bg-gradient-to-r from-green-500 to-emerald-600"
+              variant="success"
+              size="sm"
+              className="flex items-center gap-2"
             >
-              <RefreshCw className="icon-sm" />
+              <RefreshCw className="w-4 h-4" />
               Install & Restart
             </Button>
           )}
           <Button
             onClick={() => setShowModal(false)}
-            className="btn-secondary btn-sm px-5 py-2.5 font-medium"
+            variant="secondary"
+            size="sm"
           >
             Later
           </Button>
         </div>
+
         {state === "downloaded" && (
-          <p className="text-xs text-[var(--text-tertiary)] mt-4 text-center">
-            The application will restart after installation.
-          </p>
+          <div className="px-6 pb-4 text-center">
+            <p className="text-xs text-[var(--text-tertiary)]">
+              The application will restart after installation.
+            </p>
+          </div>
         )}
       </div>
     </div>
@@ -271,14 +250,19 @@ const UpdateNotifier: React.FC = () => {
     <>
       <button
         onClick={() => setShowModal(true)}
-        className="relative p-2 rounded-lg hover:bg-[var(--card-secondary-bg)] text-[var(--sidebar-text)] transition-all duration-200 hover:scale-105 active:scale-95"
+        className="relative group w-full flex items-center justify-center gap-2 p-2 rounded-lg hover:bg-[var(--card-hover-bg)] text-[var(--sidebar-text)] transition-all duration-200 hover:scale-[1.02] active:scale-95"
         aria-label="Update available"
+        title={getStatusText()}
       >
         {getIcon()}
+        <span className="text-xs font-medium hidden md:inline-block">
+          {state === "available" && "Update"}
+          {state === "downloading" && `${Math.round(progress?.percent || 0)}%`}
+          {state === "downloaded" && "Restart"}
+        </span>
         {getBadge()}
       </button>
-      {typeof document !== "undefined" &&
-        createPortal(modalContent, document.body)}
+      {typeof document !== "undefined" && createPortal(modalContent, document.body)}
     </>
   );
 };

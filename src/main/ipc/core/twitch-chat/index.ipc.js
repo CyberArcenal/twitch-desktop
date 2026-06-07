@@ -2,9 +2,9 @@
 const { ipcMain } = require("electron");
 const {
   twitchChatService,
-} = require("../../../../services/twitch-chat.service");
-const { twitchApiService } = require("../../../../services/twitch-api.service");
-
+} = require("../../../../services/twitch-chat");
+const { twitchApiService } = require("../../../../services/twitch-api");
+const { logger } = require('../../../../utils/logger');
 /**
  * @param {Electron.IpcMainInvokeEvent} event
  * @param {{ method: any; params?: {} | undefined; }} payload
@@ -73,7 +73,7 @@ async function handleChatRequest(event, payload) {
 
 ipcMain.handle("twitch-chat", async (event, payload) => {
   try {
-    const result = await handleChatRequest(event, payload);
+    const result = await handleChatRequest(event, payload);logger.debug(`[IPC] request: ${JSON.stringify(payload)}`);
     return { status: true, message: "OK", data: result };
   } catch (err) {
     console.error("[IPC:twitch-chat]", err);

@@ -48,3 +48,27 @@
 .animate-slideInRight {
   animation: slideInRight 0.2s ease-out forwards;
 }
+
+
+
+
+/* Shimmer animation for skeleton cards */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(42, 42, 46, 1) 0%,
+    rgba(58, 58, 74, 1) 50%,
+    rgba(42, 42, 46, 1) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}

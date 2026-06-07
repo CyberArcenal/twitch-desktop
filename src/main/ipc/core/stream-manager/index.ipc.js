@@ -1,21 +1,20 @@
 // src/main/ipc/core/stream-manager/index.ipc.js
 //@ts-check
 const { ipcMain } = require("electron");
-const { settingsService } = require("../../../../services/settings.service");
+const { settingsService } = require("../../../../services/settings");
 const {
   streamManagerService,
-} = require("../../../../services/stream-manager.service");
-const { logger } = require("../../../../utils/logger");
+} = require("../../../../services/stream-manager");
 const {
   obsDetectionService,
-} = require("../../../../services/obs-detection.service");
+} = require("../../../../services/obs-detection");
 const {
   automationService,
-} = require("../../../../services/automation.service");
+} = require("../../../../services/automation");
 const {
   obsWebSocketService,
-} = require("../../../../services/obs-websocket.service");
-
+} = require("../../../../services/obs-websocket");
+const { logger } = require('../../../../utils/logger');
 /**
  * @param {Electron.IpcMainInvokeEvent} event
  */
@@ -181,7 +180,7 @@ async function handleStreamManagerRequest(event, { method, params = {} }) {
       // Re‑use the existing method from twitchApiService
       const {
         twitchApiService,
-      } = require("../../../../services/twitch-api.service");
+      } = require("../../../../services/twitch-api");
       // @ts-ignore
       return await twitchApiService.getUserByName(params.username);
     default:
@@ -191,7 +190,7 @@ async function handleStreamManagerRequest(event, { method, params = {} }) {
 
 ipcMain.handle("stream-manager", async (event, payload) => {
   try {
-    const result = await handleStreamManagerRequest(event, payload);
+    const result = await handleStreamManagerRequest(event, payload);logger.debug(`[IPC] request: ${JSON.stringify(payload)}`);
     return { status: true, message: "OK", data: result };
   } catch (err) {
     // @ts-ignore

@@ -1,11 +1,11 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { User, LogOut, Power, Key, Shield, ExternalLink } from 'lucide-react';
-import { authAPI } from '../../../api/core/auth';
-import { userAPI, type TwitchUser } from '../../../api/core/user';
-import Button from '../../../components/UI/Button';
-import { dialogs } from '../../../utils/dialogs';
-import { showSuccess, showError } from '../../../utils/notification';
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { User, LogOut, Power, Key, Shield, ExternalLink } from "lucide-react";
+import { authAPI } from "../../../api/core/auth";
+import { userAPI, type TwitchUser } from "../../../api/core/user";
+import Button from "../../../components/UI/Button";
+import { dialogs } from "../../../utils/dialogs";
+import { showSuccess, showError } from "../../../utils/notification";
 
 const SecuritySettingsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -25,32 +25,33 @@ const SecuritySettingsPage: React.FC = () => {
 
   const handleLogout = async () => {
     const confirmed = await dialogs.confirm({
-      title: 'Logout',
-      message: 'Are you sure you want to log out from this device?',
+      title: "Logout",
+      message: "Are you sure you want to log out from this device?",
     });
     if (!confirmed) return;
     await authAPI.logout();
-    navigate('/login');
+    navigate("/login");
   };
 
   const handleRevokeAll = async () => {
     const confirmed = await dialogs.confirm({
-      title: 'Revoke All Tokens',
-      message: 'This will log you out from all devices and applications. You will need to log in again everywhere. Continue?',
-      confirmText: 'Yes, revoke all',
+      title: "Revoke All Tokens",
+      message:
+        "This will log you out from all devices and applications. You will need to log in again everywhere. Continue?",
+      confirmText: "Yes, revoke all",
     });
     if (!confirmed) return;
     try {
       await authAPI.revokeAllTokens();
-      showSuccess('Logged out from all devices');
-      navigate('/login');
+      showSuccess("Logged out from all devices");
+      navigate("/login");
     } catch (err: any) {
       showError(err.message);
     }
   };
 
   const handleChangePassword = () => {
-    window.backendAPI.openExternal('https://www.twitch.tv/settings/security');
+    window.backendAPI.openExternal("https://www.twitch.tv/settings/security");
   };
 
   if (loading) {
@@ -64,7 +65,9 @@ const SecuritySettingsPage: React.FC = () => {
   return (
     <div className="p-4 md:p-6 max-w-3xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--sidebar-text)]">Security</h1>
+        <h1 className="text-2xl font-bold text-[var(--sidebar-text)]">
+          Security
+        </h1>
         <p className="text-sm text-[var(--text-secondary)] mt-1">
           Manage your Twitch account security and sessions
         </p>
@@ -85,8 +88,12 @@ const SecuritySettingsPage: React.FC = () => {
                 className="w-16 h-16 rounded-full border-2 border-[var(--primary-color)]"
               />
               <div>
-                <p className="font-bold text-[var(--sidebar-text)] text-lg">{user.display_name}</p>
-                <p className="text-sm text-[var(--text-secondary)]">@{user.login}</p>
+                <p className="font-bold text-[var(--sidebar-text)] text-lg">
+                  {user.display_name}
+                </p>
+                <p className="text-sm text-[var(--text-secondary)]">
+                  @{user.login}
+                </p>
                 <p className="text-xs text-[var(--text-tertiary)] mt-1">
                   User ID: {user.id}
                 </p>
@@ -97,12 +104,24 @@ const SecuritySettingsPage: React.FC = () => {
 
         {/* Session Management */}
         <div className="bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-[var(--sidebar-text)] mb-4">Session Management</h2>
-          <div className="space-y-3">
-            <Button variant="secondary" onClick={handleLogout} icon={LogOut}>
+          <h2 className="text-lg font-semibold text-[var(--sidebar-text)] mb-4">
+            Session Management
+          </h2>
+          <div className="space-y-4">
+            <Button
+              className="block w-full"
+              variant="secondary"
+              onClick={handleLogout}
+              icon={LogOut}
+            >
               Logout from this device
             </Button>
-            <Button variant="danger" onClick={handleRevokeAll} icon={Power}>
+            <Button
+              className="block w-full"
+              variant="danger"
+              onClick={handleRevokeAll}
+              icon={Power}
+            >
               Revoke all tokens (logout from all devices)
             </Button>
           </div>
@@ -110,16 +129,24 @@ const SecuritySettingsPage: React.FC = () => {
 
         {/* Account Security */}
         <div className="bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-[var(--sidebar-text)] mb-4">Account Security</h2>
+          <h2 className="text-lg font-semibold text-[var(--sidebar-text)] mb-4">
+            Account Security
+          </h2>
           <div className="space-y-3">
-            <Button variant="secondary" onClick={handleChangePassword} icon={Key}>
+            <Button
+              variant="secondary"
+              onClick={handleChangePassword}
+              icon={Key}
+            >
               Change Password <ExternalLink className="w-3 h-3 ml-1" />
             </Button>
             <div className="flex items-center justify-between pt-2">
               <div className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-[var(--primary-color)]" />
                 <div>
-                  <p className="text-sm font-medium text-[var(--sidebar-text)]">Two-Factor Authentication</p>
+                  <p className="text-sm font-medium text-[var(--sidebar-text)]">
+                    Two-Factor Authentication
+                  </p>
                   <p className="text-xs text-[var(--text-secondary)]">
                     Manage 2FA settings on Twitch
                   </p>
@@ -128,7 +155,11 @@ const SecuritySettingsPage: React.FC = () => {
               <Button
                 variant="ghost"
                 size="xs"
-                onClick={() => window.backendAPI.openExternal('https://www.twitch.tv/settings/security')}
+                onClick={() =>
+                  window.backendAPI.openExternal(
+                    "https://www.twitch.tv/settings/security",
+                  )
+                }
               >
                 Manage
               </Button>

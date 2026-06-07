@@ -1,3 +1,4 @@
+// src/renderer/pages/channel/index.tsx
 import React from 'react';
 import { useChannel } from './hooks/useChannel';
 import ChannelHeader from './components/ChannelHeader';
@@ -15,28 +16,42 @@ const ChannelPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-full">
-        <LoadingSpinner size="medium" text="Loading stream data..." />
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <LoadingSpinner size="medium" text="Loading channel..." />
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-500">Channel not found</p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+        <div className="w-24 h-24 rounded-full bg-[var(--card-hover-bg)] flex items-center justify-center mb-4">
+          <span className="text-4xl">😢</span>
+        </div>
+        <h2 className="text-xl font-semibold text-[var(--sidebar-text)] mb-1">Channel not found</h2>
+        <p className="text-sm text-[var(--text-secondary)]">The channel you're looking for doesn't exist or is unavailable.</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[var(--background-color)] m-2">
       <ChannelHeader user={user} isFollowing={isFollowing} liveStream={liveStream} onFollowToggle={toggleFollow} />
       <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-      {activeTab === 'streams' && <StreamsTab liveStream={liveStream} recentVideos={recentVideos} />}
-      {activeTab === 'clips' && <ClipsTab clips={clips} onClipClick={setSelectedClip} />}
-      {activeTab === 'schedule' && <div className="p-6 text-center text-[var(--text-secondary)]">Schedule feature coming soon</div>}
-      {activeTab === 'about' && <AboutTab user={user} />}
+      
+      <div className="mt-4">
+        {activeTab === 'streams' && <StreamsTab liveStream={liveStream} recentVideos={recentVideos} />}
+        {activeTab === 'clips' && <ClipsTab clips={clips} onClipClick={setSelectedClip} />}
+        {activeTab === 'schedule' && (
+          <div className="p-8 text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--card-hover-bg)] text-[var(--text-secondary)] text-sm">
+              🗓️ Schedule feature coming soon
+            </div>
+          </div>
+        )}
+        {activeTab === 'about' && <AboutTab user={user} />}
+      </div>
+
       <ClipModal clip={selectedClip} onClose={() => setSelectedClip(null)} />
     </div>
   );

@@ -1,6 +1,7 @@
+//@ts-check
 const { ipcMain } = require("electron");
-const { gamesService } = require("../../../../services/games.service");
-
+const { gamesService } = require("../../../../services/game");
+const { logger } = require('../../../../utils/logger');
 async function handleGamesRequest(event, payload) {
   const { method, params = {} } = payload;
 
@@ -23,7 +24,7 @@ async function handleGamesRequest(event, payload) {
 
 ipcMain.handle("games", async (event, payload) => {
   try {
-    const result = await handleGamesRequest(event, payload);
+    const result = await handleGamesRequest(event, payload);logger.debug(`[IPC] request: ${JSON.stringify(payload)}`);
     return { status: true, message: "OK", data: result };
   } catch (err) {
     console.error("[IPC:games]", err);

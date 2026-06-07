@@ -1,7 +1,7 @@
 // src/main/ipc/core/whisper/index.ipc.js
 const { ipcMain } = require('electron');
-const { twitchChatService } = require('../../../../services/twitch-chat.service');
-
+const { twitchChatService } = require('../../../../services/twitch-chat');
+const { logger } = require('../../../../utils/logger');
 async function handleWhisperRequest(event, payload) {
   const { method, params = {} } = payload;
 
@@ -26,7 +26,7 @@ async function handleWhisperRequest(event, payload) {
 
 ipcMain.handle('whisper', async (event, payload) => {
   try {
-    const result = await handleWhisperRequest(event, payload);
+    const result = await handleWhisperRequest(event, payload);logger.debug(`[IPC] request: ${JSON.stringify(payload)}`);
     return { status: true, message: 'OK', data: result };
   } catch (err) {
     console.error('[IPC:whisper]', err);

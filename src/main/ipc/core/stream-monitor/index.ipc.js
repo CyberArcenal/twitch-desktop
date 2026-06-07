@@ -2,11 +2,11 @@
 const { ipcMain } = require("electron");
 const {
   streamMonitorService,
-} = require("../../../../services/stream-monitor.service");
-const { twitchApiService } = require("../../../../services/twitch-api.service");
+} = require("../../../../services/stream-monitor");
+const { twitchApiService } = require("../../../../services/twitch-api");
 const {
   streamManagerService,
-} = require("../../../../services/stream-manager.service");
+} = require("../../../../services/stream-manager");
 
 /**
  * @param {Electron.IpcMainInvokeEvent} event
@@ -44,7 +44,7 @@ async function handleStreamMonitorRequest(event, payload) {
 
 ipcMain.handle("stream-monitor", async (event, payload) => {
   try {
-    const result = await handleStreamMonitorRequest(event, payload);
+    const result = await handleStreamMonitorRequest(event, payload);logger.debug(`[IPC] request: ${JSON.stringify(payload)}`);
     return { status: true, message: "OK", data: result };
   } catch (err) {
     console.error("[IPC:stream-monitor]", err);

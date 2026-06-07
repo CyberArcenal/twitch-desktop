@@ -1,6 +1,8 @@
+// src/renderer/pages/channel/components/ClipsTab.tsx
 import React from 'react';
 import type { Clip } from '../../../api/core/clips';
-import { Eye } from 'lucide-react';
+import { Video, TrendingUp } from 'lucide-react';
+import ClipCard from '../../browse/clips/components/ClipCard';
 
 interface ClipsTabProps {
   clips: Clip[];
@@ -9,31 +11,28 @@ interface ClipsTabProps {
 
 const ClipsTab: React.FC<ClipsTabProps> = ({ clips, onClipClick }) => {
   if (clips.length === 0) {
-    return <p className="text-center text-[var(--text-secondary)] py-8">No clips available</p>;
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="w-20 h-20 rounded-full bg-[var(--card-hover-bg)] flex items-center justify-center mb-4">
+          <Video className="w-8 h-8 text-[var(--text-tertiary)]" />
+        </div>
+        <h3 className="text-lg font-medium text-[var(--sidebar-text)] mb-1">No clips yet</h3>
+        <p className="text-sm text-[var(--text-secondary)]">This channel hasn't created any clips.</p>
+      </div>
+    );
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 md:p-6">
-      {clips.map(clip => (
-        <div
-          key={clip.id}
-          onClick={() => onClipClick(clip)}
-          className="cursor-pointer group rounded-lg overflow-hidden bg-[var(--card-secondary-bg)] hover:scale-105 transition"
-        >
-          <div className="relative aspect-video">
-            <img src={clip.thumbnail_url} alt={clip.title} className="w-full h-full object-cover" />
-            <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-1 py-0.5 rounded">
-              {Math.floor(clip.duration / 60)}:{Math.floor(clip.duration % 60).toString().padStart(2, '0')}
-            </div>
-          </div>
-          <div className="p-3">
-            <p className="font-medium text-[var(--sidebar-text)] line-clamp-2">{clip.title}</p>
-            <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)] mt-1">
-              <Eye className="w-3 h-3" /> {clip.view_count.toLocaleString()}
-            </div>
-          </div>
-        </div>
-      ))}
+    <div className="p-4 md:p-6 lg:p-8">
+      <div className="flex items-center gap-2 mb-5">
+        <TrendingUp className="w-5 h-5 text-[var(--primary-color)]" />
+        <h3 className="text-lg font-semibold text-[var(--sidebar-text)]">Recent Clips</h3>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        {clips.map(clip => (
+          <ClipCard key={clip.id} clip={clip} onClick={onClipClick} />
+        ))}
+      </div>
     </div>
   );
 };

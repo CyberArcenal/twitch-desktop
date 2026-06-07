@@ -1,8 +1,8 @@
 // src/main/ipc/core/watch-later/index.ipc.js
 //@ts-check
 const { ipcMain } = require('electron');
-const { watchLaterService } = require('../../../../services/watch-later.service');
-
+const { watchLaterService } = require('../../../../services/watch-later');
+const { logger } = require('../../../../utils/logger');
 /**
  * @param {Electron.IpcMainInvokeEvent} event
  * @param {{ method: any; params?: {} | undefined; }} payload
@@ -35,7 +35,7 @@ async function handleWatchLaterRequest(event, payload) {
 
 ipcMain.handle('watch-later', async (event, payload) => {
   try {
-    const result = await handleWatchLaterRequest(event, payload);
+    const result = await handleWatchLaterRequest(event, payload);logger.debug(`[IPC] request: ${JSON.stringify(payload)}`);
     return { status: true, message: 'OK', data: result };
   } catch (err) {
     console.error('[IPC:watch-later]', err);

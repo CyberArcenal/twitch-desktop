@@ -1,7 +1,7 @@
 //@ts-check
 const { ipcMain } = require('electron');
-const { clipsService } = require('../../../../services/clips.service');
-
+const { clipsService } = require('../../../../services/clips');
+const { logger } = require('../../../../utils/logger');
 /**
  * @param {Electron.IpcMainInvokeEvent} event
  * @param {{ method: any; params?: {} | undefined; }} payload
@@ -27,7 +27,7 @@ async function handleClipsRequest(event, payload) {
 
 ipcMain.handle('clips', async (event, payload) => {
   try {
-    const result = await handleClipsRequest(event, payload);
+    const result = await handleClipsRequest(event, payload);logger.debug(`[IPC] request: ${JSON.stringify(payload)}`);
     return { status: true, message: 'OK', data: result };
   } catch (err) {
     console.error('[IPC:clips]', err);
