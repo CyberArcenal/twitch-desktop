@@ -1,15 +1,25 @@
 // src/renderer/pages/browse/game/index.tsx
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, Gamepad2, Video, Tv, Calendar, ExternalLink } from 'lucide-react';
-import { gamesAPI, type Game, type Stream } from '../../../api/core/games';
-import { clipsAPI, type Clip } from '../../../api/core/clips';
-import Button from '../../../components/UI/Button';
-import StreamCard from './components/StreamCard';
-import ClipCard from './components/ClipCard';
-import LoadingSpinner from '../../../components/Shared/LoadingSpinner';
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  ArrowLeft,
+  Users,
+  Gamepad2,
+  Video,
+  Tv,
+  Calendar,
+  ExternalLink,
+} from "lucide-react";
+import { gamesAPI, type Game, type Stream } from "../../../api/core/games";
+import { clipsAPI, type Clip } from "../../../api/core/clips";
+import Button from "../../../components/UI/Button";
+import StreamCard from "./components/StreamCard";
+import LoadingSpinner from "../../../components/Shared/LoadingSpinner";
+import ClipCard from "../clips/components/ClipCard";
+import { usePopularClips } from "../clips/hooks/usePopularClips";
+import ClipModal from "../clips/components/ClipModal";
 
-type TabType = 'streams' | 'clips';
+type TabType = "streams" | "clips";
 
 const GamePage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -20,8 +30,10 @@ const GamePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [loadingStreams, setLoadingStreams] = useState(false);
   const [loadingClips, setLoadingClips] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabType>('streams');
+  const [activeTab, setActiveTab] = useState<TabType>("streams");
   const [error, setError] = useState<string | null>(null);
+
+  const { selectedClip, openClipModal, closeClipModal } = usePopularClips();
 
   useEffect(() => {
     if (!gameId) return;
@@ -31,17 +43,17 @@ const GamePage: React.FC = () => {
         if (res.status && res.data) {
           setGame(res.data);
         } else {
-          setError('Game not found');
+          setError("Game not found");
         }
       } catch (err) {
-        setError('Failed to load game');
+        setError("Failed to load game");
       }
     };
     fetchGame();
   }, [gameId]);
 
   useEffect(() => {
-    if (!gameId || activeTab !== 'streams') return;
+    if (!gameId || activeTab !== "streams") return;
     const fetchStreams = async () => {
       setLoadingStreams(true);
       try {
@@ -52,7 +64,7 @@ const GamePage: React.FC = () => {
           setStreams([]);
         }
       } catch (err) {
-        console.error('Failed to fetch streams', err);
+        console.error("Failed to fetch streams", err);
       } finally {
         setLoadingStreams(false);
       }
@@ -61,18 +73,18 @@ const GamePage: React.FC = () => {
   }, [gameId, activeTab]);
 
   useEffect(() => {
-    if (!gameId || activeTab !== 'clips') return;
+    if (!gameId || activeTab !== "clips") return;
     const fetchClips = async () => {
       setLoadingClips(true);
       try {
-        const res = await clipsAPI.getTopClips(gameId, undefined, 'week', 30);
+        const res = await clipsAPI.getTopClips(gameId, undefined, "week", 30);
         if (res.status && res.data?.data) {
           setClips(res.data.data);
         } else {
           setClips([]);
         }
       } catch (err) {
-        console.error('Failed to fetch clips', err);
+        console.error("Failed to fetch clips", err);
       } finally {
         setLoadingClips(false);
       }
@@ -96,8 +108,12 @@ const GamePage: React.FC = () => {
   if (error || !game) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-center p-4">
-        <p className="text-red-500 mb-2">{error || 'Game not found'}</p>
-        <Button variant="primary" size="sm" onClick={() => navigate('/browse/top-games')}>
+        <p className="text-red-500 mb-2">{error || "Game not found"}</p>
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => navigate("/browse/top-games")}
+        >
           Back to Top Games
         </Button>
       </div>
@@ -105,8 +121,8 @@ const GamePage: React.FC = () => {
   }
 
   const boxArtUrl = game.box_art_url
-    ? game.box_art_url.replace('{width}', '400').replace('{height}', '533')
-    : 'https://static-cdn.jtvnw.net/ttv-static/404_boxart.png';
+    ? game.box_art_url.replace("{width}", "400").replace("{height}", "533")
+    : "https://static-cdn.jtvnw.net/ttv-static/404_boxart.png";
 
   const totalViewers = streams.reduce((acc, s) => acc + s.viewer_count, 0);
 
@@ -126,7 +142,9 @@ const GamePage: React.FC = () => {
             alt={game.name}
             className="w-28 h-36 md:w-40 md:h-52 rounded-xl shadow-2xl border-2 border-[#9147ff]/30 mb-4"
           />
-          <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 tracking-tight">{game.name}</h1>
+          <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 tracking-tight">
+            {game.name}
+          </h1>
           <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-[#adadb8]">
             <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full">
               <Gamepad2 className="w-4 h-4" />
@@ -156,34 +174,34 @@ const GamePage: React.FC = () => {
         <div className="border-b border-[#2a2a2e] mb-6">
           <div className="flex gap-6">
             <button
-              onClick={() => setActiveTab('streams')}
+              onClick={() => setActiveTab("streams")}
               className={`pb-3 px-1 text-sm font-medium transition-all relative ${
-                activeTab === 'streams'
-                  ? 'text-white'
-                  : 'text-[#adadb8] hover:text-white'
+                activeTab === "streams"
+                  ? "text-white"
+                  : "text-[#adadb8] hover:text-white"
               }`}
             >
               <div className="flex items-center gap-2">
                 <Tv className="w-4 h-4" />
                 Live Streams
               </div>
-              {activeTab === 'streams' && (
+              {activeTab === "streams" && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#9147ff] rounded-full" />
               )}
             </button>
             <button
-              onClick={() => setActiveTab('clips')}
+              onClick={() => setActiveTab("clips")}
               className={`pb-3 px-1 text-sm font-medium transition-all relative ${
-                activeTab === 'clips'
-                  ? 'text-white'
-                  : 'text-[#adadb8] hover:text-white'
+                activeTab === "clips"
+                  ? "text-white"
+                  : "text-[#adadb8] hover:text-white"
               }`}
             >
               <div className="flex items-center gap-2">
                 <Video className="w-4 h-4" />
                 Top Clips
               </div>
-              {activeTab === 'clips' && (
+              {activeTab === "clips" && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#9147ff] rounded-full" />
               )}
             </button>
@@ -191,17 +209,19 @@ const GamePage: React.FC = () => {
         </div>
 
         {/* Streams content */}
-        {activeTab === 'streams' && (
+        {activeTab === "streams" && (
           <>
             {loadingStreams && streams.length === 0 && (
-              <div className="flex justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#9147ff]" />
+              <div className="flex justify-center items-center h-full">
+                <LoadingSpinner size="medium" text="Loading game data..." />
               </div>
             )}
             {!loadingStreams && streams.length === 0 && (
               <div className="text-center py-12 bg-[#1f1f23] rounded-xl">
                 <Tv className="w-12 h-12 mx-auto text-[#adadb8] mb-3" />
-                <p className="text-[#adadb8]">No live streams for this game right now.</p>
+                <p className="text-[#adadb8]">
+                  No live streams for this game right now.
+                </p>
               </div>
             )}
             {streams.length > 0 && (
@@ -215,29 +235,39 @@ const GamePage: React.FC = () => {
         )}
 
         {/* Clips content */}
-        {activeTab === 'clips' && (
+        {activeTab === "clips" && (
           <>
             {loadingClips && clips.length === 0 && (
-              <div className="flex justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#9147ff]" />
+              <div className="flex justify-center items-center h-full">
+                <LoadingSpinner size="medium" text="Loading game data..." />
               </div>
             )}
             {!loadingClips && clips.length === 0 && (
               <div className="text-center py-12 bg-[#1f1f23] rounded-xl">
                 <Video className="w-12 h-12 mx-auto text-[#adadb8] mb-3" />
-                <p className="text-[#adadb8]">No clips found for this game this week.</p>
+                <p className="text-[#adadb8]">
+                  No clips found for this game this week.
+                </p>
               </div>
             )}
             {clips.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {clips.map((clip) => (
-                  <ClipCard key={clip.id} clip={clip} />
+                  <ClipCard
+                    key={clip.id}
+                    clip={clip}
+                    onClick={(clip) => {
+                      openClipModal(clip);
+                    }}
+                  />
                 ))}
               </div>
             )}
           </>
         )}
       </div>
+      {/* Clip Modal */}
+      <ClipModal clip={selectedClip} onClose={closeClipModal} />
     </div>
   );
 };
